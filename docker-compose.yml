@@ -1,0 +1,22 @@
+services:
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+
+    # Lädt .env direkt in den Container.
+    # Fehlt die Datei, bricht docker compose mit klarer Fehlermeldung ab
+    # statt still mit leeren Werten zu starten.
+    env_file:
+      - .env
+
+    environment:
+      # Pfad im Volume - nicht in der .env überschreiben
+      - DATABASE_URL=file:/data/wow-dashboard.db
+
+    volumes:
+      - sqlite_data:/data
+    restart: unless-stopped
+
+volumes:
+  sqlite_data:

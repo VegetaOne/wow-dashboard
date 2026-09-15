@@ -1,0 +1,9 @@
+node_modules
+.next
+.env
+*.db
+.DS_Store
+tsconfig.tsbuildinfo
+next-env.d.ts
+_backup_*
+.gh-token

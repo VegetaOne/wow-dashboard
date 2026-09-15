@@ -1,0 +1,97 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String          @id @default(cuid())
+  battleTag   String          @unique
+  region      String          @default("eu")
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  favorites   Favorite[]
+  preferences UserPreference?
+}
+
+model Favorite {
+  id            String @id @default(cuid())
+  userId        String
+  characterName String
+  realmSlug     String
+  gameMode      String @default("retail")
+  user          User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, characterName, realmSlug, gameMode])
+}
+
+model UserPreference {
+  id        String  @id @default(cuid())
+  userId    String  @unique
+  mainChar  String?
+  mainRealm String?
+  mainMode  String?
+  region    String  @default("eu")
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+/// Loot-Tabelle aus der Journal-API, vorberechnet.
+/// Der Journal-Durchlauf kostet hunderte Anfragen – deshalb einmal
+/// indexieren und lokal abfragen, statt bei jedem Seitenaufruf zu laufen.
+model LootItem {
+  id            String @id @default(cuid())
+  gameMode      String
+  itemId        Int
+  name          String
+  /// Rohwert der API (HEAD, CLOAK, ROBE, TRINKET, …)
+  inventoryType String
+  itemLevel     Int?
+  quality       String?
+  instanceName  String
+  encounterName String
+
+  @@unique([gameMode, itemId, encounterName])
+  @@index([gameMode, inventoryType])
+}
+
+/// Fortschritt des Index-Durchlaufs je Spielmodus.
+model LootIndexRun {
+  id                String    @id @default(cuid())
+  gameMode          String    @unique
+  status            String    @default("PENDING")
+  totalInstances    Int       @default(0)
+  indexedInstances  Int       @default(0)
+  itemCount         Int       @default(0)
+  /// Noch offene Instanz-IDs, als JSON-Array
+  pendingInstanceIds   String    @default("[]")
+  error             String?
+  startedAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+}
+
+/// Zwischengespeicherte Antworten der Profil-API, ein Stand pro Tag.
+///
+/// Der Tag steckt im Unique-Key: dadurch entsteht die Historie von selbst
+/// (ein Abruf am selben Tag überschreibt, ein Abruf am nächsten legt an),
+/// ohne dass jemand alte Zeilen ausdünnen muss.
+model CharacterSnapshot {
+  id        String   @id @default(cuid())
+  gameMode  String
+  realmSlug String
+  charName  String
+  /// "professions" | "collections" | "achievements" | "raids" | …
+  dataset   String
+  /// Tag als YYYY-MM-DD
+  day       String
+  /// Rohantwort der API als JSON
+  payload   String
+  fetchedAt DateTime @default(now())
+
+  @@unique([gameMode, realmSlug, charName, dataset, day])
+  @@index([gameMode, realmSlug, charName, dataset])
+  @@index([dataset, day])
+}
