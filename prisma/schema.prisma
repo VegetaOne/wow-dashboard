@@ -73,6 +73,56 @@ model LootIndexRun {
   updatedAt         DateTime  @updatedAt
 }
 
+/// Verdichteter Preisstand eines Auktionshauses.
+///
+/// Die Rohantwort des Auktionsendpunkts ist je verbundenem Realm mehrere
+/// Megabyte gross (bei vollen Servern über zehn) und enthält jedes einzelne
+/// Gebot. Aufbewahrt wird darum nur, was eine Preisfrage beantwortet:
+/// günstigster Sofortkaufpreis je Einheit, angebotene Menge, Zahl der Angebote.
+///
+/// Preise stehen in Kupfer – so liefert die API sie, und so bleiben sie ganze
+/// Zahlen.
+model AuctionPrice {
+  id               String   @id @default(cuid())
+  gameMode         String
+  connectedRealmId Int
+  /// Classic führt mehrere Häuser je Realm (Allianz, Horde, neutral).
+  /// Retail hat genau eines; dort steht 0.
+  houseId          Int
+  itemId           Int
+  /// Günstigster Sofortkaufpreis je Einheit, in Kupfer
+  minUnitPrice     Int
+  /// Summe der angebotenen Stückzahl
+  quantity         Int
+  /// Zahl der Angebote – sagt, wie belastbar der Preis ist
+  listings         Int
+  fetchedAt        DateTime @default(now())
+
+  @@unique([gameMode, connectedRealmId, houseId, itemId])
+  @@index([gameMode, connectedRealmId, houseId])
+}
+
+/// Stand des letzten Auktions-Durchlaufs je Haus.
+model AuctionRun {
+  id               String   @id @default(cuid())
+  gameMode         String
+  connectedRealmId Int
+  houseId          Int
+  houseName        String?
+  status           String   @default("PENDING")
+  /// Zahl der Angebote in der Rohantwort
+  auctionCount     Int      @default(0)
+  /// Zahl der unterschiedlichen Gegenstände mit Preis
+  itemCount        Int      @default(0)
+  /// Angebote ohne Sofortkaufpreis – die ergeben keinen Preis
+  skippedCount     Int      @default(0)
+  error            String?
+  startedAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@unique([gameMode, connectedRealmId, houseId])
+}
+
 /// Zwischengespeicherte Antworten der Profil-API, ein Stand pro Tag.
 ///
 /// Der Tag steckt im Unique-Key: dadurch entsteht die Historie von selbst

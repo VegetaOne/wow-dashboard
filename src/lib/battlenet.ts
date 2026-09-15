@@ -21,6 +21,8 @@ export interface GameModeConfig {
   namespace: string
   /** Namespace für statische Spieldaten (Item-Icons, Medien) */
   staticNamespace: string
+  /** Namespace für veränderliche Spieldaten (Auktionen, verbundene Realms) */
+  dynamicNamespace: string
   accent: string
   /** Retail liefert ilvl + Avatar, Classic-Namespaces nicht */
   hasRichProfile: boolean
@@ -32,6 +34,7 @@ export const GAME_MODES: GameModeConfig[] = [
     label: "Retail",
     namespace: `profile-${REGION}`,
     staticNamespace: `static-${REGION}`,
+    dynamicNamespace: `dynamic-${REGION}`,
     accent: "#D4AF37",
     hasRichProfile: true,
   },
@@ -40,6 +43,7 @@ export const GAME_MODES: GameModeConfig[] = [
     label: "Classic",
     namespace: `profile-classic-${REGION}`,
     staticNamespace: `static-classic-${REGION}`,
+    dynamicNamespace: `dynamic-classic-${REGION}`,
     accent: "#C9A227",
     hasRichProfile: false,
   },
@@ -48,6 +52,7 @@ export const GAME_MODES: GameModeConfig[] = [
     label: "Classic Era",
     namespace: `profile-classic1x-${REGION}`,
     staticNamespace: `static-classic1x-${REGION}`,
+    dynamicNamespace: `dynamic-classic1x-${REGION}`,
     accent: "#7BA05B",
     hasRichProfile: false,
   },
@@ -146,7 +151,7 @@ async function bnetFetch<T>(
 }
 
 /** Führt fn über alle items aus, aber höchstens `limit` gleichzeitig. */
-async function mapLimit<T, R>(
+export async function mapLimit<T, R>(
   items: T[],
   limit: number,
   fn: (item: T) => Promise<R>

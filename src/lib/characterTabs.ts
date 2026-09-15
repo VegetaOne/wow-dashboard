@@ -23,6 +23,7 @@ export const CHARACTER_TABS: CharacterTab[] = [
   { slug: "ansehen", label: "Ansehen", enabled: true, note: "Ruf bei Fraktionen" },
   { slug: "pvp", label: "PvP", enabled: true, note: "Wertungen und Schlachtfelder" },
   { slug: "gilde", label: "Gilde", enabled: true, note: "Mitglieder, Erfolge, Ereignisse" },
+  { slug: "wirtschaft", label: "Wirtschaft", enabled: true, note: "Herstellkosten gegen Verkaufspreis" },
   { slug: "logs", label: "Logs", enabled: false, note: "Warcraft Logs" },
   { slug: "verlauf", label: "Verlauf", enabled: true, note: "Entwicklung über Zeit" },
 ]
