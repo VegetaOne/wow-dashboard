@@ -1,243 +1,498 @@
-# WoW Dashboard
+<div align="center">
 
-Ein selbst gehosteter Companion für den eigenen World-of-Warcraft-Account:
-alle Charaktere über alle Spielmodi hinweg, Ausrüstung wie im Charakterfenster,
-mögliche Upgrades, Berufe, Fortschritt, Sammlungen, Erfolge, Ansehen und PvP –
-mit Verlauf über die Zeit.
+# ⚔️ WoW Dashboard
 
-Läuft als einzelner Docker-Container im Heimnetz. Jede Person meldet sich mit
-ihrem eigenen Battle.net-Account an und sieht ausschliesslich ihre eigenen
-Charaktere.
+**A self-hosted companion for your own World of Warcraft account.**
+Every character across every game mode, gear the way the character sheet shows it,
+the upgrades you are actually missing, and a history that builds itself.
 
-> Nicht mit Blizzard Entertainment verbunden. Die Daten kommen aus der
-> offiziellen Battle.net-API; WoW und World of Warcraft sind Marken von
-> Blizzard Entertainment.
+[![Next.js 14](https://img.shields.io/badge/Next.js-14-000000?style=flat-square&logo=nextdotjs&logoColor=white)](https://nextjs.org)
+[![React 18](https://img.shields.io/badge/React-18-61DAFB?style=flat-square&logo=react&logoColor=black)](https://react.dev)
+[![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind-3-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
+[![Prisma](https://img.shields.io/badge/Prisma-5-2D3748?style=flat-square&logo=prisma&logoColor=white)](https://www.prisma.io)
+[![SQLite](https://img.shields.io/badge/SQLite-file--based-003B57?style=flat-square&logo=sqlite&logoColor=white)](https://sqlite.org)
+[![Docker](https://img.shields.io/badge/Docker-compose%20up-2496ED?style=flat-square&logo=docker&logoColor=white)](https://docs.docker.com/compose/)
 
----
+Runs as a single Docker container on your home network.
+Everyone signs in with their own Battle.net account and sees only their own characters.
 
-## Inhalt
+</div>
 
-- [Funktionen](#funktionen)
-- [Schnellstart](#schnellstart)
-- [Battle.net-Anwendung anlegen](#battlenet-anwendung-anlegen)
-- [Konfiguration](#konfiguration)
-- [Im Heimnetz teilen](#im-heimnetz-teilen)
-- [Entwicklung ohne Docker](#entwicklung-ohne-docker)
-- [Wie es funktioniert](#wie-es-funktioniert)
-- [Spielmodi und WoW Forever](#spielmodi-und-wow-forever)
-- [Projektstruktur](#projektstruktur)
-- [Grenzen der API](#grenzen-der-api)
-- [Roadmap](#roadmap)
-- [Sicherheit](#sicherheit)
+> [!NOTE]
+> Not affiliated with Blizzard Entertainment. All data comes from the official
+> Battle.net API. World of Warcraft and WoW are trademarks of Blizzard Entertainment.
+
+> [!IMPORTANT]
+> The interface is currently **German**. An **English/German switch is planned, with
+> English as the default** — see the [roadmap](#-roadmap). Item and faction names come
+> from the API in the selected locale.
 
 ---
 
-## Funktionen
+## Contents
 
-### Übersicht
+- [✨ Features](#-features)
+- [🚀 Quick start](#-quick-start)
+- [🔑 Battle.net application](#-battlenet-application)
+- [⚙ Configuration](#-configuration)
+- [🏠 Sharing on your home network](#-sharing-on-your-home-network)
+- [🧑‍💻 Development without Docker](#-development-without-docker)
+- [🧠 How it works](#-how-it-works)
+- [🌍 Game modes and WoW Forever](#-game-modes-and-wow-forever)
+- [📁 Project structure](#-project-structure)
+- [⚠ What the API cannot do](#-what-the-api-cannot-do)
+- [🗺 Roadmap](#-roadmap)
+- [🔒 Security](#-security)
+- [📄 License](#-license)
+- [🇩🇪 Deutsche Fassung](#-deutsche-fassung)
 
-- **Alle Charaktere** des angemeldeten Accounts, gruppiert nach Spielmodus
-  (Retail, Classic, Classic Era) und darin nach Realm.
-- **Fraktionsbewusste Darstellung**: Wappen und Farbe je Horde/Allianz,
-  Klassenfarbe am Namen.
-- **Favoriten**: häufig gespielte Charaktere nach oben.
-- **Nachladen auf Abruf**: Ein Realm lädt erst, wenn er ins Bild scrollt.
-  Bei 40 Charakteren wird nicht alles auf einmal geholt.
+---
 
-### Ausrüstung
+## ✨ Features
 
-- Alle angelegten Gegenstände als Paperdoll – links, rechts, Waffen unten,
-  genau wie im Spiel.
-- **Item-Icons** aus der Game-Data-API, Rahmen in der Qualitätsfarbe.
-- **Hover-Tooltip** mit Itemstufe, Attributen, Verzauberung und Sockeln.
-- **Charaktermodell** in der Mitte, vergrössert und drehbar (die API liefert
-  Renderbilder aus mehreren Winkeln).
+### Overview
+
+- **Every character** on the account, grouped by game mode (Retail, Classic, Classic Era)
+  and by realm within each mode
+- **Faction-aware**: crest and colour per Horde/Alliance, class colour on the name
+- **Favourites** pin the characters you actually play to the top
+- **Loads on demand** — a realm is fetched when it scrolls into view, not all at once.
+  With 40 characters that is the difference between usable and unusable
+
+### Gear
+
+- All equipped items as a **paperdoll**: left column, right column, weapons below,
+  the way the game lays it out
+- **Item icons** from the Game Data API, bordered in the item's quality colour
+- **Hover tooltip** with item level, stats, enchant and sockets
+- **Character model** in the middle, enlarged and rotatable (the API serves rendered
+  views from several angles)
 
 ### Upgrades
 
-- **Fehlende Verzauberungen und leere Sockel** je Slot.
-- **Schwächste Slots** im Vergleich zum eigenen Schnitt – ohne Behauptungen
-  über DPS, denn dafür fehlen der API die Statgewichte.
-- **Loot-Kandidaten** aus den Loot-Tabellen der Journal-API: welche Bosse
-  welcher Instanz etwas für diesen Slot droppen, mit Icon und Tooltip.
-  Der Index wird im Hintergrund aufgebaut und in der Datenbank gehalten.
+- **Missing enchants and empty sockets**, per slot
+- **Weakest slots** relative to your own average
+- **Loot candidates** from the Journal API loot tables: which boss in which instance
+  drops something for that slot, with icon and tooltip. The index is built in the
+  background and kept in the database
 
-### Weitere Tabs je Charakter
+> [!WARNING]
+> No DPS numbers and no best-in-slot list. The API does not publish stat weights, so any
+> such ranking would be invented. This app shows what the data supports and says so.
 
-| Tab | Inhalt |
+### Per-character tabs
+
+<details>
+<summary><b>What each tab shows</b></summary>
+
+| Tab | Contents |
 | --- | --- |
-| **Berufe** | Haupt- und Nebenberufe, Fertigkeitsstufen je Erweiterungsstufe, bekannte Rezepte |
-| **Fortschritt** | Raid- und Dungeon-Bosskills je Schwierigkeit mit Datum, Mythisch+ Wertung und Läufe |
-| **Sammlungen** | Titel, Spielzeug, Reittiere und Haustiere (account-weit, einmal geladen) |
-| **Erfolge** | Erfolge nach Kategorie, mit Punktestand |
-| **Ansehen** | Ruf bei allen Fraktionen, höchste Stufe zuerst, Paragon getrennt ausgewiesen, mit Suche |
-| **PvP** | Ehrestufe, ehrenhafte Siege, Wertungen für 2v2/3v3/RBG und Statistik je Schlachtfeld |
-| **Verlauf** | Entwicklung von Itemstufe, Erfolgspunkten und Fortschritt über die Zeit als Sparkline |
+| **Gear** | Equipped items, paperdoll, character model, upgrades, loot candidates |
+| **Professions** | Primary and secondary professions, skill tiers per expansion, known recipes |
+| **Progression** | Raid and dungeon boss kills per difficulty with dates, Mythic+ rating and runs |
+| **Collections** | Titles, toys, mounts and pets (account-wide, fetched once) |
+| **Achievements** | Achievements by category, with point total |
+| **Reputation** | Standing with every faction, highest tier first, paragon shown separately, with search |
+| **PvP** | Honor level, honorable kills, 2v2 / 3v3 / RBG ratings, per-battleground statistics |
+| **History** | Item level, achievement points and progression over time as sparklines |
 
-### Allgemein
+</details>
 
-- **Deutsche Oberfläche** (`de_DE`), auch die Item- und Fraktionsnamen aus
-  der API.
-- **Hell/Dunkel** umschaltbar.
-- **Verlauf ohne Zusatzaufwand**: Jeder Abruf wird als Tagesschnappschuss
-  gespeichert. Damit gibt es Historie, und wenn die API ausfällt, zeigt die App
-  den letzten bekannten Stand statt einer leeren Seite – sichtbar
-  gekennzeichnet.
+### Across the app
+
+- **Light and dark** mode
+- **History for free**: every fetch is stored as a daily snapshot. That gives you trends,
+  and when the API is down the app shows the last known state — clearly labelled — instead
+  of an empty page
+- **Honest about gaps**: a missing value renders as `—`, never as `0`. A ratio appears only
+  when both numerator and denominator are known, so `0/0` never reads as "complete"
 
 ---
 
-## Schnellstart
+## 🚀 Quick start
 
-Vorausgesetzt sind Docker und Docker Compose.
+**Requirements:** Docker and Docker Compose.
 
 ```bash
-git clone <URL dieses Repos> wow-dashboard
+git clone https://github.com/<your-user>/wow-dashboard.git
 cd wow-dashboard
 
-# Konfiguration anlegen
+# Create the configuration
 cp .env.example .env
 
-# Session-Schlüssel erzeugen und in .env bei NEXTAUTH_SECRET eintragen
+# Generate a session key and put it in .env as NEXTAUTH_SECRET
 openssl rand -base64 32
 
-# Battle.net Client ID und Secret in .env eintragen (siehe unten)
-# Danach:
+# Add your Battle.net client ID and secret to .env (see below), then:
 docker compose up -d --build
 ```
 
-Die App läuft dann auf <http://localhost:3000>.
+The app is then on <http://localhost:3000>.
 
-Der erste Build dauert einige Minuten, weil im Container `npm install`,
-`prisma generate` und `next build` laufen. Danach startet der Container in
-Sekunden.
-
-Logs ansehen, falls etwas nicht startet:
+The first build takes a few minutes — `npm install`, `prisma generate` and `next build`
+all run inside the container. After that it starts in seconds.
 
 ```bash
-docker compose logs -f app
+docker compose logs -f app      # if something does not come up
+docker compose down             # stop (the database volume survives)
 ```
 
 ---
 
-## Battle.net-Anwendung anlegen
+## 🔑 Battle.net application
 
-Die App greift mit dem OAuth-Login des jeweiligen Nutzers auf dessen
-Profildaten zu. Dafür braucht es eine eigene Anwendung in der Battle.net
-Developer Console:
+The app reads profile data with each user's own OAuth login, so it needs an application
+in the Battle.net Developer Console.
 
-1. <https://develop.battle.net> öffnen und mit dem Battle.net-Account anmelden.
-2. **Create New Client** – Name frei wählbar, z. B. `wow-dashboard`.
-3. Als **Redirect URI** genau die Callback-Adresse eintragen:
+1. Open <https://develop.battle.net> and sign in
+2. **Create New Client** — any name, e.g. `wow-dashboard`
+3. Set the **Redirect URI** to exactly this callback address:
 
    ```
    http://localhost:3000/api/auth/callback/battlenet
    ```
 
-   Soll die App auch von anderen Geräten im Heimnetz erreichbar sein, zusätzlich
-   die Adresse mit der lokalen IP eintragen, z. B.
-   `http://192.168.1.42:3000/api/auth/callback/battlenet`. Battle.net erlaubt
-   mehrere Redirect-URIs pro Client – jede Adresse, unter der sich jemand
-   anmeldet, muss dort stehen.
-4. **Client ID** und **Client Secret** in die `.env` übernehmen.
+   To reach the app from other devices on your network, add the address with your local
+   IP as well, e.g. `http://192.168.1.42:3000/api/auth/callback/battlenet`. Battle.net
+   allows several redirect URIs per client — every address anyone signs in from has to
+   be listed
+4. Copy **Client ID** and **Client Secret** into your `.env`
 
-Der verwendete Scope ist ausschliesslich `wow.profile`. Die App liest nie
-Zahlungs- oder Accountdaten und schreibt nichts nach Battle.net zurück.
+The only scope requested is `wow.profile`. The app never reads payment or account data
+and never writes anything back to Battle.net.
 
 ---
 
-## Konfiguration
+## ⚙ Configuration
 
-Alle Werte stehen in der `.env` (Vorlage: `.env.example`). Die Datei ist
-bewusst **nicht** im Repository und wird auch nicht ins Docker-Image kopiert.
+All values live in `.env` (template: `.env.example`). That file is deliberately **not**
+in the repository and is not copied into the Docker image.
 
-| Variable | Bedeutung |
+| Variable | Meaning |
 | --- | --- |
-| `NEXTAUTH_URL` | Adresse, unter der die App aufgerufen wird. Muss zu einer Redirect-URI im Battle.net-Client passen. |
-| `NEXTAUTH_SECRET` | Schlüssel für die Session-Verschlüsselung. `openssl rand -base64 32` |
-| `BNET_CLIENT_ID` | Client ID aus der Developer Console |
-| `BNET_CLIENT_SECRET` | Client Secret aus der Developer Console |
-| `BNET_REGION` | `eu`, `us`, `kr` oder `tw` |
-| `DATABASE_URL` | Wird von Compose auf das Volume gesetzt – in der `.env` nicht überschreiben. |
+| `NEXTAUTH_URL` | The address the app is served on. Must match a redirect URI on the Battle.net client |
+| `NEXTAUTH_SECRET` | Key for session encryption — `openssl rand -base64 32` |
+| `BNET_CLIENT_ID` | Client ID from the Developer Console |
+| `BNET_CLIENT_SECRET` | Client secret from the Developer Console |
+| `BNET_REGION` | `eu`, `us`, `kr` or `tw` |
+| `DATABASE_URL` | Set by Compose to the volume path — do not override it in `.env` |
 
-`docker-compose.yml` lädt die `.env` über `env_file`. Fehlt die Datei, bricht
-Compose mit einer klaren Meldung ab, statt still mit leeren Werten zu starten.
-
----
-
-## Im Heimnetz teilen
-
-Die App ist von Anfang an mehrbenutzerfähig: Jede Person meldet sich mit ihrem
-eigenen Battle.net-Account an, und die Charakterliste kommt aus deren eigenem
-Token. Es gibt keinen geteilten Datenbestand zwischen Accounts.
-
-Damit jemand anderes im Heimnetz zugreifen kann:
-
-1. Lokale IP des Rechners ermitteln (`ipconfig getifaddr en0` auf macOS,
-   `hostname -I` auf Linux).
-2. `NEXTAUTH_URL` in der `.env` auf `http://<diese-IP>:3000` setzen.
-3. Dieselbe Adresse als Redirect-URI im Battle.net-Client hinterlegen.
-4. `docker compose up -d` neu starten.
-
-HTTPS ist dafür nicht eingerichtet – das Setup ist fürs lokale Netz gedacht,
-nicht fürs offene Internet. Wer die App ins Internet stellt, braucht davor
-einen Reverse Proxy mit TLS.
+`docker-compose.yml` loads `.env` via `env_file`. If the file is missing, Compose stops
+with a clear error instead of starting silently with blank values.
 
 ---
 
-## Entwicklung ohne Docker
+## 🏠 Sharing on your home network
+
+The app is multi-user by design: everyone signs in with their own Battle.net account and
+the character list comes from their own token. No data is shared between accounts.
+
+1. Find your local IP — `ipconfig getifaddr en0` (macOS) or `hostname -I` (Linux)
+2. Set `NEXTAUTH_URL=http://<that-ip>:3000` in `.env`
+3. Add the same address as a redirect URI on the Battle.net client
+4. `docker compose up -d`
+
+> [!CAUTION]
+> There is no HTTPS in this setup — it is built for a local network, not the open
+> internet. Exposing it publicly requires a reverse proxy with TLS in front.
+
+---
+
+## 🧑‍💻 Development without Docker
 
 ```bash
 npm install
-cp .env.example .env          # Werte eintragen
+cp .env.example .env                    # fill in the values
 echo 'DATABASE_URL="file:./dev.db"' >> .env
 
-npx prisma migrate dev        # Datenbank anlegen
+npx prisma migrate dev                  # create the database
 npm run dev
 ```
 
-Nützliche Befehle:
+<details>
+<summary><b>Useful commands</b></summary>
 
 ```bash
-npx tsc --noEmit              # Typen prüfen
-npm run build                 # Produktionsbuild
-npx prisma studio             # Datenbank ansehen
-npx prisma migrate dev --name <name>   # neue Migration
+npx tsc --noEmit                        # type-check
+npm run build                           # production build
+npx prisma studio                       # inspect the database
+npx prisma migrate dev --name <name>    # new migration
 ```
 
----
-
-## Wie es funktioniert
-
-**Stack:** Next.js 14 (App Router) mit React 18, Tailwind CSS, NextAuth für
-den Battle.net-OAuth-Login, Prisma mit SQLite als Datenbank. Kein externer
-Dienst, keine Registrierung, keine Cloud.
-
-**Login:** Battle.net wird als reiner OAuth2-Provider konfiguriert, nicht als
-OIDC-Provider. Grund: Battle.net schreibt eine eigene Nonce ins ID-Token, was
-die OIDC-Prüfung von NextAuth scheitern lässt (`nonce mismatch`). Der BattleTag
-kommt darum über den `userinfo`-Endpunkt.
-
-**Schnappschüsse:** Jeder Datensatz je Charakter und Tag landet als Snapshot in
-SQLite. Der Tag ist Teil des eindeutigen Schlüssels. Daraus folgt dreierlei:
-Ein zweiter Aufruf am selben Tag kostet keine API-Anfrage, der Verlauf entsteht
-von selbst, und wenn die API nicht antwortet, liefert die App den letzten
-bekannten Stand mit Hinweis („Letzter bekannter Stand vom …") statt eines
-Fehlers.
-
-**Nachladen:** Realms laden per `IntersectionObserver` erst beim Scrollen,
-Detailabrufe laufen mit begrenzter Parallelität. Das schont das Ratelimit und
-hält die Startseite schnell.
-
-**Ehrlichkeit bei Lücken:** Fehlt ein Wert, zeigt die App `—` und nicht `0`.
-Eine Quote wird nur berechnet, wenn Zähler und Nenner bekannt sind; `0/0` liest
-sich nie als „vollständig". Wo die API etwas nicht hergibt, steht das im
-Interface.
+</details>
 
 ---
 
-## Spielmodi und WoW Forever
+## 🧠 How it works
 
-Die Spielmodi unterscheiden sich in der API nur über den Namespace:
+**Stack:** Next.js 14 (App Router) with React 18, Tailwind CSS, NextAuth for the
+Battle.net OAuth login, Prisma with SQLite. No external service, no sign-up, no cloud.
+
+**Login.** Battle.net is configured as a plain **OAuth2** provider, not an OIDC one —
+it writes its own nonce into the ID token, which makes NextAuth's OIDC check fail with
+`nonce mismatch`. The BattleTag therefore comes from the `userinfo` endpoint.
+
+**Snapshots.** Every dataset is stored per character and per day in SQLite, with the day
+as part of the unique key. Three things follow: a second call on the same day costs no API
+request, the history builds itself, and when the API does not answer the app serves the
+last known state with a timestamp instead of an error.
+
+**On-demand loading.** Realms load via `IntersectionObserver` as you scroll, and detail
+requests run with limited concurrency. That keeps the landing page fast and the rate
+limit intact.
+
+---
+
+## 🌍 Game modes and WoW Forever
+
+In the API the game modes differ only by namespace:
+
+| Mode | Profile namespace |
+| --- | --- |
+| Retail | `profile-<region>` |
+| Classic (current) | `profile-classic-<region>` |
+| Classic Era | `profile-classic1x-<region>` |
+
+The responses diverge in the details — Classic Era omits `level` on equipped items, has
+no enchants at all, and Mythic+ exists only in Retail. The app reads responses
+tolerantly and hides whatever a mode does not know about.
+
+For **WoW Forever** there is a documented placeholder at
+`src/lib/adapters/wow-forever.ts`. Once Blizzard publishes the namespace, the mode gets
+added there — the interface needs no changes.
+
+---
+
+## 📁 Project structure
+
+<details>
+<summary><b>Where things live</b></summary>
+
+```
+src/
+  app/                       Next.js App Router
+    api/auth/                NextAuth route
+    api/wow/                 internal endpoints for on-demand loading
+    dashboard/[mode]/[realm]/[name]/
+                             character pages (tabs as subfolders)
+  components/                UI — paperdoll, tooltips, panels, charts
+  lib/
+    auth.ts                  Battle.net as an OAuth2 provider
+    battlenet.ts             API access, namespaces, slots, colours
+    character.ts             cached fetches per dataset
+    snapshot.ts              snapshots, stale fallback, history
+    journal.ts / loot.ts     loot tables and candidates
+    reputations.ts / pvp.ts  reputation and PvP
+    trend.ts / history.ts    sparkline geometry (pure) / data access
+    adapters/                game modes, incl. the WoW Forever placeholder
+    format.ts                numbers and dates without toLocaleString
+prisma/
+  schema.prisma
+  migrations/
+```
+
+Two splits are deliberate:
+
+- `trend.ts` (pure) is separate from `history.ts` (database) so the client-side chart
+  component does not drag Prisma into the browser bundle
+- `format.ts` avoids `toLocaleString` on purpose. If the runtime's ICU data is
+  incomplete, Node falls back to `en-US` silently and `12’345` becomes `12,345` — which
+  in German reads as a decimal
+
+</details>
+
+---
+
+## ⚠ What the API cannot do
+
+<details>
+<summary><b>Worth knowing before something looks like a bug</b></summary>
+
+- **The profile only updates when the character logs out.** Polling more often than every
+  few minutes achieves nothing
+- **No stat weights.** The API does not say which item is better for which playstyle. So
+  the app shows missing enchants, empty sockets and weak slots — not a BiS list and not
+  DPS figures
+- **Things never played answer with 404.** For PvP brackets that means "never queued", not
+  "error", and such brackets are not displayed at all
+- **No grouping by expansion** for reputation — hence the search box
+- **Gold, currencies and bag contents are not in the API** at all. Only an addon export
+  could provide them
+- **The character model is a rendered image**, not a 3D model — the rotation uses the
+  angles the API serves
+- **Rate limits** apply per client. Snapshots and on-demand loading exist for that reason
+
+</details>
+
+---
+
+## 🗺 Roadmap
+
+**Done:** character overview, gear with paperdoll and tooltips, upgrades and loot
+candidates, professions, progression, collections, achievements, reputation, PvP, history.
+
+| Next | What it needs |
+| --- | --- |
+| **🌐 English/German switch** | UI strings extracted, API locale per request, English as the default |
+| **🏰 Guild** | Roster with item levels, guild achievements, activity |
+| **💰 Auction house / craft economy** | Crafting cost versus sale price — needs its own index, responses run to several MB |
+| **📅 Weekly overview** | Resets, open lockouts, weekly rewards |
+| **⚖️ Character comparison** | Two characters side by side |
+| **🔄 Background refresher** | Open question — it would require persisting encrypted refresh tokens |
+| **📊 Warcraft Logs** | Raid performance; needs a separate application registered at warcraftlogs.com |
+| **♾️ WoW Forever** | As soon as the API namespace is known |
+
+---
+
+## 🔒 Security
+
+- `.env` is in `.gitignore` **and** `.dockerignore`. It reaches neither the repository nor
+  the image
+- The client secret belongs in `.env` and nowhere else. If it ever lands somewhere else —
+  a chat, a commit, a screenshot — regenerate it in the Developer Console. A secret that
+  has been exposed stays exposed
+- Session cookies are signed with `NEXTAUTH_SECRET`; changing it invalidates all sessions
+- Without HTTPS, tokens should not travel across networks you do not control
+
+---
+
+## 📄 License
+
+Private project — no license granted. If you have access to this repository and want to
+reuse something, just ask.
+
+---
+
+## 🇩🇪 Deutsche Fassung
+
+<details>
+<summary><b>Aufklappen für die deutsche Dokumentation</b></summary>
+
+<br>
+
+**WoW Dashboard** — ein selbst gehosteter Companion für den eigenen World-of-Warcraft-Account:
+alle Charaktere über alle Spielmodi, Ausrüstung wie im Charakterfenster, die Upgrades, die
+wirklich fehlen, und ein Verlauf, der von selbst entsteht.
+
+Läuft als einzelner Docker-Container im Heimnetz. Jede Person meldet sich mit ihrem eigenen
+Battle.net-Account an und sieht ausschliesslich ihre eigenen Charaktere.
+
+> [!NOTE]
+> Nicht mit Blizzard Entertainment verbunden. Die Daten kommen aus der offiziellen
+> Battle.net-API. Die Oberfläche ist derzeit deutsch; ein **Umschalter Englisch/Deutsch mit
+> Englisch als Standard ist geplant**.
+
+### Funktionen
+
+**Übersicht** — Alle Charaktere des Accounts, gruppiert nach Spielmodus (Retail, Classic,
+Classic Era) und darin nach Realm. Fraktionswappen und -farbe, Klassenfarbe am Namen,
+Favoriten. **Nachladen auf Abruf:** ein Realm lädt erst, wenn er ins Bild scrollt — bei
+40 Charakteren der Unterschied zwischen benutzbar und unbenutzbar.
+
+**Ausrüstung** — Paperdoll wie im Spiel: links, rechts, Waffen unten, Charaktermodell in
+der Mitte, vergrössert und drehbar. Item-Icons mit Rahmen in der Qualitätsfarbe,
+Hover-Tooltip mit Itemstufe, Attributen, Verzauberung und Sockeln.
+
+**Upgrades** — Fehlende Verzauberungen, leere Sockel, schwächste Slots gegen den eigenen
+Schnitt. **Loot-Kandidaten** aus den Journal-Loot-Tabellen: welcher Boss welcher Instanz
+etwas für diesen Slot droppt, mit Icon und Tooltip.
+
+> [!WARNING]
+> Keine DPS-Zahlen und keine BiS-Liste. Die API liefert keine Statgewichte — jede solche
+> Rangfolge wäre erfunden. Gezeigt wird, was die Daten hergeben.
+
+**Tabs je Charakter** — Ausrüstung · Berufe · Fortschritt (Raids, Dungeons, Mythisch+) ·
+Sammlungen (Titel, Spielzeug, Reittiere, Haustiere) · Erfolge · Ansehen (Paragon getrennt
+ausgewiesen) · PvP (Ehre, Wertungen, Schlachtfeld-Statistik) · Verlauf (Sparklines).
+
+**Querschnitt** — Hell/Dunkel umschaltbar. **Verlauf ohne Zusatzaufwand:** jeder Abruf wird
+als Tagesschnappschuss gespeichert; fällt die API aus, zeigt die App den letzten bekannten
+Stand mit Hinweis statt einer leeren Seite. **Ehrlich bei Lücken:** fehlt ein Wert, steht
+`—` und nicht `0`; eine Quote erscheint nur, wenn Zähler und Nenner bekannt sind.
+
+### Schnellstart
+
+Vorausgesetzt sind Docker und Docker Compose.
+
+```bash
+git clone https://github.com/<dein-user>/wow-dashboard.git
+cd wow-dashboard
+
+cp .env.example .env
+openssl rand -base64 32        # Ergebnis als NEXTAUTH_SECRET in die .env
+
+# Battle.net Client ID und Secret in die .env eintragen, dann:
+docker compose up -d --build
+```
+
+Die App läuft auf <http://localhost:3000>. Der erste Build dauert einige Minuten.
+Logs: `docker compose logs -f app`.
+
+### Battle.net-Anwendung
+
+1. <https://develop.battle.net> öffnen und anmelden
+2. **Create New Client**, Name frei wählbar
+3. **Redirect URI** genau so eintragen:
+   `http://localhost:3000/api/auth/callback/battlenet` — für Zugriff aus dem Heimnetz
+   zusätzlich die Adresse mit der lokalen IP. Jede Adresse, unter der sich jemand anmeldet,
+   muss dort stehen
+4. **Client ID** und **Client Secret** in die `.env`
+
+Verwendeter Scope ist ausschliesslich `wow.profile`. Die App schreibt nichts nach
+Battle.net zurück.
+
+### Konfiguration
+
+| Variable | Bedeutung |
+| --- | --- |
+| `NEXTAUTH_URL` | Adresse, unter der die App läuft. Muss zu einer Redirect-URI passen |
+| `NEXTAUTH_SECRET` | Schlüssel für die Session-Verschlüsselung |
+| `BNET_CLIENT_ID` | Client ID aus der Developer Console |
+| `BNET_CLIENT_SECRET` | Client Secret aus der Developer Console |
+| `BNET_REGION` | `eu`, `us`, `kr` oder `tw` |
+| `DATABASE_URL` | Setzt Compose auf das Volume — in der `.env` nicht überschreiben |
+
+`docker-compose.yml` lädt die `.env` über `env_file`. Fehlt sie, bricht Compose mit klarer
+Meldung ab statt still mit leeren Werten zu starten.
+
+### Im Heimnetz teilen
+
+Lokale IP ermitteln (`ipconfig getifaddr en0` / `hostname -I`), `NEXTAUTH_URL` darauf
+setzen, dieselbe Adresse als Redirect-URI hinterlegen, `docker compose up -d`.
+
+> [!CAUTION]
+> Kein HTTPS — das Setup ist fürs lokale Netz gedacht. Wer die App ins Internet stellt,
+> braucht davor einen Reverse Proxy mit TLS.
+
+### Entwicklung ohne Docker
+
+```bash
+npm install
+cp .env.example .env
+echo 'DATABASE_URL="file:./dev.db"' >> .env
+npx prisma migrate dev
+npm run dev
+```
+
+Nützlich: `npx tsc --noEmit`, `npm run build`, `npx prisma studio`.
+
+### Wie es funktioniert
+
+**Stack:** Next.js 14 (App Router), React 18, Tailwind, NextAuth, Prisma mit SQLite.
+Kein externer Dienst, keine Registrierung, keine Cloud.
+
+**Login:** Battle.net wird als reiner **OAuth2**-Provider konfiguriert, nicht als OIDC —
+es schreibt eine eigene Nonce ins ID-Token, woran die OIDC-Prüfung von NextAuth mit
+`nonce mismatch` scheitert. Der BattleTag kommt darum über `userinfo`.
+
+**Schnappschüsse:** Jeder Datensatz landet je Charakter und Tag in SQLite, der Tag ist Teil
+des eindeutigen Schlüssels. Folge: zweiter Aufruf am selben Tag kostet keine API-Anfrage,
+der Verlauf entsteht von selbst, und bei Ausfall gibt es den letzten Stand mit Zeitstempel.
+
+**Nachladen:** Realms per `IntersectionObserver`, Detailabrufe mit begrenzter Parallelität.
+
+### Spielmodi und WoW Forever
 
 | Modus | Profil-Namespace |
 | --- | --- |
@@ -245,96 +500,32 @@ Die Spielmodi unterscheiden sich in der API nur über den Namespace:
 | Classic (aktuell) | `profile-classic-<region>` |
 | Classic Era | `profile-classic1x-<region>` |
 
-Die Antworten weichen im Detail voneinander ab – in Classic Era fehlt etwa das
-`level`-Feld an Ausrüstungsteilen, Verzauberungen gibt es dort nicht, und
-Mythisch+ existiert nur in Retail. Die App liest die Antworten darum tolerant
-und blendet aus, was ein Modus nicht kennt.
+Die Antworten weichen im Detail ab: Classic Era liefert kein `level` an Ausrüstungsteilen
+und keine Verzauberungen, Mythisch+ gibt es nur in Retail. Für **WoW Forever** liegt unter
+`src/lib/adapters/wow-forever.ts` ein dokumentierter Platzhalter.
 
-Für **WoW Forever** liegt unter `src/lib/adapters/wow-forever.ts` ein
-dokumentierter Platzhalter. Sobald Blizzard den Namespace veröffentlicht, ist
-dort der Modus einzutragen; die Oberfläche braucht dafür keine Änderung.
+### Grenzen der API
 
----
+- **Das Profil aktualisiert sich erst beim Ausloggen** des Charakters
+- **Keine Statgewichte** — darum keine BiS-Liste und keine DPS-Zahlen
+- **404 heisst „nie gespielt"**, nicht „Fehler" (PvP-Wertungen)
+- **Keine Gruppierung nach Erweiterung** beim Ansehen — darum die Suche
+- **Gold, Währungen und Taschen** führt die API nicht
+- **Das Charaktermodell ist ein gerendertes Bild**, kein 3D-Modell
+- **Ratelimit** pro Client — dafür gibt es Schnappschüsse und Nachladen auf Abruf
 
-## Projektstruktur
+### Offen
 
-```
-src/
-  app/                       Next.js App Router
-    api/auth/                NextAuth-Route
-    api/wow/                 interne Endpunkte fürs Nachladen
-    dashboard/[mode]/[realm]/[name]/
-                             Charakterseiten (Tabs als Unterordner)
-  components/                UI – Paperdoll, Tooltips, Panels, Charts
-  lib/
-    auth.ts                  Battle.net als OAuth2-Provider
-    battlenet.ts             API-Zugriff, Namespaces, Slots, Farben
-    character.ts             gecachte Abrufe je Datensatz
-    snapshot.ts              Schnappschüsse, Stale-Fallback, Verlauf
-    journal.ts / loot.ts     Loot-Tabellen und Kandidaten
-    reputations.ts / pvp.ts  Ansehen und PvP
-    trend.ts / history.ts    Sparkline-Geometrie (rein) / Datenzugriff
-    adapters/                Spielmodi, inkl. Platzhalter für WoW Forever
-    format.ts                Zahlen und Datum ohne toLocaleString
-prisma/
-  schema.prisma
-  migrations/
-```
+Umschalter Englisch/Deutsch (Englisch als Standard) · Gilde · Auktionshaus und
+Berufs-Wirtschaft · Wochenübersicht · Charaktervergleich · Hintergrund-Auffrischer
+(braucht persistente, verschlüsselte Refresh-Tokens) · Warcraft Logs (eigene App-
+Registrierung) · WoW Forever.
 
-`trend.ts` und `history.ts` sind getrennt, damit die Chart-Komponente auf dem
-Client nicht Prisma in das Browser-Bundle zieht. `format.ts` verzichtet
-absichtlich auf `toLocaleString`: fehlen im Container die ICU-Daten, fällt Node
-still auf `en-US` zurück, und aus `12’345` würde `12,345` – auf Deutsch als
-Dezimalzahl zu lesen.
+### Sicherheit
 
----
+`.env` steht in `.gitignore` **und** `.dockerignore` — weder im Repo noch im Image. Das
+Client Secret gehört ausschliesslich dorthin; landet es woanders (Chat, Commit,
+Screenshot), in der Developer Console neu generieren. Ein offengelegtes Secret bleibt
+offengelegt. Ohne HTTPS gehören Tokens nicht über fremde Netze.
 
-## Grenzen der API
-
-Gut zu wissen, bevor etwas als Fehler aussieht:
-
-- **Das Profil aktualisiert sich erst beim Ausloggen** des Charakters. Häufiger
-  als alle paar Minuten abzufragen bringt nichts.
-- **Keine Statgewichte.** Die API sagt nicht, welches Item für welche Spielart
-  besser ist. Die App zeigt deshalb fehlende Verzauberungen, leere Sockel und
-  schwache Slots – aber keine BiS-Liste und keine DPS-Zahlen.
-- **Ungespieltes antwortet mit 404.** Bei PvP-Wertungen heisst das „nie
-  angetreten", nicht „Fehler". Die App zeigt solche Klassen gar nicht an.
-- **Keine Gruppierung nach Erweiterung** beim Ansehen – darum die Suche.
-- **Ratelimit** pro Client. Schnappschüsse und Nachladen auf Abruf sind genau
-  dafür da.
-
----
-
-## Roadmap
-
-Umgesetzt: Charakterübersicht, Ausrüstung mit Paperdoll und Tooltips, Upgrades
-und Loot-Kandidaten, Berufe, Fortschritt, Sammlungen, Erfolge, Ansehen, PvP,
-Verlauf.
-
-Geplant:
-
-- **Gilde** – Roster mit Itemstufe, Gildenerfolge, Aktivität
-- **Auktionshaus / Berufs-Wirtschaft** – Herstellkosten gegen Verkaufspreis
-  (braucht einen eigenen Index, die Antworten sind mehrere MB gross)
-- **Wochenübersicht** – Resets, offene Lockouts, wöchentliche Belohnungen
-- **Charaktervergleich** – zwei Charaktere nebeneinander
-- **Hintergrund-Auffrischer** – noch offen, weil dafür verschlüsselte
-  Refresh-Tokens persistent gespeichert werden müssten
-- **Warcraft Logs** – Raid-Performance; braucht eine eigene Anwendung bei
-  warcraftlogs.com mit Client ID und Secret
-- **WoW Forever** – sobald der Namespace der API bekannt ist
-
----
-
-## Sicherheit
-
-- Die `.env` ist in `.gitignore` **und** in `.dockerignore`. Sie landet weder
-  im Repository noch im Image.
-- Das Client Secret gehört ausschliesslich in die `.env`. Wer es versehentlich
-  woanders hinschreibt (Chat, Commit, Screenshot), sollte es in der Developer
-  Console neu generieren – ein einmal offengelegtes Secret bleibt offengelegt.
-- Die Session-Cookies sind mit `NEXTAUTH_SECRET` signiert. Ein neuer Wert
-  macht alle bestehenden Sessions ungültig.
-- Ohne HTTPS gehören Tokens nicht über fremde Netze. Das Setup ist fürs
-  Heimnetz gedacht.
+</details>
