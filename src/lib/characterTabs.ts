@@ -22,6 +22,7 @@ export const CHARACTER_TABS: CharacterTab[] = [
   { slug: "erfolge", label: "Erfolge", enabled: true, note: "Erfolge nach Kategorie" },
   { slug: "ansehen", label: "Ansehen", enabled: true, note: "Ruf bei Fraktionen" },
   { slug: "pvp", label: "PvP", enabled: true, note: "Wertungen und Schlachtfelder" },
+  { slug: "gilde", label: "Gilde", enabled: true, note: "Mitglieder, Erfolge, Ereignisse" },
   { slug: "logs", label: "Logs", enabled: false, note: "Warcraft Logs" },
   { slug: "verlauf", label: "Verlauf", enabled: true, note: "Entwicklung über Zeit" },
 ]

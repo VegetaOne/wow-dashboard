@@ -33,6 +33,13 @@ export type Dataset =
   | "statistics"
   | "pvp"
   | "pvp-brackets"
+  /** Welcher Gilde ein Charakter angehört – je Charakter */
+  | "character-guild"
+  /** Gildengebunden, nicht je Charakter – siehe `guildKey` */
+  | "guild"
+  | "guild-roster"
+  | "guild-activity"
+  | "guild-achievements"
   | "specializations"
   | "titles"
   | "toys"
@@ -60,6 +67,25 @@ export function accountKey(dataset: Dataset): SnapshotKey {
     gameMode: "retail",
     realmSlug: ACCOUNT_SCOPE,
     charName: ACCOUNT_SCOPE,
+    dataset,
+  }
+}
+
+/**
+ * Schlüssel für gildengebundene Datensätze. Eine Gilde gehört nicht zu einem
+ * Charakter – sonst läge dieselbe Mitgliederliste einmal je Gildenmitglied in
+ * der Tabelle. Sie nutzt dieselbe Tabelle, nur mit der Gilde im Namensfeld.
+ */
+export function guildKey(
+  gameMode: GameMode,
+  realmSlug: string,
+  guildSlug: string,
+  dataset: Dataset
+): SnapshotKey {
+  return {
+    gameMode,
+    realmSlug,
+    charName: `@guild:${guildSlug}`,
     dataset,
   }
 }

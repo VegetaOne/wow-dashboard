@@ -20,7 +20,24 @@ import {
   type CharacterMedia,
   type GameMode,
 } from "./battlenet"
-import { withSnapshot, accountKey, type SnapshotResult } from "./snapshot"
+import {
+  withSnapshot,
+  accountKey,
+  guildKey,
+  type SnapshotResult,
+} from "./snapshot"
+import {
+  fetchCharacterGuild,
+  fetchGuild,
+  fetchRoster,
+  fetchGuildActivity,
+  fetchGuildAchievements,
+  type GuildRef,
+  type GuildRosterView,
+  type RawGuild,
+  type RawGuildActivity,
+  type RawGuildAchievements,
+} from "./guild"
 import type { RawProfessions } from "./professions"
 import type { RawEncounters, RawMythicProfile } from "./progress"
 import { fetchReputations, type RawReputations } from "./reputations"
@@ -231,6 +248,78 @@ export function titles(
   return withSnapshot(
     { gameMode: ref.mode, realmSlug: ref.realm, charName: ref.name, dataset: "titles" },
     () => fetchCharacterTitles(ref.realm, ref.name, token, ref.mode)
+  )
+}
+
+// ─── Gilde ────────────────────────────────────────────────────────────────────
+
+/**
+ * Welcher Gilde der Charakter angehört. `null` heisst „in keiner Gilde" –
+ * das ist ein gültiger Zustand, kein Fehler.
+ */
+export function characterGuild(
+  ref: CharacterRef,
+  token: string
+): Promise<SnapshotResult<GuildRef | null>> {
+  return withSnapshot(
+    {
+      gameMode: ref.mode,
+      realmSlug: ref.realm,
+      charName: ref.name,
+      dataset: "character-guild",
+    },
+    () => fetchCharacterGuild(ref.realm, ref.name, token, ref.mode)
+  )
+}
+
+export function guildProfile(
+  guild: GuildRef,
+  mode: GameMode,
+  token: string
+): Promise<SnapshotResult<RawGuild>> {
+  return withSnapshot(guildKey(mode, guild.realmSlug, guild.slug, "guild"), () =>
+    fetchGuild(guild, token, mode)
+  )
+}
+
+/**
+ * Mitgliederliste, schon verdichtet. Längere Frist als üblich: ein Roster
+ * ändert sich in Stunden, nicht in Minuten, und der Abruf ist der teuerste
+ * der Gildenansicht.
+ */
+export function guildRoster(
+  guild: GuildRef,
+  mode: GameMode,
+  token: string
+): Promise<SnapshotResult<GuildRosterView>> {
+  return withSnapshot(
+    guildKey(mode, guild.realmSlug, guild.slug, "guild-roster"),
+    () => fetchRoster(guild, token, mode),
+    6 * 60 * 60
+  )
+}
+
+export function guildActivity(
+  guild: GuildRef,
+  mode: GameMode,
+  token: string
+): Promise<SnapshotResult<RawGuildActivity>> {
+  return withSnapshot(
+    guildKey(mode, guild.realmSlug, guild.slug, "guild-activity"),
+    () => fetchGuildActivity(guild, token, mode),
+    60 * 60
+  )
+}
+
+export function guildAchievements(
+  guild: GuildRef,
+  mode: GameMode,
+  token: string
+): Promise<SnapshotResult<RawGuildAchievements>> {
+  return withSnapshot(
+    guildKey(mode, guild.realmSlug, guild.slug, "guild-achievements"),
+    () => fetchGuildAchievements(guild, token, mode),
+    6 * 60 * 60
   )
 }
 
