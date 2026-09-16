@@ -26,10 +26,8 @@
 
 import { prisma } from "./db"
 import { GAME_MODES, type GameMode } from "./battlenet"
+import { apiBase, locale } from "./runtime"
 
-const REGION = process.env.BNET_REGION || "eu"
-const API_BASE = `https://${REGION}.api.blizzard.com`
-const LOCALE = "de_DE"
 
 /** Retail hat genau ein Haus; die ID 0 steht für „das eine". */
 export const RETAIL_HOUSE_ID = 0
@@ -169,9 +167,9 @@ async function dataFetch<T>(
   namespace: string,
   revalidate: number
 ): Promise<T> {
-  const url = new URL(`${API_BASE}${path}`)
+  const url = new URL(`${apiBase()}${path}`)
   url.searchParams.set("namespace", namespace)
-  url.searchParams.set("locale", LOCALE)
+  url.searchParams.set("locale", locale())
 
   const res = await fetch(url.toString(), {
     headers: { Authorization: `Bearer ${token}` },

@@ -3,6 +3,7 @@
 import { useState } from "react"
 import type { ExpansionProgress, InstanceProgress, DifficultyProgress } from "@/lib/progress"
 import { expansionTotals, formatDay } from "@/lib/progress"
+import { useT } from "./I18nProvider"
 
 /** Farbe je Schwierigkeit – Mythisch am kräftigsten. */
 const DIFFICULTY_COLOR: Record<string, string> = {
@@ -27,6 +28,8 @@ export function ProgressPanel({
   expansions: ExpansionProgress[]
   emptyLabel: string
 }) {
+  const t = useT()
+
   // Neueste Erweiterung offen, der Rest zugeklappt
   const [openExpansion, setOpenExpansion] = useState<number | null>(
     expansions[0]?.expansionId ?? null
@@ -60,16 +63,16 @@ export function ProgressPanel({
 
                 {/* Summen je Schwierigkeit – der Überblick ohne Aufklappen */}
                 <span className="flex flex-wrap items-baseline gap-x-3">
-                  {totals.map((t) => (
-                    <span key={t.difficulty} className="flex items-baseline gap-1.5">
+                  {totals.map((total) => (
+                    <span key={total.difficulty} className="flex items-baseline gap-1.5">
                       <span
                         className="h-2 w-2 flex-none translate-y-[-1px]"
-                        style={{ background: colorFor(t.difficulty) }}
+                        style={{ background: colorFor(total.difficulty) }}
                         aria-hidden
                       />
-                      <span className="eyebrow">{t.difficultyName}</span>
+                      <span className="eyebrow">{total.difficultyName}</span>
                       <span className="font-heading text-[12px] font-extrabold">
-                        {`${t.completed}/${t.total}`}
+                        {`${total.completed}/${total.total}`}
                       </span>
                     </span>
                   ))}
@@ -96,6 +99,7 @@ export function ProgressPanel({
 }
 
 function InstanceRow({ instance }: { instance: InstanceProgress }) {
+  const t = useT()
   const [showBosses, setShowBosses] = useState(false)
   const hasEncounters = instance.modes.some((m) => m.encounters.length > 0)
 
@@ -118,7 +122,7 @@ function InstanceRow({ instance }: { instance: InstanceProgress }) {
             aria-expanded={showBosses}
             className="btn btn-secondary text-[12px]"
           >
-            {showBosses ? "Bosse ausblenden" : "Bosse"}
+            {showBosses ? t("progress.bossesHide") : t("progress.bossesShow")}
           </button>
         )}
       </div>
@@ -165,6 +169,7 @@ function InstanceRow({ instance }: { instance: InstanceProgress }) {
 }
 
 function ModeBadge({ mode }: { mode: DifficultyProgress }) {
+  const t = useT()
   const isComplete = mode.total > 0 && mode.completed >= mode.total
   const color = colorFor(mode.difficulty)
   const pct = mode.total > 0 ? Math.round((mode.completed / mode.total) * 100) : 0
@@ -177,7 +182,10 @@ function ModeBadge({ mode }: { mode: DifficultyProgress }) {
         background: isComplete ? color : "transparent",
         color: isComplete ? "var(--color-bg)" : "var(--color-text)",
       }}
-      title={`${mode.difficultyName}: ${pct}%`}
+      title={t("progress.modeProgress", {
+        difficulty: mode.difficultyName,
+        percent: pct,
+      })}
     >
       <span className="font-heading text-[11px] font-extrabold uppercase tracking-[0.06em]">
         {mode.difficultyName}

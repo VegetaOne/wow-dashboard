@@ -8,6 +8,7 @@ import type {
   CategoryCatalog,
 } from "@/lib/achievements"
 import { formatNumber, formatDate } from "@/lib/format"
+import { useT } from "./I18nProvider"
 
 export function AchievementsPanel({
   summary,
@@ -16,6 +17,7 @@ export function AchievementsPanel({
   summary: AchievementSummary
   mode: GameMode
 }) {
+  const t = useT()
   const [catalogs, setCatalogs] = useState<Record<number, CategoryCatalog | null>>({})
   const [loading, setLoading] = useState<number | null>(null)
   const [open, setOpen] = useState<number | null>(null)
@@ -55,9 +57,9 @@ export function AchievementsPanel({
     <div className="space-y-8">
       {/* Kennzahlen */}
       <div className="grid grid-cols-2 border-2 border-line lg:grid-cols-3">
-        <Stat label="Erfolgspunkte" value={summary.totalPoints} />
-        <Stat label="Erfolge" value={summary.totalQuantity} />
-        <Stat label="Kategorien" value={summary.categories.length} />
+        <Stat label={t("achievements.points")} value={summary.totalPoints} />
+        <Stat label={t("achievements.achievements")} value={summary.totalQuantity} />
+        <Stat label={t("achievements.categories")} value={summary.categories.length} />
       </div>
 
       {/* Zuletzt erreicht */}
@@ -65,7 +67,7 @@ export function AchievementsPanel({
         <section className="border-2 border-line">
           <div className="border-b border-line px-4 py-2">
             <span className="font-heading text-[14px] font-extrabold uppercase tracking-[0.06em]">
-              Zuletzt erreicht
+              {t("achievements.recent")}
             </span>
           </div>
           <ul className="m-0 list-none p-0">
@@ -86,11 +88,11 @@ export function AchievementsPanel({
 
       {/* Kategorien */}
       <section>
-        <h4 className="mb-3">Nach Kategorie</h4>
+        <h4 className="mb-3">{t("achievements.byCategory")}</h4>
 
         {summary.categories.length === 0 ? (
           <div className="border-2 border-line px-4 py-3 text-[13px] opacity-75">
-            Die API liefert keinen Fortschritt je Kategorie für diesen Charakter.
+            {t("achievements.noCategoryProgress")}
           </div>
         ) : (
           <div className="border-2 border-line">
@@ -141,6 +143,8 @@ function CategoryRow({
   earned: Set<number>
   onToggle: (categoryId: number) => void
 }) {
+  const t = useT()
+
   // Der Fortschritt kommt aus der Charakterantwort. Die Gesamtmenge kennen
   // wir erst nach dem Aufklappen – vorher wird keine Quote gezeigt.
   const total = catalog?.achievements.length ?? null
@@ -165,12 +169,19 @@ function CategoryRow({
           </span>
 
           <span className="eyebrow">
-            {`${formatNumber(category.quantity)} erreicht · ${formatNumber(category.points)} Punkte`}
+            {t("achievements.categoryStats", {
+              quantity: formatNumber(category.quantity),
+              points: formatNumber(category.points),
+            })}
           </span>
 
           {pct !== null && (
             <span className="font-heading text-[13px] font-extrabold">
-              {`${done} / ${total} (${pct}%)`}
+              {t("achievements.progressOf", {
+                done: done ?? 0,
+                total: total ?? 0,
+                pct,
+              })}
             </span>
           )}
 
@@ -192,13 +203,14 @@ function CategoryRow({
       {isOpen && (
         <div className="border-t border-line bg-surface px-4 py-3">
           {isLoading && (
-            <span className="text-[13px] opacity-55">Lade Erfolgsliste…</span>
+            <span className="text-[13px] opacity-55">
+              {t("achievements.loadingList")}
+            </span>
           )}
 
           {!isLoading && hasCatalog && !catalog && (
             <span className="text-[12px] opacity-60">
-              Für diese Kategorie liefert die API keine Erfolgsliste — es lässt
-              sich also nicht sagen, was noch fehlt.
+              {t("achievements.noCatalog")}
             </span>
           )}
 
@@ -218,6 +230,7 @@ function CategoryDetail({
   catalog: CategoryCatalog
   earned: Set<number>
 }) {
+  const t = useT()
   const [showMissing, setShowMissing] = useState(true)
 
   const done = catalog.achievements.filter((a) => earned.has(a.id))
@@ -228,8 +241,9 @@ function CategoryDetail({
     return (
       <div>
         <span className="text-[12px] opacity-60">
-          Diese Kategorie enthält keine eigenen Erfolge
-          {catalog.subcategories.length > 0 && ", nur Unterkategorien"}.
+          {catalog.subcategories.length > 0
+            ? t("achievements.noOwnAchievementsSubcategories")
+            : t("achievements.noOwnAchievements")}
         </span>
         {catalog.subcategories.length > 0 && (
           <ul className="mt-2 m-0 list-none p-0">
@@ -248,8 +262,8 @@ function CategoryDetail({
     <div>
       <div className="mb-3 flex">
         {([
-          ["missing", `Fehlt (${missing.length})`] as const,
-          ["done", `Erreicht (${done.length})`] as const,
+          ["missing", t("achievements.tabMissing", { count: missing.length })] as const,
+          ["done", t("achievements.tabEarned", { count: done.length })] as const,
         ]).map(([id, label]) => {
           const active = (id === "missing") === showMissing
           return (
@@ -270,7 +284,9 @@ function CategoryDetail({
 
       {shown.length === 0 ? (
         <span className="text-[12px] opacity-55">
-          {showMissing ? "Alle Erfolge dieser Kategorie erreicht." : "Noch keiner erreicht."}
+          {showMissing
+            ? t("achievements.allEarned")
+            : t("achievements.noneEarned")}
         </span>
       ) : (
         <ul className="m-0 grid list-none grid-cols-1 gap-x-4 p-0 sm:grid-cols-2 lg:grid-cols-3">
@@ -292,7 +308,9 @@ function CategoryDetail({
                 {a.name}
               </span>
               {a.points !== null && a.points > 0 && (
-                <span className="flex-none eyebrow">{`${a.points}P`}</span>
+                <span className="flex-none eyebrow">
+                  {t("achievements.pointsShort", { points: a.points })}
+                </span>
               )}
             </li>
           ))}
@@ -301,7 +319,7 @@ function CategoryDetail({
 
       {shown.length > 90 && (
         <span className="mt-2 block eyebrow">
-          {`${shown.length - 90} weitere nicht angezeigt`}
+          {t("achievements.moreHidden", { count: shown.length - 90 })}
         </span>
       )}
     </div>

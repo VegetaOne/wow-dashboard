@@ -17,10 +17,8 @@
  */
 
 import { GAME_MODES, type GameMode } from "./battlenet"
+import { apiBase, locale } from "./runtime"
 
-const REGION = process.env.BNET_REGION || "eu"
-const API_BASE = `https://${REGION}.api.blizzard.com`
-const LOCALE = "de_DE"
 const STATIC_REVALIDATE = 60 * 60 * 24 * 7
 
 // ─── Verdichtete Form (das, was gespeichert wird) ────────────────────────────
@@ -168,9 +166,9 @@ export async function getCategoryCatalog(
   mode: GameMode
 ): Promise<CategoryCatalog | null> {
   const config = GAME_MODES.find((m) => m.id === mode) ?? GAME_MODES[0]
-  const url = new URL(`${API_BASE}/data/wow/achievement-category/${categoryId}`)
+  const url = new URL(`${apiBase()}/data/wow/achievement-category/${categoryId}`)
   url.searchParams.set("namespace", config.staticNamespace)
-  url.searchParams.set("locale", LOCALE)
+  url.searchParams.set("locale", locale())
 
   try {
     const res = await fetch(url.toString(), {
@@ -226,10 +224,10 @@ export async function fetchCharacterAchievements(
 ): Promise<AchievementSummary> {
   const config = GAME_MODES.find((m) => m.id === mode) ?? GAME_MODES[0]
   const url = new URL(
-    `${API_BASE}/profile/wow/character/${realm}/${name.toLowerCase()}/achievements`
+    `${apiBase()}/profile/wow/character/${realm}/${name.toLowerCase()}/achievements`
   )
   url.searchParams.set("namespace", config.namespace)
-  url.searchParams.set("locale", LOCALE)
+  url.searchParams.set("locale", locale())
 
   const res = await fetch(url.toString(), {
     headers: { Authorization: `Bearer ${token}` },

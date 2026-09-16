@@ -1,6 +1,6 @@
 import { getServerSession } from "next-auth"
 import { NextRequest, NextResponse } from "next/server"
-import { authOptions } from "@/lib/auth"
+import { getAuthOptions } from "@/lib/auth"
 import {
   getCharacterEquipment,
   GAME_MODES,
@@ -27,7 +27,7 @@ export interface SlotUpgrades {
  * ist. Geliefert wird, was für den Slot überhaupt droppt, plus Quelle.
  */
 export async function GET(req: NextRequest) {
-  const session = await getServerSession(authOptions)
+  const session = await getServerSession(await getAuthOptions())
   if (!session?.accessToken) {
     return NextResponse.json({ error: "Nicht eingeloggt" }, { status: 401 })
   }

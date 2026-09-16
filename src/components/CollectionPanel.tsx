@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react"
 import type { CollectionView, CollectibleEntry } from "@/lib/collections"
+import { useT } from "./I18nProvider"
 
 type Filter = "collected" | "missing"
 
@@ -18,6 +19,7 @@ export function CollectionPanel({
   view: CollectionView
   pageSize?: number
 }) {
+  const t = useT()
   const [filter, setFilter] = useState<Filter>("collected")
   const [query, setQuery] = useState("")
   const [limit, setLimit] = useState(pageSize)
@@ -43,8 +45,12 @@ export function CollectionPanel({
         </span>
         <span className="font-heading text-[13px] font-extrabold">
           {view.hasTotal
-            ? `${view.collected.length} / ${view.all.length} (${pct}%)`
-            : `${view.collected.length} gesammelt`}
+            ? t("collections.collectedOf", {
+                collected: view.collected.length,
+                total: view.all.length,
+                pct: pct ?? 0,
+              })
+            : t("collections.collectedCount", { collected: view.collected.length })}
         </span>
       </div>
 
@@ -61,8 +67,7 @@ export function CollectionPanel({
       {!view.hasTotal && (
         <div className="border-b border-line px-4 py-2">
           <span className="text-[12px] opacity-60">
-            Die Stammdaten für diese Sammlung sind nicht abrufbar — es lässt sich
-            deshalb nicht sagen, was noch fehlt.
+            {t("collections.noTotals")}
           </span>
         </div>
       )}
@@ -70,9 +75,17 @@ export function CollectionPanel({
       <div className="flex flex-wrap items-center gap-3 border-b border-line px-4 py-2.5">
         <div className="flex">
           {([
-            ["collected", `Gesammelt (${view.collected.length})`] as const,
+            [
+              "collected",
+              t("collections.tabCollected", { count: view.collected.length }),
+            ] as const,
             ...(view.hasTotal
-              ? [["missing", `Fehlt (${view.missing.length})`] as const]
+              ? [
+                  [
+                    "missing",
+                    t("collections.tabMissing", { count: view.missing.length }),
+                  ] as const,
+                ]
               : []),
           ]).map(([id, label]) => {
             const active = filter === id
@@ -97,7 +110,7 @@ export function CollectionPanel({
 
         <input
           className="input max-w-[200px]"
-          placeholder="Suchen…"
+          placeholder={t("collections.searchPlaceholder")}
           value={query}
           onChange={(e) => {
             setQuery(e.target.value)
@@ -107,14 +120,17 @@ export function CollectionPanel({
 
         <span className="ml-auto eyebrow">
           {filtered.length === source.length
-            ? `${filtered.length} Einträge`
-            : `${filtered.length} von ${source.length}`}
+            ? t("collections.entryCount", { count: filtered.length })
+            : t("collections.countOfTotal", {
+                count: filtered.length,
+                total: source.length,
+              })}
         </span>
       </div>
 
       {shown.length === 0 ? (
         <div className="px-4 py-6 text-[13px] opacity-55">
-          {query ? "Kein Treffer." : "Nichts vorhanden."}
+          {query ? t("collections.noMatch") : t("collections.empty")}
         </div>
       ) : (
         <>
@@ -131,7 +147,9 @@ export function CollectionPanel({
                 onClick={() => setLimit((l) => l + pageSize)}
                 className="btn btn-secondary text-[12px]"
               >
-                {`Weitere ${Math.min(pageSize, filtered.length - shown.length)} anzeigen`}
+                {t("collections.showMore", {
+                  count: Math.min(pageSize, filtered.length - shown.length),
+                })}
               </button>
             </div>
           )}
@@ -142,6 +160,8 @@ export function CollectionPanel({
 }
 
 function EntryRow({ entry, dim }: { entry: CollectibleEntry; dim: boolean }) {
+  const t = useT()
+
   // Gesammelt aber nicht nutzbar: kommt bei Reittieren vor, deren
   // Anforderung der Charakter nicht erfüllt
   const notUsable = entry.usable === false
@@ -166,7 +186,9 @@ function EntryRow({ entry, dim }: { entry: CollectibleEntry; dim: boolean }) {
       <span className="truncate" title={entry.name}>
         {entry.name}
       </span>
-      {notUsable && <span className="eyebrow flex-none">nicht nutzbar</span>}
+      {notUsable && (
+        <span className="eyebrow flex-none">{t("collections.notUsable")}</span>
+      )}
     </li>
   )
 }

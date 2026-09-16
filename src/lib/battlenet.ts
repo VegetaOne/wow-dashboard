@@ -3,9 +3,7 @@
  * Alle Requests laufen server-seitig (Token verlässt nie das Backend).
  */
 
-const REGION = process.env.BNET_REGION || "eu"
-const API_BASE = `https://${REGION}.api.blizzard.com`
-const LOCALE = "de_DE"
+import { apiBase, locale, region } from "./runtime"
 
 /** Wie viele Charakter-Requests parallel laufen dürfen (Rate-Limit-Schutz) */
 const CONCURRENCY = 8
@@ -28,31 +26,58 @@ export interface GameModeConfig {
   hasRichProfile: boolean
 }
 
+/**
+ * Die Spielmodi.
+ *
+ * Die Namespaces tragen die Region im Namen, und die Region steht seit dem
+ * Setup in der Datenbank – sie kann sich also zur Laufzeit ändern. Deshalb
+ * sind die drei Namespace-Felder **Getter**: als feste Zeichenketten wären
+ * sie beim Laden des Moduls eingefroren und würden nach einer Umstellung
+ * weiter auf die alte Region zeigen.
+ */
 export const GAME_MODES: GameModeConfig[] = [
   {
     id: "retail",
     label: "Retail",
-    namespace: `profile-${REGION}`,
-    staticNamespace: `static-${REGION}`,
-    dynamicNamespace: `dynamic-${REGION}`,
+    get namespace() {
+      return `profile-${region()}`
+    },
+    get staticNamespace() {
+      return `static-${region()}`
+    },
+    get dynamicNamespace() {
+      return `dynamic-${region()}`
+    },
     accent: "#D4AF37",
     hasRichProfile: true,
   },
   {
     id: "classic",
     label: "Classic",
-    namespace: `profile-classic-${REGION}`,
-    staticNamespace: `static-classic-${REGION}`,
-    dynamicNamespace: `dynamic-classic-${REGION}`,
+    get namespace() {
+      return `profile-classic-${region()}`
+    },
+    get staticNamespace() {
+      return `static-classic-${region()}`
+    },
+    get dynamicNamespace() {
+      return `dynamic-classic-${region()}`
+    },
     accent: "#C9A227",
     hasRichProfile: false,
   },
   {
     id: "classic-era",
     label: "Classic Era",
-    namespace: `profile-classic1x-${REGION}`,
-    staticNamespace: `static-classic1x-${REGION}`,
-    dynamicNamespace: `dynamic-classic1x-${REGION}`,
+    get namespace() {
+      return `profile-classic1x-${region()}`
+    },
+    get staticNamespace() {
+      return `static-classic1x-${region()}`
+    },
+    get dynamicNamespace() {
+      return `dynamic-classic1x-${region()}`
+    },
     accent: "#7BA05B",
     hasRichProfile: false,
   },
@@ -134,9 +159,9 @@ async function bnetFetch<T>(
   namespace: string,
   revalidate = 300
 ): Promise<T> {
-  const url = new URL(`${API_BASE}${path}`)
+  const url = new URL(`${apiBase()}${path}`)
   url.searchParams.set("namespace", namespace)
-  url.searchParams.set("locale", LOCALE)
+  url.searchParams.set("locale", locale())
 
   const res = await fetch(url.toString(), {
     headers: { Authorization: `Bearer ${token}` },

@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { visibleTabs, tabHref, characterBase } from "@/lib/characterTabs"
+import { useT } from "./I18nProvider"
 
 /**
  * Tab-Leiste unter dem Charakterkopf. Nur freigeschaltete Tabs erscheinen,
@@ -17,6 +18,7 @@ export function CharacterTabs({
   name: string
   mode: string
 }) {
+  const t = useT()
   const pathname = usePathname()
   const base = characterBase(mode, realm, name)
   const tabs = visibleTabs()
@@ -44,7 +46,7 @@ export function CharacterTabs({
               opacity: isActive ? 1 : 0.6,
             }}
           >
-            {tab.label}
+            {t(tab.labelKey)}
           </Link>
         )
       })}

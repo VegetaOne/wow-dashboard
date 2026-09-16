@@ -1,5 +1,5 @@
 import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
+import { getAuthOptions } from "@/lib/auth"
 import { redirect } from "next/navigation"
 import { TrendChart } from "@/components/TrendChart"
 import { GAME_MODES, type GameMode } from "@/lib/battlenet"
@@ -10,7 +10,7 @@ export default async function HistoryPage({
 }: {
   params: { mode: string; realm: string; name: string }
 }) {
-  const session = await getServerSession(authOptions)
+  const session = await getServerSession(await getAuthOptions())
   if (!session?.accessToken) redirect("/login")
 
   const { realm, name } = params

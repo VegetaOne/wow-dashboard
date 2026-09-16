@@ -4,12 +4,30 @@ import { Suspense, useCallback, useState } from "react"
 import { Header } from "./Header"
 import { GameModeTabs } from "./GameModeTabs"
 import { CharacterGrid, POLL_MS } from "./CharacterGrid"
+import type { GameMode } from "@/lib/battlenet"
+import { WeeklyLink } from "./WeeklyLink"
+import { useT } from "./I18nProvider"
 
 /**
  * Client-Hülle: hält den Sync-Zeitpunkt, damit die Kopfzeile den Poll-Status
  * zeigen kann, ohne dass CharacterGrid die Kopfzeile kennt.
  */
-export function DashboardShell({ battleTag }: { battleTag?: string }) {
+export function DashboardShell({
+  battleTag,
+  modes,
+  defaultMode = "retail",
+  pollSeconds = POLL_MS / 1000,
+  isOwner = false,
+}: {
+  battleTag?: string
+  /** Im Setup gewählte Spielmodi */
+  modes?: GameMode[]
+  defaultMode?: GameMode
+  pollSeconds?: number
+  /** Besitzer der Instanz – nur er darf die Sprache umstellen. */
+  isOwner?: boolean
+}) {
+  const t = useT()
   const [sync, setSync] = useState<{ at: Date | null; count: number }>({ at: null, count: 0 })
 
   // Stabile Identität: als Inline-Funktion würde sie CharacterGrid
@@ -23,24 +41,43 @@ export function DashboardShell({ battleTag }: { battleTag?: string }) {
       <Header
         battleTag={battleTag}
         lastSync={sync.at}
-        pollSeconds={POLL_MS / 1000}
+        pollSeconds={pollSeconds}
         characterCount={sync.count}
+        canChangeLanguage={isOwner}
       />
 
       <Suspense fallback={<div className="h-[70px] border-b-2 border-line" />}>
-        <GameModeTabs />
+        <GameModeTabs modes={modes} defaultMode={defaultMode} />
       </Suspense>
 
       <main>
-        <div className="border-b-2 border-line px-6 py-5">
-          <h2>Meine Charaktere</h2>
-          <p className="mt-1 text-[13px] opacity-60">
-            Alle Charaktere des Accounts · Dev-API zieht automatisch nach
-          </p>
+        <div className="flex flex-wrap items-center gap-4 border-b-2 border-line px-6 py-5">
+          <div>
+            <h2>{t("dashboard.myCharacters")}</h2>
+            <p className="mt-1 text-[13px] opacity-60">
+              {t("dashboard.myCharactersHint")}
+            </p>
+          </div>
+
+          <div className="ml-auto">
+            <Suspense fallback={null}>
+              <WeeklyLink />
+            </Suspense>
+          </div>
         </div>
 
-        <Suspense fallback={<div className="px-6 py-12 text-[13px] opacity-55">Lade…</div>}>
-          <CharacterGrid onSync={handleSync} />
+        <Suspense
+          fallback={
+            <div className="px-6 py-12 text-[13px] opacity-55">
+              {t("dashboard.loading")}
+            </div>
+          }
+        >
+          <CharacterGrid
+            onSync={handleSync}
+            pollMs={pollSeconds * 1000}
+            defaultMode={defaultMode}
+          />
         </Suspense>
       </main>
     </div>

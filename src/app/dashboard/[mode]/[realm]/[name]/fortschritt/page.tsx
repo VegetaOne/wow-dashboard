@@ -1,5 +1,5 @@
 import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
+import { getAuthOptions } from "@/lib/auth"
 import { redirect } from "next/navigation"
 import { ProgressPanel } from "@/components/ProgressPanel"
 import { MythicPanel } from "@/components/MythicPanel"
@@ -12,7 +12,7 @@ export default async function ProgressPage({
 }: {
   params: { mode: string; realm: string; name: string }
 }) {
-  const session = await getServerSession(authOptions)
+  const session = await getServerSession(await getAuthOptions())
   if (!session?.accessToken) redirect("/login")
 
   const { realm, name } = params

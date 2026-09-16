@@ -1,6 +1,6 @@
 import { getServerSession } from "next-auth"
 import { NextRequest, NextResponse } from "next/server"
-import { authOptions } from "@/lib/auth"
+import { getAuthOptions } from "@/lib/auth"
 import { GAME_MODES, type GameMode } from "@/lib/battlenet"
 import { getTierCatalog } from "@/lib/professions"
 
@@ -9,7 +9,7 @@ import { getTierCatalog } from "@/lib/professions"
  * Wird erst geholt, wenn eine Stufe aufgeklappt wird.
  */
 export async function GET(req: NextRequest) {
-  const session = await getServerSession(authOptions)
+  const session = await getServerSession(await getAuthOptions())
   if (!session?.accessToken) {
     return NextResponse.json({ error: "Nicht eingeloggt" }, { status: 401 })
   }

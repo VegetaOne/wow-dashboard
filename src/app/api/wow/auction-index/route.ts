@@ -1,6 +1,6 @@
 import { getServerSession } from "next-auth"
 import { NextRequest, NextResponse } from "next/server"
-import { authOptions } from "@/lib/auth"
+import { getAuthOptions } from "@/lib/auth"
 import { GAME_MODES, type GameMode } from "@/lib/battlenet"
 import {
   resolveConnectedRealm,
@@ -23,7 +23,7 @@ function resolveMode(value: unknown): GameMode {
 
 /** Häuser eines Realms und der Stand ihres letzten Durchlaufs. */
 export async function GET(req: NextRequest) {
-  const session = await getServerSession(authOptions)
+  const session = await getServerSession(await getAuthOptions())
   if (!session?.accessToken) {
     return NextResponse.json({ error: "Nicht eingeloggt" }, { status: 401 })
   }
@@ -74,7 +74,7 @@ export async function GET(req: NextRequest) {
 
 /** Ein Haus neu einlesen. */
 export async function POST(req: NextRequest) {
-  const session = await getServerSession(authOptions)
+  const session = await getServerSession(await getAuthOptions())
   if (!session?.accessToken) {
     return NextResponse.json({ error: "Nicht eingeloggt" }, { status: 401 })
   }

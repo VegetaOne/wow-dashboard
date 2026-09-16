@@ -1,6 +1,6 @@
 import { getServerSession } from "next-auth"
 import { NextRequest, NextResponse } from "next/server"
-import { authOptions } from "@/lib/auth"
+import { getAuthOptions } from "@/lib/auth"
 import { GAME_MODES, mapLimit, type GameMode } from "@/lib/battlenet"
 import { getPrices } from "@/lib/auction"
 import {
@@ -24,7 +24,7 @@ const CONCURRENCY = 6
  * Rezepte kennen.
  */
 export async function POST(req: NextRequest) {
-  const session = await getServerSession(authOptions)
+  const session = await getServerSession(await getAuthOptions())
   if (!session?.accessToken) {
     return NextResponse.json({ error: "Nicht eingeloggt" }, { status: 401 })
   }

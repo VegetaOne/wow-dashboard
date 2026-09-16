@@ -14,10 +14,8 @@
  */
 
 import { GAME_MODES, type GameMode } from "./battlenet"
+import { apiBase, locale } from "./runtime"
 
-const REGION = process.env.BNET_REGION || "eu"
-const API_BASE = `https://${REGION}.api.blizzard.com`
-const LOCALE = "de_DE"
 const STATIC_REVALIDATE = 60 * 60 * 24 * 7
 
 // ─── Gemeinsame Form ──────────────────────────────────────────────────────────
@@ -189,10 +187,10 @@ export async function getTierCatalog(
 ): Promise<TierCatalog | null> {
   const config = GAME_MODES.find((m) => m.id === mode) ?? GAME_MODES[0]
   const url = new URL(
-    `${API_BASE}/data/wow/profession/${professionId}/skill-tier/${tierId}`
+    `${apiBase()}/data/wow/profession/${professionId}/skill-tier/${tierId}`
   )
   url.searchParams.set("namespace", config.staticNamespace)
-  url.searchParams.set("locale", LOCALE)
+  url.searchParams.set("locale", locale())
 
   try {
     const res = await fetch(url.toString(), {

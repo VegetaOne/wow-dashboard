@@ -1,8 +1,8 @@
 import { AuthOptions } from "next-auth"
 import type { OAuthConfig } from "next-auth/providers/oauth"
 import { JWT } from "next-auth/jwt"
-
-const region = process.env.BNET_REGION || "eu"
+import { configSnapshot } from "./config-cache"
+import { oauthBase } from "./runtime"
 
 /**
  * Battle.net Profil-Response vom userinfo-Endpoint:
@@ -15,25 +15,55 @@ interface BattleNetProfile {
 }
 
 /**
+ * Zugangsdaten kommen aus der Konfiguration, nicht mehr aus der Umgebung.
+ *
+ * Gelesen wird der Zwischenspeicher, weil NextAuth diese Felder synchron
+ * abfragt. Die Auth-Route wartet vor jeder Anfrage `loadConfig()` ab – so
+ * ist der Speicher gefüllt, auch beim allerersten Aufruf nach dem Start,
+ * und eine Änderung im Setup greift ohne Neustart des Containers.
+ */
+function credentials(): { id: string; secret: string } {
+  const config = configSnapshot()
+  return {
+    id: config?.bnetClientId ?? "",
+    secret: config?.clientSecret ?? "",
+  }
+}
+
+/**
  * Battle.net als reiner OAuth2-Provider (NICHT OIDC).
  *
  * Grund: Battle.net setzt im ID-Token einen eigenen nonce, den next-auth
  * nie angefordert hat → "nonce mismatch" bei der OIDC-Validierung.
  * Ohne den openid-Scope wird kein ID-Token ausgestellt und next-auth
  * holt das Profil stattdessen vom userinfo-Endpoint. Kein nonce, kein Problem.
+ *
+ * Alle regions- und zugangsdatenabhängigen Felder sind **Getter**: als feste
+ * Werte wären sie beim Laden des Moduls eingefroren, und eine Umstellung im
+ * Setup bräuchte einen Neustart.
  */
 const BattleNetProvider: OAuthConfig<BattleNetProfile> = {
   id: "battlenet",
   name: "Battle.net",
   type: "oauth",
-  clientId: process.env.BNET_CLIENT_ID,
-  clientSecret: process.env.BNET_CLIENT_SECRET,
-  authorization: {
-    url: `https://${region}.battle.net/oauth/authorize`,
-    params: { scope: "wow.profile" },
+  get clientId() {
+    return credentials().id
   },
-  token: `https://${region}.battle.net/oauth/token`,
-  userinfo: `https://${region}.battle.net/oauth/userinfo`,
+  get clientSecret() {
+    return credentials().secret
+  },
+  get authorization() {
+    return {
+      url: `${oauthBase()}/oauth/authorize`,
+      params: { scope: "wow.profile" },
+    }
+  },
+  get token() {
+    return `${oauthBase()}/oauth/token`
+  },
+  get userinfo() {
+    return `${oauthBase()}/oauth/userinfo`
+  },
   checks: ["state"],
   profile(profile) {
     return {
@@ -52,16 +82,18 @@ async function refreshBattleNetToken(token: JWT): Promise<JWT> {
     return { ...token, error: "NoRefreshToken" }
   }
 
+  const { id, secret } = credentials()
+  if (!id || !secret) {
+    return { ...token, error: "RefreshAccessTokenError" }
+  }
+
   try {
-    const response = await fetch(`https://${region}.battle.net/oauth/token`, {
+    const response = await fetch(`${oauthBase()}/oauth/token`, {
       method: "POST",
       headers: {
         "Content-Type": "application/x-www-form-urlencoded",
         Authorization:
-          "Basic " +
-          Buffer.from(
-            `${process.env.BNET_CLIENT_ID}:${process.env.BNET_CLIENT_SECRET}`
-          ).toString("base64"),
+          "Basic " + Buffer.from(`${id}:${secret}`).toString("base64"),
       },
       body: new URLSearchParams({
         grant_type: "refresh_token",
@@ -88,6 +120,13 @@ async function refreshBattleNetToken(token: JWT): Promise<JWT> {
 
 export const authOptions: AuthOptions = {
   providers: [BattleNetProvider],
+  /**
+   * Sitzungsschlüssel aus der Konfiguration – beim Setup einmal erzeugt und
+   * danach nie ersetzt, weil ein Wechsel alle Anmeldungen ungültig machte.
+   */
+  get secret() {
+    return configSnapshot()?.authSecret ?? undefined
+  },
   pages: {
     signIn: "/login",
     error: "/login",
@@ -119,4 +158,14 @@ export const authOptions: AuthOptions = {
       return session
     },
   },
+}
+
+/**
+ * Für `getServerSession` und die Auth-Route: stellt sicher, dass die
+ * Konfiguration geladen ist, bevor die Getter oben gelesen werden.
+ */
+export async function getAuthOptions(): Promise<AuthOptions> {
+  const { loadConfig } = await import("./config")
+  await loadConfig()
+  return authOptions
 }

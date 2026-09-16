@@ -1,5 +1,5 @@
 import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
+import { getAuthOptions } from "@/lib/auth"
 import { redirect } from "next/navigation"
 import Link from "next/link"
 import { Header } from "@/components/Header"
@@ -11,16 +11,20 @@ import {
   getMountIndex,
   getPetIndex,
 } from "@/lib/collections"
+import { isOwner, loadConfig, toView } from "@/lib/config"
+import { dateLocale, translator } from "@/lib/i18n"
 
 /**
  * Account-weite Sammlungen. Reittiere und Begleiter gelten für alle
  * Charaktere gemeinsam – sie gehören deshalb nicht in die Charakteransicht.
  */
 export default async function AccountPage() {
-  const session = await getServerSession(authOptions)
+  const session = await getServerSession(await getAuthOptions())
   if (!session?.accessToken) redirect("/login")
 
   const token = session.accessToken
+  const config = await loadConfig()
+  const t = translator(config.language)
 
   const [mountResult, petResult, mountIndex, petIndex] = await Promise.all([
     attempt(() => accountMounts(token)),
@@ -37,28 +41,31 @@ export default async function AccountPage() {
 
   return (
     <div className="min-h-screen bg-ground">
-      <Header battleTag={session.battleTag} />
+      <Header
+        battleTag={session.battleTag}
+        canChangeLanguage={isOwner(toView(config), session.battleTag)}
+      />
 
       <div className="border-b border-line px-6 py-2.5">
         <Link href="/dashboard" className="btn btn-ghost text-[13px]">
-          ← Zurück zur Kaderliste
+          {t("weekly.back")}
         </Link>
       </div>
 
       <div className="border-b-2 border-line px-6 py-6">
-        <span className="eyebrow">Account</span>
-        <h2 className="mt-0.5">Sammlungen</h2>
-        <p className="mt-1 text-[13px] opacity-60">
-          Reittiere und Begleiter gelten für den ganzen Account, nicht für einen
-          einzelnen Charakter.
-        </p>
+        <span className="eyebrow">{t("account.eyebrow")}</span>
+        <h2 className="mt-0.5">{t("account.heading")}</h2>
+        <p className="mt-1 text-[13px] opacity-60">{t("account.intro")}</p>
       </div>
 
       {stale && (
         <div className="border-b border-line px-6 py-1.5">
           <span className="eyebrow" style={{ color: "var(--color-accent)" }}>
-            Letzter bekannter Stand
-            {fetchedAt && ` vom ${fetchedAt.toLocaleDateString("de-CH")}`}
+            {fetchedAt
+              ? t("weekly.lastKnownFrom", {
+                  date: fetchedAt.toLocaleDateString(dateLocale(config.language)),
+                })
+              : t("weekly.lastKnown")}
           </span>
         </div>
       )}
@@ -66,9 +73,8 @@ export default async function AccountPage() {
       <main className="space-y-8 px-6 py-6">
         {mountResult.failed && petResult.failed ? (
           <div className="border-2 border-accent px-4 py-3 text-[13px]">
-            <span className="eyebrow block">Sammlungen nicht abrufbar</span>
-            Beide Endpunkte haben nicht geantwortet, und es liegt kein früherer
-            Stand vor.
+            <span className="eyebrow block">{t("account.unavailable")}</span>
+            {t("account.unavailableText")}
           </div>
         ) : (
           <>

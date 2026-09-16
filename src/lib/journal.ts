@@ -11,10 +11,8 @@
  */
 
 import { GAME_MODES, type GameMode } from "./battlenet"
+import { apiBase, locale } from "./runtime"
 
-const REGION = process.env.BNET_REGION || "eu"
-const API_BASE = `https://${REGION}.api.blizzard.com`
-const LOCALE = "de_DE"
 
 /** Statische Spieldaten – eine Woche Cache ist reichlich konservativ. */
 const STATIC_REVALIDATE = 60 * 60 * 24 * 7
@@ -85,9 +83,9 @@ async function staticFetch<T>(
   token: string,
   namespace: string
 ): Promise<T> {
-  const url = new URL(`${API_BASE}${path}`)
+  const url = new URL(`${apiBase()}${path}`)
   url.searchParams.set("namespace", namespace)
-  url.searchParams.set("locale", LOCALE)
+  url.searchParams.set("locale", locale())
 
   const res = await fetch(url.toString(), {
     headers: { Authorization: `Bearer ${token}` },

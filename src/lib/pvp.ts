@@ -10,10 +10,8 @@
  */
 
 import { GAME_MODES, type GameMode } from "./battlenet"
+import { apiBase, locale } from "./runtime"
 
-const REGION = process.env.BNET_REGION || "eu"
-const API_BASE = `https://${REGION}.api.blizzard.com`
-const LOCALE = "de_DE"
 
 /** Die gewerteten Klassen, wie die API sie im Pfad erwartet. */
 export const PVP_BRACKETS = [
@@ -136,9 +134,9 @@ async function pvpFetch<T>(
   mode: GameMode
 ): Promise<T> {
   const config = GAME_MODES.find((m) => m.id === mode) ?? GAME_MODES[0]
-  const url = new URL(`${API_BASE}${path}`)
+  const url = new URL(`${apiBase()}${path}`)
   url.searchParams.set("namespace", config.namespace)
-  url.searchParams.set("locale", LOCALE)
+  url.searchParams.set("locale", locale())
 
   const res = await fetch(url.toString(), {
     headers: { Authorization: `Bearer ${token}` },

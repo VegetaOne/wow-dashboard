@@ -4,6 +4,7 @@ import { useMemo, useState } from "react"
 import type { ReputationView } from "@/lib/reputations"
 import { tierProgress } from "@/lib/reputations"
 import { formatNumber } from "@/lib/format"
+import { useT } from "./I18nProvider"
 
 const PAGE = 40
 
@@ -12,6 +13,7 @@ export function ReputationList({
 }: {
   reputations: ReputationView[]
 }) {
+  const t = useT()
   const [query, setQuery] = useState("")
   const [limit, setLimit] = useState(PAGE)
 
@@ -31,7 +33,7 @@ export function ReputationList({
   if (reputations.length === 0) {
     return (
       <div className="border-2 border-line px-4 py-3 text-[13px] opacity-75">
-        Für diesen Charakter liefert die API kein Ansehen.
+        {t("reputation.none")}
       </div>
     )
   }
@@ -40,19 +42,24 @@ export function ReputationList({
     <div className="border-2 border-line">
       <div className="flex flex-wrap items-baseline justify-between gap-3 border-b border-line px-4 py-2">
         <span className="font-heading text-[14px] font-extrabold uppercase tracking-[0.06em]">
-          Fraktionen
+          {t("reputation.factions")}
         </span>
         <span className="eyebrow">
           {withParagon > 0
-            ? `${formatNumber(reputations.length)} Fraktionen · ${formatNumber(withParagon)} mit Paragon`
-            : `${formatNumber(reputations.length)} Fraktionen`}
+            ? t("reputation.factionCountParagon", {
+                count: formatNumber(reputations.length),
+                paragon: formatNumber(withParagon),
+              })
+            : t("reputation.factionCount", {
+                count: formatNumber(reputations.length),
+              })}
         </span>
       </div>
 
       <div className="flex flex-wrap items-center gap-3 border-b border-line px-4 py-2.5">
         <input
           className="input max-w-[220px]"
-          placeholder="Fraktion oder Stufe suchen…"
+          placeholder={t("reputation.searchPlaceholder")}
           value={query}
           onChange={(e) => {
             setQuery(e.target.value)
@@ -61,13 +68,18 @@ export function ReputationList({
         />
         <span className="ml-auto eyebrow">
           {filtered.length === reputations.length
-            ? `${formatNumber(filtered.length)} Einträge`
-            : `${formatNumber(filtered.length)} von ${formatNumber(reputations.length)}`}
+            ? t("reputation.entryCount", { count: formatNumber(filtered.length) })
+            : t("reputation.countOfTotal", {
+                count: formatNumber(filtered.length),
+                total: formatNumber(reputations.length),
+              })}
         </span>
       </div>
 
       {shown.length === 0 ? (
-        <div className="px-4 py-6 text-[13px] opacity-55">Kein Treffer.</div>
+        <div className="px-4 py-6 text-[13px] opacity-55">
+          {t("reputation.noMatch")}
+        </div>
       ) : (
         <>
           {shown.map((rep) => (
@@ -80,7 +92,11 @@ export function ReputationList({
                 onClick={() => setLimit((l) => l + PAGE)}
                 className="btn btn-secondary text-[12px]"
               >
-                {`Weitere ${formatNumber(Math.min(PAGE, filtered.length - shown.length))} anzeigen`}
+                {t("reputation.showMore", {
+                  count: formatNumber(
+                    Math.min(PAGE, filtered.length - shown.length)
+                  ),
+                })}
               </button>
             </div>
           )}
@@ -91,6 +107,7 @@ export function ReputationList({
 }
 
 function ReputationRow({ rep }: { rep: ReputationView }) {
+  const t = useT()
   const pct = tierProgress(rep)
   const paragonPct =
     rep.paragon && rep.paragon.max > 0
@@ -117,7 +134,10 @@ function ReputationRow({ rep }: { rep: ReputationView }) {
             className="w-24 flex-none text-right text-[12px] opacity-70"
             style={{ fontVariantNumeric: "tabular-nums" }}
           >
-            {`${formatNumber(rep.value)} / ${formatNumber(rep.max)}`}
+            {t("reputation.valueOfMax", {
+              value: formatNumber(rep.value),
+              max: formatNumber(rep.max),
+            })}
           </span>
         )}
       </div>
@@ -134,7 +154,7 @@ function ReputationRow({ rep }: { rep: ReputationView }) {
       {/* Paragon getrennt ausweisen: es ist kein weiterer Ansehensrang */}
       {rep.paragon && paragonPct !== null && (
         <div className="mt-1.5 flex items-baseline gap-2">
-          <span className="eyebrow flex-none">Paragon</span>
+          <span className="eyebrow flex-none">{t("reputation.paragon")}</span>
           <span className="h-1.5 flex-1 bg-neutral-300">
             <span
               className="block h-1.5"
@@ -145,7 +165,10 @@ function ReputationRow({ rep }: { rep: ReputationView }) {
             className="flex-none text-[11px] opacity-60"
             style={{ fontVariantNumeric: "tabular-nums" }}
           >
-            {`${formatNumber(rep.paragon.value)} / ${formatNumber(rep.paragon.max)}`}
+            {t("reputation.valueOfMax", {
+              value: formatNumber(rep.paragon.value),
+              max: formatNumber(rep.paragon.max),
+            })}
           </span>
         </div>
       )}

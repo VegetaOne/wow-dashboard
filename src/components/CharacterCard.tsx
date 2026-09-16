@@ -4,6 +4,8 @@ import Link from "next/link"
 import type { WoWCharacter, GameMode, CharacterDetails } from "@/lib/battlenet"
 import { CLASS_COLORS } from "@/lib/battlenet"
 import { characterBase } from "@/lib/characterTabs"
+import { classCode } from "@/lib/i18n"
+import { useLanguage, useT } from "./I18nProvider"
 
 interface CharacterCardProps {
   character: WoWCharacter & { isFavorite?: boolean }
@@ -17,12 +19,6 @@ interface CharacterCardProps {
   tint?: "edge" | "fill"
 }
 
-/** Klassen-Kürzel für das umrandete Kästchen (Klassenfarbe bleibt nur Marker). */
-const CLASS_CODE: Record<number, string> = {
-  1: "KRI", 2: "PAL", 3: "JÄG", 4: "SRK", 5: "PRI", 6: "TOD", 7: "SCH",
-  8: "MAG", 9: "HEX", 10: "MÖN", 11: "DRU", 12: "DÄJ", 13: "RUF",
-}
-
 export function CharacterCard({
   character,
   onToggleFavorite,
@@ -31,10 +27,13 @@ export function CharacterCard({
   detailsPending = false,
   tint = "edge",
 }: CharacterCardProps) {
+  const t = useT()
+  const language = useLanguage()
+
   const isAlliance = character.faction.type === "ALLIANCE"
   const band = isAlliance ? "var(--faction-alliance)" : "var(--faction-horde)"
   const classColor = CLASS_COLORS[character.playable_class.id] ?? "#FFFFFF"
-  const code = CLASS_CODE[character.playable_class.id] ?? "—"
+  const code = classCode(language, character.playable_class.id)
   // Modus steht im Pfad: derselbe Name kann in mehreren Modi existieren
   const href = characterBase(mode, character.realm.slug, character.name.toLowerCase())
 
@@ -42,7 +41,7 @@ export function CharacterCard({
   // Classic und Classic Era liefern keine — dort die Stufe.
   const showItemLevel = mode === "retail"
   const metric = showItemLevel ? details?.equippedItemLevel : character.level
-  const metricLabel = showItemLevel ? "GS" : "Stufe"
+  const metricLabel = showItemLevel ? t("card.itemLevel") : t("card.level")
 
   return (
     <div
@@ -74,27 +73,36 @@ export function CharacterCard({
 
       <span className="w-14 flex-none text-right">
         <span className="block eyebrow">{metricLabel}</span>
-        <Metric value={metric} pending={detailsPending && showItemLevel} />
+        <Metric
+          value={metric}
+          pending={detailsPending && showItemLevel}
+          loadingLabel={t("card.loading")}
+        />
       </span>
 
       <span className="hidden w-14 flex-none text-right text-[13px] opacity-75 sm:block">
-        <span className="block eyebrow">Ø ilvl</span>
+        <span className="block eyebrow">{t("card.averageItemLevel")}</span>
         <Metric
           value={details?.averageItemLevel}
           pending={detailsPending && showItemLevel}
+          loadingLabel={t("card.loading")}
           small
         />
       </span>
 
       <span className="hidden w-24 flex-none sm:block">
-        <span className="block eyebrow">Fraktion</span>
-        <span className="text-[12px]">{isAlliance ? "Allianz" : "Horde"}</span>
+        <span className="block eyebrow">{t("card.faction")}</span>
+        <span className="text-[12px]">
+          {isAlliance ? t("card.alliance") : t("card.horde")}
+        </span>
       </span>
 
       <button
         onClick={onToggleFavorite}
         aria-pressed={!!character.isFavorite}
-        title={character.isFavorite ? "Aus Favoriten entfernen" : "Zu Favoriten hinzufügen"}
+        title={
+          character.isFavorite ? t("card.favoriteRemove") : t("card.favoriteAdd")
+        }
         className="w-9 flex-none border border-line py-1.5 text-[13px]"
         style={{
           background: character.isFavorite ? "var(--color-accent)" : "transparent",
@@ -105,7 +113,7 @@ export function CharacterCard({
       </button>
 
       <Link href={href} className="btn btn-secondary hidden lg:inline-flex">
-        Ausrüstung
+        {t("card.gear")}
       </Link>
     </div>
   )
@@ -115,10 +123,12 @@ export function CharacterCard({
 function Metric({
   value,
   pending,
+  loadingLabel,
   small = false,
 }: {
   value?: number
   pending: boolean
+  loadingLabel: string
   small?: boolean
 }) {
   if (typeof value === "number") {
@@ -134,7 +144,7 @@ function Metric({
       <span
         className="ml-auto block animate-pulse bg-neutral-300"
         style={{ height: small ? 12 : 16, width: small ? 24 : 32 }}
-        aria-label="Wird geladen"
+        aria-label={loadingLabel}
       />
     )
   }

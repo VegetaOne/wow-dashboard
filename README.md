@@ -118,17 +118,13 @@ Everyone signs in with their own Battle.net account and sees only their own char
 git clone https://github.com/<your-user>/wow-dashboard.git
 cd wow-dashboard
 
-# Create the configuration
-cp .env.example .env
-
-# Generate a session key and put it in .env as NEXTAUTH_SECRET
-openssl rand -base64 32
-
-# Add your Battle.net client ID and secret to .env (see below), then:
 docker compose up -d --build
 ```
 
-The app is then on <http://localhost:3000>.
+The app is then on <http://localhost:3000>, where it walks you through setup on the
+first visit: language, region and your Battle.net client ID and secret. There is no
+configuration file to fill in — the values go into the database and can be changed
+later under Settings.
 
 The first build takes a few minutes — `npm install`, `prisma generate` and `next build`
 all run inside the container. After that it starts in seconds.
@@ -157,7 +153,8 @@ in the Battle.net Developer Console.
    IP as well, e.g. `http://192.168.1.42:3000/api/auth/callback/battlenet`. Battle.net
    allows several redirect URIs per client — every address anyone signs in from has to
    be listed
-4. Copy **Client ID** and **Client Secret** into your `.env`
+4. Enter **Client ID** and **Client Secret** on the setup page, which also shows the
+   redirect URI to copy
 
 The only scope requested is `wow.profile`. The app never reads payment or account data
 and never writes anything back to Battle.net.
@@ -166,20 +163,30 @@ and never writes anything back to Battle.net.
 
 ## ⚙ Configuration
 
-All values live in `.env` (template: `.env.example`). That file is deliberately **not**
-in the repository and is not copied into the Docker image.
+Configuration lives in the database, not in a file. On the first visit the app opens a
+setup in two stages:
 
-| Variable | Meaning |
-| --- | --- |
-| `NEXTAUTH_URL` | The address the app is served on. Must match a redirect URI on the Battle.net client |
-| `NEXTAUTH_SECRET` | Key for session encryption — `openssl rand -base64 32` |
-| `BNET_CLIENT_ID` | Client ID from the Developer Console |
-| `BNET_CLIENT_SECRET` | Client secret from the Developer Console |
-| `BNET_REGION` | `eu`, `us`, `kr` or `tw` |
-| `DATABASE_URL` | Set by Compose to the volume path — do not override it in `.env` |
+1. **Before signing in** — language, region, Battle.net client ID and secret. It has to
+   be this way round: without those credentials there is no Battle.net login to put the
+   setup behind. The page shows the exact redirect URI to paste into the Developer
+   Console and checks the credentials against Battle.net before saving. It is reachable
+   only while the setup is unfinished; afterwards it is closed.
+2. **After signing in** — which game modes you care about, which one the roster starts
+   on, how often it refreshes, and optionally Warcraft Logs credentials.
 
-`docker-compose.yml` loads `.env` via `env_file`. If the file is missing, Compose stops
-with a clear error instead of starting silently with blank values.
+The account that finishes the setup becomes the owner of the instance and is the only
+one who can change these values afterwards, under **Settings**. Changes take effect
+immediately; no container restart.
+
+The client secret is stored encrypted (AES-256-GCM). The key is generated on first use
+and written next to the database as `config.key`. That protects the database file on its
+own — a copied backup is useless without the key — but not against someone with access
+to the filesystem. It is never displayed, and the settings form never sends it back.
+
+The only environment variable left is `DATABASE_URL`, which Compose sets to the volume
+path: without it the app could not find the database in the first place. `NEXTAUTH_URL`
+is optional — when unset, the app derives the address from the request, so the same
+instance works over `localhost` and over your LAN IP.
 
 ---
 
@@ -189,9 +196,9 @@ The app is multi-user by design: everyone signs in with their own Battle.net acc
 the character list comes from their own token. No data is shared between accounts.
 
 1. Find your local IP — `ipconfig getifaddr en0` (macOS) or `hostname -I` (Linux)
-2. Set `NEXTAUTH_URL=http://<that-ip>:3000` in `.env`
-3. Add the same address as a redirect URI on the Battle.net client
-4. `docker compose up -d`
+2. Add `http://<that-ip>:3000/api/auth/callback/battlenet` as a redirect URI on the
+   Battle.net client. Battle.net allows several per client, so `localhost` can stay.
+3. Open the app from the other device at that address — nothing to reconfigure
 
 > [!CAUTION]
 > There is no HTTPS in this setup — it is built for a local network, not the open
@@ -203,12 +210,13 @@ the character list comes from their own token. No data is shared between account
 
 ```bash
 npm install
-cp .env.example .env                    # fill in the values
-echo 'DATABASE_URL="file:./dev.db"' >> .env
+cp .env.example .env                    # only DATABASE_URL matters
 
 npx prisma migrate dev                  # create the database
 npm run dev
 ```
+
+Then open <http://localhost:3000> and go through the setup.
 
 <details>
 <summary><b>Useful commands</b></summary>
@@ -347,12 +355,17 @@ candidates, professions, progression, collections, achievements, reputation, PvP
 
 ## 🔒 Security
 
-- `.env` is in `.gitignore` **and** `.dockerignore`. It reaches neither the repository nor
-  the image
-- The client secret belongs in `.env` and nowhere else. If it ever lands somewhere else —
-  a chat, a commit, a screenshot — regenerate it in the Developer Console. A secret that
-  has been exposed stays exposed
-- Session cookies are signed with `NEXTAUTH_SECRET`; changing it invalidates all sessions
+- The client secret lives encrypted in the database (AES-256-GCM) and nowhere else. The
+  key sits beside the database as `config.key`, so a copied database file alone is
+  useless — but anyone with filesystem access has both. That is the honest limit
+- The secret is never displayed and never sent back to the browser. If it ever lands
+  somewhere else — a chat, a commit, a screenshot — regenerate it in the Developer
+  Console. A secret that has been exposed stays exposed
+- The setup page is reachable without signing in, because the Battle.net login needs the
+  credentials it collects. It is closed as soon as the setup is finished
+- Session cookies are signed with a key generated during setup; replacing it would
+  invalidate all sessions, so it is written once and never touched again
+- `.env` is in `.gitignore` **and** `.dockerignore`, and holds nothing secret any more
 - Without HTTPS, tokens should not travel across networks you do not control
 
 ---
@@ -419,15 +432,15 @@ Vorausgesetzt sind Docker und Docker Compose.
 git clone https://github.com/<dein-user>/wow-dashboard.git
 cd wow-dashboard
 
-cp .env.example .env
-openssl rand -base64 32        # Ergebnis als NEXTAUTH_SECRET in die .env
-
-# Battle.net Client ID und Secret in die .env eintragen, dann:
 docker compose up -d --build
 ```
 
-Die App läuft auf <http://localhost:3000>. Der erste Build dauert einige Minuten.
-Logs: `docker compose logs -f app`.
+Die App läuft auf <http://localhost:3000> und führt beim ersten Aufruf durch die
+Einrichtung: Sprache, Region, Battle.net Client ID und Secret. Es gibt keine
+Konfigurationsdatei mehr auszufüllen — die Werte landen in der Datenbank und lassen
+sich später unter Einstellungen ändern.
+
+Der erste Build dauert einige Minuten. Logs: `docker compose logs -f app`.
 
 ### Battle.net-Anwendung
 
@@ -436,30 +449,46 @@ Logs: `docker compose logs -f app`.
 3. **Redirect URI** genau so eintragen:
    `http://localhost:3000/api/auth/callback/battlenet` — für Zugriff aus dem Heimnetz
    zusätzlich die Adresse mit der lokalen IP. Jede Adresse, unter der sich jemand anmeldet,
-   muss dort stehen
-4. **Client ID** und **Client Secret** in die `.env`
+   muss dort stehen. Die Einrichtungsseite zeigt die passende Adresse zum Kopieren an
+4. **Client ID** und **Client Secret** in die Einrichtungsseite eintragen
 
 Verwendeter Scope ist ausschliesslich `wow.profile`. Die App schreibt nichts nach
 Battle.net zurück.
 
 ### Konfiguration
 
-| Variable | Bedeutung |
-| --- | --- |
-| `NEXTAUTH_URL` | Adresse, unter der die App läuft. Muss zu einer Redirect-URI passen |
-| `NEXTAUTH_SECRET` | Schlüssel für die Session-Verschlüsselung |
-| `BNET_CLIENT_ID` | Client ID aus der Developer Console |
-| `BNET_CLIENT_SECRET` | Client Secret aus der Developer Console |
-| `BNET_REGION` | `eu`, `us`, `kr` oder `tw` |
-| `DATABASE_URL` | Setzt Compose auf das Volume — in der `.env` nicht überschreiben |
+Die Konfiguration liegt in der Datenbank, nicht in einer Datei. Beim ersten Aufruf
+öffnet die App eine Einrichtung in zwei Stufen:
 
-`docker-compose.yml` lädt die `.env` über `env_file`. Fehlt sie, bricht Compose mit klarer
-Meldung ab statt still mit leeren Werten zu starten.
+1. **Vor der Anmeldung** — Sprache, Region, Battle.net Client ID und Secret. Diese
+   Reihenfolge ist zwingend: ohne Zugangsdaten gibt es keinen Battle.net-Login, hinter
+   dem der Setup liegen könnte. Die Seite zeigt die exakte Redirect-URI zum Kopieren und
+   prüft die Zugangsdaten vor dem Speichern gegen Battle.net. Erreichbar ist sie nur,
+   solange der Setup offen ist; danach wird sie gesperrt.
+2. **Nach der Anmeldung** — welche Spielmodi dich interessieren, womit die Kaderliste
+   startet, wie oft sie nachzieht, optional Warcraft-Logs-Zugangsdaten.
+
+Der Account, der den Setup abschliesst, wird Besitzer der Instanz und darf diese Werte
+danach als Einziger ändern, unter **Einstellungen**. Änderungen greifen sofort, ohne
+Neustart des Containers.
+
+Das Client Secret liegt verschlüsselt (AES-256-GCM). Der Schlüssel entsteht beim ersten
+Bedarf und liegt als `config.key` neben der Datenbank. Das schützt die Datenbankdatei
+für sich — ein kopiertes Backup ist ohne Schlüssel wertlos —, nicht aber gegen jemanden
+mit Zugriff aufs Dateisystem. Angezeigt wird das Secret nie, und das Einstellungsformular
+sendet es auch nie zurück.
+
+Übrig bleibt als Umgebungsvariable nur `DATABASE_URL`, die Compose auf das Volume setzt:
+ohne sie fände die App die Datenbank gar nicht erst. `NEXTAUTH_URL` ist optional — ohne
+Angabe leitet die App die Adresse aus der Anfrage ab, dieselbe Instanz funktioniert dann
+über `localhost` und über die lokale IP.
 
 ### Im Heimnetz teilen
 
-Lokale IP ermitteln (`ipconfig getifaddr en0` / `hostname -I`), `NEXTAUTH_URL` darauf
-setzen, dieselbe Adresse als Redirect-URI hinterlegen, `docker compose up -d`.
+Lokale IP ermitteln (`ipconfig getifaddr en0` / `hostname -I`) und
+`http://<diese-ip>:3000/api/auth/callback/battlenet` als weitere Redirect-URI beim
+Battle.net-Client hinterlegen. Mehr ist nicht nötig: die App erkennt die Adresse, unter
+der sie aufgerufen wurde, selbst.
 
 > [!CAUTION]
 > Kein HTTPS — das Setup ist fürs lokale Netz gedacht. Wer die App ins Internet stellt,
@@ -469,8 +498,7 @@ setzen, dieselbe Adresse als Redirect-URI hinterlegen, `docker compose up -d`.
 
 ```bash
 npm install
-cp .env.example .env
-echo 'DATABASE_URL="file:./dev.db"' >> .env
+cp .env.example .env                    # nur DATABASE_URL ist relevant
 npx prisma migrate dev
 npm run dev
 ```
@@ -523,9 +551,12 @@ Registrierung) · WoW Forever.
 
 ### Sicherheit
 
-`.env` steht in `.gitignore` **und** `.dockerignore` — weder im Repo noch im Image. Das
-Client Secret gehört ausschliesslich dorthin; landet es woanders (Chat, Commit,
-Screenshot), in der Developer Console neu generieren. Ein offengelegtes Secret bleibt
-offengelegt. Ohne HTTPS gehören Tokens nicht über fremde Netze.
+Das Client Secret liegt verschlüsselt in der Datenbank, der Schlüssel als `config.key`
+daneben: eine kopierte Datenbankdatei allein nützt nichts, wer aufs Dateisystem kommt,
+hat beides. Angezeigt wird es nie. Landet es woanders (Chat, Commit, Screenshot), in
+der Developer Console neu generieren — ein offengelegtes Secret bleibt offengelegt.
+Die Einrichtungsseite ist ohne Anmeldung erreichbar, weil der Login die Daten braucht,
+die sie einsammelt; sobald der Setup durch ist, wird sie gesperrt. Ohne HTTPS gehören
+Tokens nicht über fremde Netze.
 
 </details>

@@ -4,14 +4,12 @@ services:
     ports:
       - "3000:3000"
 
-    # Lädt .env direkt in den Container.
-    # Fehlt die Datei, bricht docker compose mit klarer Fehlermeldung ab
-    # statt still mit leeren Werten zu starten.
-    env_file:
-      - .env
-
+    # Keine .env nötig: Region, Sprache und die Battle.net-Zugangsdaten
+    # werden beim ersten Aufruf der Website abgefragt und liegen danach
+    # in der Datenbank. Geändert werden sie unter Einstellungen.
     environment:
-      # Pfad im Volume - nicht in der .env überschreiben
+      # Pfad im Volume - hier gehört er hin, nicht in die Konfiguration:
+      # ohne ihn findet die App die Datenbank gar nicht erst.
       - DATABASE_URL=file:/data/wow-dashboard.db
 
     volumes:

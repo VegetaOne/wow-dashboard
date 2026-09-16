@@ -1,6 +1,6 @@
 import { getServerSession } from "next-auth"
 import { NextRequest, NextResponse } from "next/server"
-import { authOptions } from "@/lib/auth"
+import { getAuthOptions } from "@/lib/auth"
 import { getCharacterDetails, GAME_MODES, type GameMode } from "@/lib/battlenet"
 
 /** Obergrenze pro Anfrage, damit ein Client nicht den ganzen Account auf einmal zieht. */
@@ -11,7 +11,7 @@ const MAX_PER_REQUEST = 40
  * Der Client fragt nur die Realm-Abschnitte an, die er tatsächlich zeigt.
  */
 export async function POST(req: NextRequest) {
-  const session = await getServerSession(authOptions)
+  const session = await getServerSession(await getAuthOptions())
 
   if (!session?.accessToken) {
     return NextResponse.json({ error: "Nicht eingeloggt" }, { status: 401 })

@@ -145,3 +145,50 @@ model CharacterSnapshot {
   @@index([gameMode, realmSlug, charName, dataset])
   @@index([dataset, day])
 }
+
+/// Konfiguration der Instanz – eine einzige Zeile.
+///
+/// Diese App läuft je Nutzer in einem eigenen Container; die Werte, die
+/// früher in der `.env` standen, liegen deshalb hier. Ausgenommen bleibt
+/// `DATABASE_URL`: ohne sie findet die App diese Tabelle gar nicht erst.
+///
+/// Das Client Secret liegt verschlüsselt (AES-256-GCM). Der Schlüssel
+/// liegt als Datei neben der Datenbank – siehe `src/lib/secrets.ts`. Wer
+/// Zugriff auf das Dateisystem hat, kommt an beides; geschützt ist damit
+/// die Datenbankdatei allein, etwa in einem Backup.
+model AppConfig {
+  /// Immer "singleton" – es gibt genau eine Zeile
+  id                    String    @id @default("singleton")
+
+  /// Oberflächensprache: "en" | "de". Bestimmt zugleich die Locale der API.
+  language              String    @default("en")
+  /// eu | us | kr | tw
+  region                String    @default("eu")
+
+  bnetClientId          String?
+  /// Verschlüsselt, nie im Klartext
+  bnetClientSecret      String?
+
+  /// Sitzungsschlüssel für NextAuth, beim Setup selbst erzeugt
+  authSecret            String?
+
+  /// Welche Spielmodi angezeigt werden, als JSON-Array
+  gameModes             String    @default("[\"retail\",\"classic\",\"classic-era\"]")
+  /// Modus, mit dem die Kaderliste startet
+  defaultMode           String    @default("retail")
+  /// Abrufintervall der Kaderliste in Sekunden
+  pollSeconds           Int       @default(60)
+
+  /// Optional, für den späteren Warcraft-Logs-Teil
+  warcraftLogsClientId  String?
+  /// Verschlüsselt
+  warcraftLogsSecret    String?
+
+  /// BattleTag des Accounts, der den Setup abgeschlossen hat
+  ownerBattleTag        String?
+  /// Gesetzt, sobald Stufe 2 durch ist – davor gilt der Setup als offen
+  setupCompletedAt      DateTime?
+
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+}

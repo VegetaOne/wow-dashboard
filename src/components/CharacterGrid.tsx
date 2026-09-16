@@ -5,6 +5,8 @@ import { useSearchParams } from "next/navigation"
 import { CharacterCard } from "./CharacterCard"
 import type { WoWCharacter, GameMode, CharacterDetails } from "@/lib/battlenet"
 import { detailKey } from "@/lib/battlenet"
+import type { TranslationKey } from "@/lib/i18n"
+import { useT } from "./I18nProvider"
 
 interface CharacterWithMeta extends WoWCharacter {
   isFavorite?: boolean
@@ -13,6 +15,7 @@ interface CharacterWithMeta extends WoWCharacter {
 type FactionFilter = "all" | "HORDE" | "ALLIANCE"
 type DetailMap = Record<string, CharacterDetails>
 
+/** Vorgabe, falls die Konfiguration nichts sagt. */
 export const POLL_MS = 60_000
 
 /** Nur Retail liefert Gegenstandsstufen — Classic-Modi zeigen die Stufe. */
@@ -51,9 +54,20 @@ function groupByRealm(characters: CharacterWithMeta[]): RealmGroup[] {
   return groups
 }
 
-export function CharacterGrid({ onSync }: { onSync?: (at: Date, count: number) => void }) {
+export function CharacterGrid({
+  onSync,
+  pollMs = POLL_MS,
+  defaultMode = "retail",
+}: {
+  onSync?: (at: Date, count: number) => void
+  /** Abrufintervall aus der Konfiguration */
+  pollMs?: number
+  /** Modus, wenn die Adresse keinen nennt */
+  defaultMode?: GameMode
+}) {
+  const t = useT()
   const params = useSearchParams()
-  const mode = (params.get("mode") as GameMode) || "retail"
+  const mode = (params.get("mode") as GameMode) || defaultMode
 
   const [characters, setCharacters] = useState<CharacterWithMeta[]>([])
   const [loading, setLoading] = useState(true)
@@ -134,7 +148,7 @@ export function CharacterGrid({ onSync }: { onSync?: (at: Date, count: number) =
   useEffect(() => {
     setLoading(true)
     load()
-    const id = setInterval(load, POLL_MS)
+    const id = setInterval(load, pollMs)
     return () => clearInterval(id)
   }, [load])
 
@@ -174,42 +188,53 @@ export function CharacterGrid({ onSync }: { onSync?: (at: Date, count: number) =
       : null
     const maxLevel = Math.max(0, ...characters.map((c) => c.level))
 
+    const stat = (
+      key: TranslationKey,
+      value: number | string,
+      note: string
+    ) => ({ key, label: t(key), value, note })
+
     return [
-      {
-        label: "Charaktere",
-        value: characters.length,
-        note: `${characters.filter((c) => c.faction.type === "HORDE").length} Horde · ${
-          characters.filter((c) => c.faction.type === "ALLIANCE").length
-        } Allianz`,
-      },
+      stat(
+        "grid.statCharacters",
+        characters.length,
+        t("grid.factionSplit", {
+          horde: characters.filter((c) => c.faction.type === "HORDE").length,
+          alliance: characters.filter((c) => c.faction.type === "ALLIANCE").length,
+        })
+      ),
       hasItemLevel(mode)
-        ? {
-            label: "Ø Gegenstandsstufe",
-            value: avg ?? "—",
+        ? stat(
+            "grid.statAvgItemLevel",
+            avg ?? "—",
             // Ehrlich bleiben: der Schnitt gilt nur für das bisher Geladene
-            note: loadedLevels.length
-              ? `aus ${loadedLevels.length} von ${characters.length} · Höchste ${Math.max(
-                  ...loadedLevels
-                )}`
-              : "wird beim Scrollen geladen",
-          }
-        : {
-            label: "Höchste Stufe",
-            value: maxLevel,
-            note: `${characters.filter((c) => c.level >= maxLevel).length} auf Höchststufe`,
-          },
-      {
-        label: "Favoriten",
-        value: characters.filter((c) => c.isFavorite).length,
-        note: "mit ★ markiert",
-      },
-      {
-        label: "Realms",
-        value: new Set(characters.map((c) => c.realm.slug)).size,
-        note: "verteilt auf",
-      },
+            loadedLevels.length
+              ? t("grid.avgNote", {
+                  loaded: loadedLevels.length,
+                  total: characters.length,
+                  max: Math.max(...loadedLevels),
+                })
+              : t("grid.avgPending")
+          )
+        : stat(
+            "grid.statHighestLevel",
+            maxLevel,
+            t("grid.atMaxLevel", {
+              count: characters.filter((c) => c.level >= maxLevel).length,
+            })
+          ),
+      stat(
+        "grid.statFavorites",
+        characters.filter((c) => c.isFavorite).length,
+        t("grid.favoritesNote")
+      ),
+      stat(
+        "grid.statRealms",
+        new Set(characters.map((c) => c.realm.slug)).size,
+        t("grid.realmsNote")
+      ),
     ]
-  }, [characters, mode, details])
+  }, [characters, mode, details, t])
 
   const displayed = characters
     .filter((c) => (faction === "all" ? true : c.faction.type === faction))
@@ -227,7 +252,7 @@ export function CharacterGrid({ onSync }: { onSync?: (at: Date, count: number) =
   if (error) {
     return (
       <div className="border-2 border-accent p-6 text-[14px]">
-        <span className="eyebrow block">API-Fehler</span>
+        <span className="eyebrow block">{t("grid.apiError")}</span>
         {error}
       </div>
     )
@@ -238,7 +263,7 @@ export function CharacterGrid({ onSync }: { onSync?: (at: Date, count: number) =
       {/* Kennzahlen-Leiste */}
       <div className="grid grid-cols-2 border-b-2 border-line lg:grid-cols-4">
         {stats.map((s) => (
-          <div key={s.label} className="flex flex-col gap-0.5 border-r border-line px-6 py-4">
+          <div key={s.key} className="flex flex-col gap-0.5 border-r border-line px-6 py-4">
             <span className="eyebrow">{s.label}</span>
             <span className="font-heading text-[30px] font-extrabold leading-none tracking-[-0.02em]">
               {loading ? "—" : s.value}
@@ -252,9 +277,9 @@ export function CharacterGrid({ onSync }: { onSync?: (at: Date, count: number) =
       <div className="flex flex-wrap items-center gap-4 border-b border-line px-6 py-3">
         <div className="flex">
           {([
-            { id: "all", label: "Alle", color: "var(--color-neutral-700)" },
-            { id: "HORDE", label: "Horde", color: "var(--faction-horde)" },
-            { id: "ALLIANCE", label: "Allianz", color: "var(--faction-alliance)" },
+            { id: "all", labelKey: "grid.filterAll", color: "var(--color-neutral-700)" },
+            { id: "HORDE", labelKey: "card.horde", color: "var(--faction-horde)" },
+            { id: "ALLIANCE", labelKey: "card.alliance", color: "var(--faction-alliance)" },
           ] as const).map((f) => {
             const active = faction === f.id
             return (
@@ -272,7 +297,7 @@ export function CharacterGrid({ onSync }: { onSync?: (at: Date, count: number) =
                   style={{ background: active ? "var(--color-bg)" : f.color }}
                   aria-hidden
                 />
-                {f.label}
+                {t(f.labelKey)}
               </button>
             )
           })}
@@ -288,33 +313,39 @@ export function CharacterGrid({ onSync }: { onSync?: (at: Date, count: number) =
               : undefined
           }
         >
-          ★ Favoriten
+          ★ {t("grid.favorites")}
         </button>
 
         <input
           className="input max-w-[220px]"
-          placeholder="Charakter suchen…"
+          placeholder={t("grid.searchPlaceholder")}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
 
         <span className="ml-auto text-[11px] uppercase tracking-[0.08em] opacity-55">
-          {displayed.length} von {characters.length} Charakteren
-          {realmGroups.length > 0 && ` · ${realmGroups.length} Realms`}
+          {t("grid.shownOf", {
+            shown: displayed.length,
+            total: characters.length,
+          })}
+          {realmGroups.length > 0 &&
+            ` · ${t("grid.realmCount", { count: realmGroups.length })}`}
         </span>
       </div>
 
       {/* Spaltenköpfe */}
       <div className="flex items-center gap-4 border-b-2 border-line pr-6 text-[10px] uppercase tracking-[0.1em] opacity-55">
         <span className="w-1 flex-none" />
-        <span className="w-[34px] flex-none">Kl.</span>
+        <span className="w-[34px] flex-none">{t("grid.colClass")}</span>
         <span className="w-3 flex-none" />
-        <span className="min-w-0 flex-1 basis-[150px] py-2">Charakter</span>
+        <span className="min-w-0 flex-1 basis-[150px] py-2">
+          {t("grid.colCharacter")}
+        </span>
         <span className="w-14 flex-none text-right">
-          {hasItemLevel(mode) ? "GS" : "Stufe"}
+          {hasItemLevel(mode) ? t("card.itemLevel") : t("card.level")}
         </span>
         <span className="hidden w-14 flex-none text-right sm:block">Ø</span>
-        <span className="hidden w-24 flex-none sm:block">Fraktion</span>
+        <span className="hidden w-24 flex-none sm:block">{t("card.faction")}</span>
         <span className="w-9 flex-none">★</span>
         <span className="hidden w-[104px] flex-none lg:block" />
       </div>
@@ -327,9 +358,7 @@ export function CharacterGrid({ onSync }: { onSync?: (at: Date, count: number) =
         </div>
       ) : realmGroups.length === 0 ? (
         <div className="px-6 py-12 text-[13px] opacity-55">
-          {favoritesOnly
-            ? "Noch keine Favoriten gesetzt — ★ bei einem Charakter klicken."
-            : "Keine Charaktere gefunden."}
+          {favoritesOnly ? t("grid.noFavorites") : t("grid.noCharacters")}
         </div>
       ) : (
         realmGroups.map((group) => (
@@ -364,6 +393,7 @@ function RealmSection({
   onVisible: (chars: CharacterWithMeta[]) => void
   onToggleFavorite: (char: CharacterWithMeta) => void
 }) {
+  const t = useT()
   const sectionRef = useRef<HTMLElement | null>(null)
 
   // Aktuelle Charakterliste in einer Ref, damit der Effect nicht bei
@@ -408,10 +438,14 @@ function RealmSection({
         </span>
         <span className="eyebrow">
           {group.characters.length}{" "}
-          {group.characters.length === 1 ? "Charakter" : "Charaktere"}
+          {group.characters.length === 1
+            ? t("grid.characterOne")
+            : t("grid.characterMany")}
         </span>
         {pendingDetails && (
-          <span className="eyebrow ml-auto animate-pulse">Lade Werte…</span>
+          <span className="eyebrow ml-auto animate-pulse">
+            {t("grid.loadingValues")}
+          </span>
         )}
       </div>
 
