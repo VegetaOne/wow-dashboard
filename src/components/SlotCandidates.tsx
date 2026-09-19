@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react"
 import type { GameMode, ItemDetails } from "@/lib/battlenet"
 import { QUALITY_COLORS } from "@/lib/battlenet"
 import { CandidateTooltip, type CandidateTarget } from "./CandidateTooltip"
+import { useT } from "./I18nProvider"
 
 interface LootCandidate {
   itemId: number
@@ -41,6 +42,7 @@ export function SlotCandidates({
   name: string
   mode: GameMode
 }) {
+  const t = useT()
   const [slots, setSlots] = useState<SlotUpgrades[]>([])
   const [indexStatus, setIndexStatus] = useState<IndexStatus | null>(null)
   const [loading, setLoading] = useState(true)
@@ -119,8 +121,8 @@ export function SlotCandidates({
   if (loading) {
     return (
       <div className="border-2 border-line px-4 py-3">
-        <span className="eyebrow block">Loot-Kandidaten</span>
-        <span className="text-[13px] opacity-55">Lade…</span>
+        <span className="eyebrow block">{t("loot.candidatesEyebrow")}</span>
+        <span className="text-[13px] opacity-55">{t("core.loading")}</span>
       </div>
     )
   }
@@ -129,11 +131,8 @@ export function SlotCandidates({
   if (!indexStatus || indexStatus.itemCount === 0) {
     return (
       <div className="border-2 border-line px-4 py-3">
-        <span className="eyebrow block">Loot-Kandidaten</span>
-        <span className="text-[13px] opacity-75">
-          Noch kein Loot-Index für diesen Spielmodus. Im Panel darüber aufbauen,
-          dann erscheinen hier die Gegenstände je Slot mit ihrer Quelle.
-        </span>
+        <span className="eyebrow block">{t("loot.candidatesEyebrow")}</span>
+        <span className="text-[13px] opacity-75">{t("loot.noIndexYet")}</span>
       </div>
     )
   }
@@ -141,11 +140,8 @@ export function SlotCandidates({
   if (slots.length === 0) {
     return (
       <div className="border-2 border-line px-4 py-3">
-        <span className="eyebrow block">Loot-Kandidaten</span>
-        <span className="text-[13px] opacity-75">
-          Der Index enthält keine Gegenstände, die auf die Slots dieses
-          Charakters passen.
-        </span>
+        <span className="eyebrow block">{t("loot.candidatesEyebrow")}</span>
+        <span className="text-[13px] opacity-75">{t("loot.noMatchingItems")}</span>
       </div>
     )
   }
@@ -161,18 +157,12 @@ export function SlotCandidates({
 
       <div className="border-b border-line px-4 py-2">
         <span className="font-heading text-[12px] font-extrabold uppercase tracking-[0.08em]">
-          Loot-Kandidaten je Slot
+          {t("loot.candidatesTitle")}
         </span>
         <p className="mt-1 text-[12px] opacity-60">
-          Was für den Slot überhaupt droppt, höchste Gegenstandsstufe zuerst.
-          {mode !== "retail" && (
-            <>
-              {" "}
-              In Classic ist die Stufe ein schwaches Signal — viel starkes Gear
-              hat dort niedrige Stufe mit den passenden Werten.
-            </>
-          )}{" "}
-          Keine DPS-Bewertung: dafür fehlen Statgewichte.
+          {t("loot.candidatesHint")}
+          {mode !== "retail" && <> {t("loot.classicLevelCaveat")}</>}{" "}
+          {t("loot.noDpsRating")}
         </p>
       </div>
 
@@ -196,17 +186,17 @@ export function SlotCandidates({
                 <span className="w-[110px] flex-none eyebrow">{slot.slotName}</span>
                 <span className="min-w-0 flex-1 truncate text-[13px]">
                   {slot.equippedName ?? (
-                    <span className="opacity-50">Kein Gegenstand angelegt</span>
+                    <span className="opacity-50">{t("loot.noItemEquipped")}</span>
                   )}
                   {slot.equippedLevel !== null && (
                     <span className="ml-2 opacity-55">
-                      Stufe {slot.equippedLevel}
+                      {t("equipment.candidateLevel", { level: slot.equippedLevel })}
                     </span>
                   )}
                 </span>
                 <span className="eyebrow">
-                  {slot.candidates.length} bekannt
-                  {better > 0 && ` · ${better} höher`}
+                  {t("loot.knownCount", { count: slot.candidates.length })}
+                  {better > 0 && ` · ${t("loot.higherBy", { delta: better })}`}
                 </span>
                 <span className="w-4 flex-none text-center text-[12px] opacity-55">
                   {isOpen ? "−" : "+"}
@@ -271,7 +261,7 @@ export function SlotCandidates({
                           {c.itemLevel ?? "—"}
                         </span>
                         {isHigher && (
-                          <span className="tag tag-accent">höher</span>
+                          <span className="tag tag-accent">{t("loot.higher")}</span>
                         )}
                         <span className="w-full text-[11px] opacity-50 sm:w-auto">
                           {c.instanceName} · {c.encounterName}

@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from "react"
 import type { GameMode } from "@/lib/battlenet"
+import { useT } from "./I18nProvider"
+import type { TranslationKey } from "@/lib/i18n"
 
 interface IndexStatus {
   gameMode: string
@@ -12,12 +14,12 @@ interface IndexStatus {
   error: string | null
 }
 
-const STATUS_LABEL: Record<IndexStatus["status"], string> = {
-  PENDING: "Nicht indexiert",
-  RUNNING: "Läuft",
-  DONE: "Fertig",
-  FAILED: "Fehlgeschlagen",
-  EMPTY: "Keine Daten",
+const STATUS_LABEL_KEY: Record<IndexStatus["status"], TranslationKey> = {
+  PENDING: "loot.index.pending",
+  RUNNING: "loot.index.running",
+  DONE: "loot.index.done",
+  FAILED: "loot.index.failed",
+  EMPTY: "loot.index.empty",
 }
 
 /**
@@ -26,6 +28,7 @@ const STATUS_LABEL: Record<IndexStatus["status"], string> = {
  * so bleibt jede Anfrage kurz und der Fortschritt sichtbar.
  */
 export function LootIndexPanel({ mode }: { mode: GameMode }) {
+  const t = useT()
   const [status, setStatus] = useState<IndexStatus | null>(null)
   const [busy, setBusy] = useState(false)
   const [current, setCurrent] = useState<string | null>(null)
@@ -99,25 +102,22 @@ export function LootIndexPanel({ mode }: { mode: GameMode }) {
     <div className="mb-8 border-2 border-line">
       <div className="flex flex-wrap items-baseline justify-between gap-3 border-b border-line px-4 py-2">
         <span className="font-heading text-[12px] font-extrabold uppercase tracking-[0.08em]">
-          Loot-Index
+          {t("loot.index.title")}
         </span>
         <span className="eyebrow">
-          {STATUS_LABEL[status.status]}
-          {status.itemCount > 0 ? ` · ${status.itemCount} Gegenstände` : ""}
+          {t(STATUS_LABEL_KEY[status.status])}
+          {status.itemCount > 0
+            ? ` · ${t("loot.index.itemCount", { count: status.itemCount })}`
+            : ""}
         </span>
       </div>
 
       <div className="px-4 py-3">
-        <p className="text-[13px] opacity-75">
-          Die Loot-Tabellen kommen aus der Journal-API. Ein Durchlauf holt alle
-          Instanzen, Bosse und Gegenstandsdaten und legt sie lokal ab — das
-          kostet einige Minuten, danach sind die Abfragen sofort da.
-        </p>
+        <p className="text-[13px] opacity-75">{t("loot.index.hint")}</p>
 
         {status.status === "EMPTY" && (
           <p className="mt-2 text-[13px]" style={{ color: "var(--color-accent)" }}>
-            {status.error ??
-              "Die Journal-API liefert für diesen Spielmodus keine Instanzen."}
+            {status.error ?? t("loot.index.noInstances")}
           </p>
         )}
 
@@ -131,7 +131,10 @@ export function LootIndexPanel({ mode }: { mode: GameMode }) {
           <div className="mt-3">
             <div className="flex items-baseline justify-between gap-2">
               <span className="eyebrow">
-                {status.indexedInstances} von {status.totalInstances} Instanzen
+                {t("loot.index.instancesProgress", {
+                  indexed: status.indexedInstances,
+                  total: status.totalInstances,
+                })}
               </span>
               <span className="eyebrow">{pct}%</span>
             </div>
@@ -151,7 +154,9 @@ export function LootIndexPanel({ mode }: { mode: GameMode }) {
           {/* Angefangener Lauf: weitermachen statt alles neu holen */}
           {!busy && status.status === "RUNNING" && (
             <button onClick={() => run(false)} className="btn btn-primary">
-              Fortsetzen ({status.totalInstances - status.indexedInstances} offen)
+              {t("loot.index.resume", {
+                count: status.totalInstances - status.indexedInstances,
+              })}
             </button>
           )}
 
@@ -165,10 +170,10 @@ export function LootIndexPanel({ mode }: { mode: GameMode }) {
             }
           >
             {busy
-              ? "Läuft…"
+              ? t("loot.index.runningEllipsis")
               : status.itemCount > 0 || status.status === "RUNNING"
-                ? "Neu aufbauen"
-                : "Index aufbauen"}
+                ? t("loot.index.rebuild")
+                : t("loot.index.build")}
           </button>
 
           {busy && (
@@ -178,7 +183,7 @@ export function LootIndexPanel({ mode }: { mode: GameMode }) {
               }}
               className="btn btn-secondary"
             >
-              Abbrechen
+              {t("loot.index.cancel")}
             </button>
           )}
         </div>

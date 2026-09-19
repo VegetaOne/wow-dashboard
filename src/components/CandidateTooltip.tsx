@@ -147,16 +147,17 @@ export function CandidateTooltip({
 
       {/* Quelle: der Grund, warum diese Liste überhaupt nützlich ist */}
       <div className="mt-2 border-t border-line pt-1.5">
-        <span className="eyebrow block">Quelle</span>
+        <span className="eyebrow block">{t("loot.source")}</span>
         <span className="text-[12px] opacity-80">{target.source}</span>
       </div>
 
       {target.equippedName && (
         <div className="mt-2 border-t border-line pt-1.5">
-          <span className="eyebrow block">Aktuell angelegt</span>
+          <span className="eyebrow block">{t("loot.currentlyEquipped")}</span>
           <span className="text-[12px] opacity-70">
             {target.equippedName}
-            {target.equippedLevel != null && ` · Stufe ${target.equippedLevel}`}
+            {target.equippedLevel != null &&
+              ` · ${t("equipment.candidateLevel", { level: target.equippedLevel })}`}
           </span>
         </div>
       )}

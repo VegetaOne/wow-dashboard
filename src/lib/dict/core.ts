@@ -45,6 +45,11 @@ export const en = {
   // jetzt ein Schlüssel für beide (V4 aus i18n-abschluss.md).
   "core.thisWeek": "This week",
 
+  // Generischer Ladehinweis, der in mehreren Komponenten nur "Lade…"/"Lädt…"
+  // stand (V4 aus i18n-abschluss.md). Bereichsspezifische Varianten wie
+  // "Lade Rezeptliste…" behalten eigene Schlüssel.
+  "core.loading": "Loading…",
+
   // ─── Spielmodi ───────────────────────────────────────────────────────────
   "mode.retail": "Retail",
   "mode.retail.note": "The War Within · level 80",
@@ -196,6 +201,8 @@ export const de: Record<keyof typeof en, string> = {
   "core.days.other": "{count} Tagen",
 
   "core.thisWeek": "Diese Woche",
+
+  "core.loading": "Lade…",
 
   "mode.retail": "Retail",
   "mode.retail.note": "The War Within · Stufe 80",
