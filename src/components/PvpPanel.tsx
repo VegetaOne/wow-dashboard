@@ -3,7 +3,7 @@
 import { useState } from "react"
 import type { BracketView, PvpSummaryView, MatchRecord } from "@/lib/pvp"
 import { winRate } from "@/lib/pvp"
-import { useFormat } from "./I18nProvider"
+import { useT, useFormat } from "./I18nProvider"
 
 const MAP_PAGE = 12
 
@@ -14,6 +14,7 @@ export function PvpPanel({
   summary: PvpSummaryView
   brackets: BracketView[]
 }) {
+  const t = useT()
   return (
     <div className="space-y-10">
       <section>
@@ -21,12 +22,12 @@ export function PvpPanel({
       </section>
 
       <section>
-        <h4 className="mb-3">Gewertete Klassen</h4>
+        <h4 className="mb-3">{t("pvp.ratedClasses")}</h4>
         <Brackets brackets={brackets} />
       </section>
 
       <section>
-        <h4 className="mb-3">Schlachtfelder</h4>
+        <h4 className="mb-3">{t("pvp.battlegrounds")}</h4>
         <MapStats maps={summary.maps} />
       </section>
     </div>
@@ -36,6 +37,7 @@ export function PvpPanel({
 // ─── Ehre ─────────────────────────────────────────────────────────────────────
 
 function Honor({ summary }: { summary: PvpSummaryView }) {
+  const t = useT()
   const f = useFormat()
   const hasAny =
     summary.honorLevel !== null || summary.honorableKills !== null
@@ -43,7 +45,7 @@ function Honor({ summary }: { summary: PvpSummaryView }) {
   if (!hasAny) {
     return (
       <div className="border-2 border-line px-4 py-3 text-[13px] opacity-75">
-        Die API liefert für diesen Charakter keine Ehre-Werte.
+        {t("pvp.noHonorData")}
       </div>
     )
   }
@@ -51,11 +53,11 @@ function Honor({ summary }: { summary: PvpSummaryView }) {
   return (
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
       {summary.honorLevel !== null && (
-        <Stat label="Ehrestufe" value={f.number(summary.honorLevel)} />
+        <Stat label={t("pvp.honorLevel")} value={f.number(summary.honorLevel)} />
       )}
       {summary.honorableKills !== null && (
         <Stat
-          label="Ehrenhafte Siege"
+          label={t("pvp.honorableKills")}
           value={f.number(summary.honorableKills)}
         />
       )}
@@ -80,12 +82,12 @@ function Stat({ label, value }: { label: string; value: string }) {
 // ─── Wertungen ────────────────────────────────────────────────────────────────
 
 function Brackets({ brackets }: { brackets: BracketView[] }) {
+  const t = useT()
   const f = useFormat()
   if (brackets.length === 0) {
     return (
       <div className="border-2 border-line px-4 py-3 text-[13px] opacity-75">
-        Keine gewertete Klasse gespielt. Die API antwortet für ungespielte
-        Klassen mit 404 — das ist kein Fehler, sondern heisst „nie angetreten".
+        {t("pvp.noRatedClasses")}
       </div>
     )
   }
@@ -103,7 +105,7 @@ function Brackets({ brackets }: { brackets: BracketView[] }) {
             </span>
 
             <span className="flex flex-none items-baseline gap-2">
-              <span className="eyebrow">Wertung</span>
+              <span className="eyebrow">{t("pvp.rating")}</span>
               {b.rating !== null ? (
                 <span
                   className="font-heading text-[18px] font-extrabold tracking-[-0.01em]"
@@ -118,8 +120,8 @@ function Brackets({ brackets }: { brackets: BracketView[] }) {
           </div>
 
           <div className="mt-2 space-y-1.5">
-            <RecordRow label="Saison" record={b.season} />
-            <RecordRow label="Diese Woche" record={b.weekly} />
+            <RecordRow label={t("pvp.season")} record={b.season} />
+            <RecordRow label={t("core.thisWeek")} record={b.weekly} />
           </div>
         </div>
       ))}
@@ -134,12 +136,13 @@ function RecordRow({
   label: string
   record: MatchRecord | null
 }) {
+  const t = useT()
   const f = useFormat()
   if (!record) {
     return (
       <div className="flex items-baseline gap-2 text-[12px]">
         <span className="eyebrow w-24 flex-none">{label}</span>
-        <span className="opacity-40">keine Angabe</span>
+        <span className="opacity-40">{t("pvp.noData")}</span>
       </div>
     )
   }
@@ -151,7 +154,7 @@ function RecordRow({
       <span className="eyebrow w-24 flex-none">{label}</span>
 
       <span style={{ fontVariantNumeric: "tabular-nums" }}>
-        {`${f.number(record.won)} Siege · ${f.number(record.lost)} Niederlagen`}
+        {t("pvp.record", { won: f.number(record.won), lost: f.number(record.lost) })}
       </span>
 
       {/* Quote nur bei mindestens einem Spiel – 0 von 0 ist keine 0 % */}
@@ -175,7 +178,7 @@ function RecordRow({
         </span>
       ) : (
         <span className="ml-auto flex-none opacity-40">
-          {`${f.number(record.played)} Spiele`}
+          {t("pvp.gamesPlayed", { count: f.number(record.played) })}
         </span>
       )}
     </div>
@@ -185,6 +188,7 @@ function RecordRow({
 // ─── Schlachtfelder ───────────────────────────────────────────────────────────
 
 function MapStats({ maps }: { maps: PvpSummaryView["maps"] }) {
+  const t = useT()
   const f = useFormat()
   const [limit, setLimit] = useState(MAP_PAGE)
   const shown = maps.slice(0, limit)
@@ -192,7 +196,7 @@ function MapStats({ maps }: { maps: PvpSummaryView["maps"] }) {
   if (maps.length === 0) {
     return (
       <div className="border-2 border-line px-4 py-3 text-[13px] opacity-75">
-        Keine Schlachtfeld-Statistik vorhanden.
+        {t("pvp.noMapStats")}
       </div>
     )
   }
@@ -201,10 +205,10 @@ function MapStats({ maps }: { maps: PvpSummaryView["maps"] }) {
     <div className="border-2 border-line">
       <div className="flex flex-wrap items-baseline justify-between gap-3 border-b border-line px-4 py-2">
         <span className="font-heading text-[14px] font-extrabold uppercase tracking-[0.06em]">
-          Nach Schlachtfeld
+          {t("pvp.byBattleground")}
         </span>
         <span className="eyebrow">
-          {`${f.number(maps.length)} Schlachtfelder · meistgespielte zuerst`}
+          {t("pvp.mapCount", { count: f.number(maps.length) })}
         </span>
       </div>
 
@@ -246,7 +250,7 @@ function MapStats({ maps }: { maps: PvpSummaryView["maps"] }) {
               </span>
             ) : (
               <span className="flex-none text-[12px] opacity-40">
-                noch nicht betreten
+                {t("pvp.neverEntered")}
               </span>
             )}
           </div>
@@ -259,7 +263,9 @@ function MapStats({ maps }: { maps: PvpSummaryView["maps"] }) {
             onClick={() => setLimit((l) => l + MAP_PAGE)}
             className="btn btn-secondary text-[12px]"
           >
-            {`Weitere ${f.number(Math.min(MAP_PAGE, maps.length - shown.length))} anzeigen`}
+            {t("pvp.showMoreMaps", {
+              count: f.number(Math.min(MAP_PAGE, maps.length - shown.length)),
+            })}
           </button>
         </div>
       )}
