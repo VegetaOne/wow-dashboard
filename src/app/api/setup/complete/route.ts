@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth"
 import { getAuthOptions } from "@/lib/auth"
 import { ALL_GAME_MODES, loadConfig, saveConfig } from "@/lib/config"
 import type { GameMode } from "@/lib/battlenet"
+import { getT } from "@/lib/t"
 
 /**
  * Stufe 2 des Setups: alles, was einen angemeldeten Account voraussetzt.
@@ -11,15 +12,16 @@ import type { GameMode } from "@/lib/battlenet"
  * der den Setup abschliesst. Danach ist der Setup gesperrt.
  */
 export async function POST(req: NextRequest) {
+  const t = await getT()
   const session = await getServerSession(await getAuthOptions())
   if (!session?.battleTag) {
-    return NextResponse.json({ error: "Nicht angemeldet" }, { status: 401 })
+    return NextResponse.json({ error: t("core.notLoggedIn") }, { status: 401 })
   }
 
   const config = await loadConfig()
   if (config.setupComplete) {
     return NextResponse.json(
-      { error: "Setup ist bereits abgeschlossen." },
+      { error: t("setup.alreadyComplete") },
       { status: 403 }
     )
   }
@@ -34,7 +36,7 @@ export async function POST(req: NextRequest) {
 
   if (modes.length === 0) {
     return NextResponse.json(
-      { error: "Mindestens ein Spielmodus muss gewählt sein." },
+      { error: t("settings.atLeastOneMode") },
       { status: 400 }
     )
   }

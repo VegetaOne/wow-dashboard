@@ -11,6 +11,7 @@ import {
   type RecipeDetail,
   type MarginRow,
 } from "@/lib/economy"
+import { getT } from "@/lib/t"
 
 /** Rezepte pro Anfrage. Jedes kostet einen Aufruf der Spieldaten-API. */
 const MAX_RECIPES = 30
@@ -24,16 +25,17 @@ const CONCURRENCY = 6
  * Rezepte kennen.
  */
 export async function POST(req: NextRequest) {
+  const t = await getT()
   const session = await getServerSession(await getAuthOptions())
   if (!session?.accessToken) {
-    return NextResponse.json({ error: "Nicht eingeloggt" }, { status: 401 })
+    return NextResponse.json({ error: t("core.notLoggedIn") }, { status: 401 })
   }
 
   let body: unknown
   try {
     body = await req.json()
   } catch {
-    return NextResponse.json({ error: "Ungültiger Request-Body" }, { status: 400 })
+    return NextResponse.json({ error: t("core.invalidRequestBody") }, { status: 400 })
   }
 
   const {
@@ -50,7 +52,7 @@ export async function POST(req: NextRequest) {
 
   if (typeof connectedRealmId !== "number" || typeof houseId !== "number") {
     return NextResponse.json(
-      { error: "connectedRealmId und houseId sind Pflicht" },
+      { error: t("economy.connectedRealmAndHouseRequired") },
       { status: 400 }
     )
   }
@@ -92,7 +94,7 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error("Fehler bei der Wirtschaftsberechnung:", error)
     return NextResponse.json(
-      { error: "Berechnung fehlgeschlagen" },
+      { error: t("economy.calculationFailedApi") },
       { status: 502 }
     )
   }

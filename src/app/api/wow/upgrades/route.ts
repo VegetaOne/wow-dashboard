@@ -9,6 +9,7 @@ import {
   type GameMode,
 } from "@/lib/battlenet"
 import { getIndexStatus, getSlotCandidates, type LootCandidate } from "@/lib/loot"
+import { getT } from "@/lib/t"
 
 export interface SlotUpgrades {
   slotType: string
@@ -27,9 +28,10 @@ export interface SlotUpgrades {
  * ist. Geliefert wird, was für den Slot überhaupt droppt, plus Quelle.
  */
 export async function GET(req: NextRequest) {
+  const t = await getT()
   const session = await getServerSession(await getAuthOptions())
   if (!session?.accessToken) {
-    return NextResponse.json({ error: "Nicht eingeloggt" }, { status: 401 })
+    return NextResponse.json({ error: t("core.notLoggedIn") }, { status: 401 })
   }
 
   const params = req.nextUrl.searchParams
@@ -39,7 +41,7 @@ export async function GET(req: NextRequest) {
     "retail") as GameMode
 
   if (!realm || !name) {
-    return NextResponse.json({ error: "realm und name nötig" }, { status: 400 })
+    return NextResponse.json({ error: t("loot.realmAndNameRequired") }, { status: 400 })
   }
 
   const indexStatus = await getIndexStatus(mode)
@@ -85,7 +87,7 @@ export async function GET(req: NextRequest) {
   } catch (error) {
     console.error("Upgrade-Kandidaten fehlgeschlagen:", error)
     return NextResponse.json(
-      { error: "Kandidaten konnten nicht ermittelt werden" },
+      { error: t("loot.candidatesFailed") },
       { status: 500 }
     )
   }

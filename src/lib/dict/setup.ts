@@ -61,6 +61,17 @@ export const en = {
   "setup.verifyUnavailable": "The check could not be carried out.",
   "setup.saveFailed": "Saving failed.",
 
+  // ─── API-Fehlermeldungen (Setup-Routen) ──────────────────────────────────
+  "setup.alreadyComplete": "Setup is already complete.",
+  "setup.completeChangesHint": "Setup is complete – changes go through the settings.",
+  "setup.credentialsRequired": "Client ID and secret are required.",
+  "setup.credentialsRejected":
+    "Battle.net rejects the credentials — ID or secret is wrong.",
+  "setup.bnetStatus": "Battle.net responds with {status}.",
+  "setup.bnetUnreachable":
+    "Battle.net was not reachable. That says nothing about the credentials — only that the check could not take place.",
+  "setup.unknownRegion": "Unknown region.",
+
   // ─── Einrichtung, Stufe 2 ────────────────────────────────────────────────
   "setup2.modesHeading": "Which game modes interest you?",
   "setup2.modesHint":
@@ -107,6 +118,11 @@ export const en = {
   "settings.wclHint": "Optional. The part of the app that uses it is not built yet.",
   "settings.save": "Save",
   "settings.saved": "Saved.",
+
+  // ─── API-Fehlermeldungen (Settings-Route) ────────────────────────────────
+  "settings.ownerOnly": "Only the owner of this instance may change the settings.",
+  "settings.atLeastOneMode": "At least one game mode must be selected.",
+  "settings.clientIdRequired": "Without a client ID, sign-in is no longer possible.",
 
   // ─── Account-Sammlungen ──────────────────────────────────────────────────
   "account.eyebrow": "Account",
@@ -172,6 +188,16 @@ export const de: Record<keyof typeof en, string> = {
   "setup.verifyUnavailable": "Die Prüfung konnte nicht durchgeführt werden.",
   "setup.saveFailed": "Speichern fehlgeschlagen.",
 
+  "setup.alreadyComplete": "Setup ist bereits abgeschlossen.",
+  "setup.completeChangesHint": "Setup ist abgeschlossen – Änderungen über die Einstellungen.",
+  "setup.credentialsRequired": "Client ID und Secret sind nötig.",
+  "setup.credentialsRejected":
+    "Battle.net weist die Zugangsdaten zurück – ID oder Secret stimmen nicht.",
+  "setup.bnetStatus": "Battle.net antwortet mit {status}.",
+  "setup.bnetUnreachable":
+    "Battle.net war nicht erreichbar. Das sagt nichts über die Zugangsdaten – nur, dass die Prüfung nicht stattfinden konnte.",
+  "setup.unknownRegion": "Unbekannte Region.",
+
   "setup2.modesHeading": "Welche Spielmodi interessieren dich?",
   "setup2.modesHint":
     "Nicht gewählte Modi verschwinden aus den Tabs. Das lässt sich jederzeit ändern.",
@@ -215,6 +241,10 @@ export const de: Record<keyof typeof en, string> = {
   "settings.wclHint": "Optional. Der Teil der App, der das nutzt, ist noch nicht gebaut.",
   "settings.save": "Speichern",
   "settings.saved": "Gespeichert.",
+
+  "settings.ownerOnly": "Nur der Besitzer dieser Instanz darf die Einstellungen ändern.",
+  "settings.atLeastOneMode": "Mindestens ein Spielmodus muss gewählt sein.",
+  "settings.clientIdRequired": "Ohne Client ID ist keine Anmeldung mehr möglich.",
 
   "account.eyebrow": "Account",
   "account.heading": "Sammlungen",

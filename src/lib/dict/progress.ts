@@ -19,6 +19,16 @@ export const en = {
   "progress.noRatedRuns": "No rated runs yet.",
   "progress.inTime": "In time",
   "progress.overTime": "Over time",
+
+  // ─── Seite ────────────────────────────────────────────────────────────────
+  "progress.intro":
+    'Boss kills by difficulty. Expanding an expansion shows the instances, "Bosses" the individual kills with date.',
+  "progress.raids": "Raids",
+  "progress.dungeons": "Dungeons",
+  "progress.raidEndpointFailed": "The raid endpoint did not answer.",
+  "progress.noRaidProgress": "No raid progress for this character.",
+  "progress.dungeonEndpointFailed": "The dungeon endpoint did not answer.",
+  "progress.noDungeonProgress": "No dungeon progress for this character.",
 } as const
 
 export const de: Record<keyof typeof en, string> = {
@@ -33,4 +43,13 @@ export const de: Record<keyof typeof en, string> = {
   "progress.noRatedRuns": "Noch keine gewerteten Läufe.",
   "progress.inTime": "In der Zeit",
   "progress.overTime": "Über der Zeit",
+
+  "progress.intro":
+    "Bosskills je Schwierigkeit. Eine Erweiterung aufklappen zeigt die Instanzen, „Bosse\" die einzelnen Kills mit Datum.",
+  "progress.raids": "Schlachtzüge",
+  "progress.dungeons": "Dungeons",
+  "progress.raidEndpointFailed": "Der Schlachtzug-Endpunkt hat nicht geantwortet.",
+  "progress.noRaidProgress": "Keine Schlachtzug-Fortschritte für diesen Charakter.",
+  "progress.dungeonEndpointFailed": "Der Dungeon-Endpunkt hat nicht geantwortet.",
+  "progress.noDungeonProgress": "Keine Dungeon-Fortschritte für diesen Charakter.",
 }

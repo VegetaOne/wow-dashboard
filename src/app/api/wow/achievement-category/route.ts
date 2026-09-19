@@ -3,15 +3,17 @@ import { NextRequest, NextResponse } from "next/server"
 import { getAuthOptions } from "@/lib/auth"
 import { GAME_MODES, type GameMode } from "@/lib/battlenet"
 import { getCategoryCatalog } from "@/lib/achievements"
+import { getT } from "@/lib/t"
 
 /**
  * Alle Erfolge einer Kategorie – Grundlage für die Fehlliste.
  * Wird erst geholt, wenn eine Kategorie aufgeklappt wird.
  */
 export async function GET(req: NextRequest) {
+  const t = await getT()
   const session = await getServerSession(await getAuthOptions())
   if (!session?.accessToken) {
-    return NextResponse.json({ error: "Nicht eingeloggt" }, { status: 401 })
+    return NextResponse.json({ error: t("core.notLoggedIn") }, { status: 401 })
   }
 
   const params = req.nextUrl.searchParams
@@ -20,7 +22,10 @@ export async function GET(req: NextRequest) {
     "retail") as GameMode
 
   if (!Number.isFinite(categoryId)) {
-    return NextResponse.json({ error: "categoryId nötig" }, { status: 400 })
+    return NextResponse.json(
+      { error: t("achievements.categoryIdRequired") },
+      { status: 400 }
+    )
   }
 
   const catalog = await getCategoryCatalog(categoryId, session.accessToken, mode)

@@ -35,6 +35,16 @@ export const en = {
   "professions.recipeProgress": "Recipe progress",
   "professions.known": "known",
   "professions.missing": "missing",
+
+  // ─── API-Route ────────────────────────────────────────────────────────────
+  "professions.professionAndTierRequired": "professionId and tierId required",
+
+  // ─── Seite ────────────────────────────────────────────────────────────────
+  "professions.intro":
+    "Skill tiers and known recipes. Expanding a tier loads the full recipe list — that's what makes visible what's still missing.",
+  "professions.unavailable": "Professions not available",
+  "professions.unavailableText":
+    "The endpoint did not answer, and no earlier state is on file.",
 } as const
 
 export const de: Record<keyof typeof en, string> = {
@@ -62,4 +72,12 @@ export const de: Record<keyof typeof en, string> = {
   "professions.recipeProgress": "Rezeptfortschritt",
   "professions.known": "bekannt",
   "professions.missing": "fehlt",
+
+  "professions.professionAndTierRequired": "professionId und tierId nötig",
+
+  "professions.intro":
+    "Fertigkeitsstufen und bekannte Rezepte. Eine Stufe aufklappen lädt die vollständige Rezeptliste — damit wird sichtbar, was noch fehlt.",
+  "professions.unavailable": "Berufe nicht abrufbar",
+  "professions.unavailableText":
+    "Der Endpunkt hat nicht geantwortet, und es liegt kein früherer Stand vor.",
 }

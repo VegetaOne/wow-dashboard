@@ -31,6 +31,16 @@ export const en = {
   "achievements.noneEarned": "None earned yet.",
   "achievements.pointsShort": "{points}P",
   "achievements.moreHidden": "{count} more not shown",
+
+  // ─── API-Route ────────────────────────────────────────────────────────────
+  "achievements.categoryIdRequired": "categoryId required",
+
+  // ─── Seite ────────────────────────────────────────────────────────────────
+  "achievements.intro":
+    "Points, recently earned achievements and progress by category. Expanding a category loads its full list — that's what makes visible what's still missing.",
+  "achievements.unavailable": "Achievements not available",
+  "achievements.unavailableText":
+    "The endpoint did not answer, and no earlier state is on file.",
 } as const
 
 export const de: Record<keyof typeof en, string> = {
@@ -56,4 +66,12 @@ export const de: Record<keyof typeof en, string> = {
   "achievements.noneEarned": "Noch keiner erreicht.",
   "achievements.pointsShort": "{points}P",
   "achievements.moreHidden": "{count} weitere nicht angezeigt",
+
+  "achievements.categoryIdRequired": "categoryId nötig",
+
+  "achievements.intro":
+    "Punkte, zuletzt erreichte Erfolge und Fortschritt je Kategorie. Eine Kategorie aufklappen lädt ihre vollständige Liste — damit wird sichtbar, was noch fehlt.",
+  "achievements.unavailable": "Erfolge nicht abrufbar",
+  "achievements.unavailableText":
+    "Der Endpunkt hat nicht geantwortet, und es liegt kein früherer Stand vor.",
 }

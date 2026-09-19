@@ -50,6 +50,12 @@ export const en = {
   // "Lade Rezeptliste…" behalten eigene Schlüssel.
   "core.loading": "Loading…",
 
+  // ─── API-Routen: wiederkehrende Fehlermeldungen ─────────────────────────
+  // Dieselbe Wächter-Prüfung stand mit "Nicht angemeldet" und "Nicht
+  // eingeloggt" in verschiedenen Routen – ein Schlüssel für beide.
+  "core.notLoggedIn": "Not logged in",
+  "core.invalidRequestBody": "Invalid request body",
+
   // ─── Spielmodi ───────────────────────────────────────────────────────────
   "mode.retail": "Retail",
   "mode.retail.note": "The War Within · level 80",
@@ -203,6 +209,9 @@ export const de: Record<keyof typeof en, string> = {
   "core.thisWeek": "Diese Woche",
 
   "core.loading": "Lade…",
+
+  "core.notLoggedIn": "Nicht angemeldet",
+  "core.invalidRequestBody": "Ungültiger Request-Body",
 
   "mode.retail": "Retail",
   "mode.retail.note": "The War Within · Stufe 80",

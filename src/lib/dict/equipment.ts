@@ -49,6 +49,9 @@ export const en = {
   // ─── CandidateTooltip (equipment-Teil, Rest folgt unter loot) ────────────
   "equipment.loadingItem": "Loading item data…",
   "equipment.candidateLevel": "Level {level}",
+
+  // ─── API-Route ────────────────────────────────────────────────────────────
+  "equipment.loadFailed": "Equipment could not be loaded",
 } as const
 
 export const de: Record<keyof typeof en, string> = {
@@ -88,4 +91,6 @@ export const de: Record<keyof typeof en, string> = {
 
   "equipment.loadingItem": "Lade Gegenstandsdaten…",
   "equipment.candidateLevel": "Stufe {level}",
+
+  "equipment.loadFailed": "Ausrüstung konnte nicht geladen werden",
 }

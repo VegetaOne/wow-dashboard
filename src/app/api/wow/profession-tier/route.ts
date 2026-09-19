@@ -3,15 +3,17 @@ import { NextRequest, NextResponse } from "next/server"
 import { getAuthOptions } from "@/lib/auth"
 import { GAME_MODES, type GameMode } from "@/lib/battlenet"
 import { getTierCatalog } from "@/lib/professions"
+import { getT } from "@/lib/t"
 
 /**
  * Alle Rezepte einer Fertigkeitsstufe – Grundlage für die Fehlliste.
  * Wird erst geholt, wenn eine Stufe aufgeklappt wird.
  */
 export async function GET(req: NextRequest) {
+  const t = await getT()
   const session = await getServerSession(await getAuthOptions())
   if (!session?.accessToken) {
-    return NextResponse.json({ error: "Nicht eingeloggt" }, { status: 401 })
+    return NextResponse.json({ error: t("core.notLoggedIn") }, { status: 401 })
   }
 
   const params = req.nextUrl.searchParams
@@ -22,7 +24,7 @@ export async function GET(req: NextRequest) {
 
   if (!Number.isFinite(professionId) || !Number.isFinite(tierId)) {
     return NextResponse.json(
-      { error: "professionId und tierId nötig" },
+      { error: t("professions.professionAndTierRequired") },
       { status: 400 }
     )
   }

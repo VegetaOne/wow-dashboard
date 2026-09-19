@@ -11,6 +11,7 @@ import {
   type Language,
 } from "@/lib/config"
 import type { GameMode } from "@/lib/battlenet"
+import { getT } from "@/lib/t"
 
 /**
  * Änderungen an der Konfiguration nach dem Setup.
@@ -24,27 +25,28 @@ import type { GameMode } from "@/lib/battlenet"
  * nicht zurücksenden.
  */
 export async function POST(req: NextRequest) {
+  const t = await getT()
   const session = await getServerSession(await getAuthOptions())
   if (!session?.battleTag) {
-    return NextResponse.json({ error: "Nicht angemeldet" }, { status: 401 })
+    return NextResponse.json({ error: t("core.notLoggedIn") }, { status: 401 })
   }
 
   const config = await loadConfig()
   if (!isOwner(toView(config), session.battleTag)) {
     return NextResponse.json(
-      { error: "Nur der Besitzer dieser Instanz darf die Einstellungen ändern." },
+      { error: t("settings.ownerOnly") },
       { status: 403 }
     )
   }
 
   const body = await req.json().catch(() => null)
   if (!body) {
-    return NextResponse.json({ error: "Ungültige Anfrage" }, { status: 400 })
+    return NextResponse.json({ error: t("core.invalidRequestBody") }, { status: 400 })
   }
 
   const region = String(body.region ?? config.region).toLowerCase()
   if (!REGIONS.includes(region as (typeof REGIONS)[number])) {
-    return NextResponse.json({ error: "Unbekannte Region." }, { status: 400 })
+    return NextResponse.json({ error: t("setup.unknownRegion") }, { status: 400 })
   }
 
   const modes = Array.isArray(body.gameModes)
@@ -55,7 +57,7 @@ export async function POST(req: NextRequest) {
 
   if (modes.length === 0) {
     return NextResponse.json(
-      { error: "Mindestens ein Spielmodus muss gewählt sein." },
+      { error: t("settings.atLeastOneMode") },
       { status: 400 }
     )
   }
@@ -69,7 +71,7 @@ export async function POST(req: NextRequest) {
   // behalten, als die Instanz aussperren.
   if (!clientId) {
     return NextResponse.json(
-      { error: "Ohne Client ID ist keine Anmeldung mehr möglich." },
+      { error: t("settings.clientIdRequired") },
       { status: 400 }
     )
   }

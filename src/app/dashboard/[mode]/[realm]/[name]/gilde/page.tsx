@@ -17,8 +17,9 @@ import {
   parseGuildAchievements,
   type GuildActivityEntry,
 } from "@/lib/guild"
-import { getFormat } from "@/lib/t"
+import { getT, getFormat } from "@/lib/t"
 import type { Format } from "@/lib/format"
+import type { Translate } from "@/lib/i18n"
 
 export default async function GuildPage({
   params,
@@ -28,6 +29,7 @@ export default async function GuildPage({
   const session = await getServerSession(await getAuthOptions())
   if (!session?.accessToken) redirect("/login")
 
+  const t = await getT()
   const f = await getFormat()
   const { realm, name } = params
   const config = GAME_MODES.find((m) => m.id === params.mode) ?? GAME_MODES[0]
@@ -38,12 +40,8 @@ export default async function GuildPage({
 
   const header = (
     <div className="mb-6">
-      <h3>Gilde</h3>
-      <p className="mt-1 text-[13px] opacity-60">
-        Mitglieder, Gildenerfolge und die letzten Ereignisse. Die Mitgliederliste
-        kommt aus einem Abruf; Gegenstandsstufen kosten einen Profilabruf je
-        Mitglied und werden darum nur auf Knopfdruck geholt.
-      </p>
+      <h3>{t("tab.guild")}</h3>
+      <p className="mt-1 text-[13px] opacity-60">{t("guild.intro")}</p>
     </div>
   )
 
@@ -52,9 +50,8 @@ export default async function GuildPage({
       <div className="px-6 py-6">
         {header}
         <div className="border-2 border-accent px-4 py-3 text-[13px]">
-          <span className="eyebrow block">Gildenzugehörigkeit unbekannt</span>
-          Das Charakterprofil hat nicht geantwortet, und es liegt kein früherer
-          Stand vor.
+          <span className="eyebrow block">{t("guild.membershipUnknown")}</span>
+          {t("guild.profileEndpointFailedText")}
         </div>
       </div>
     )
@@ -66,7 +63,7 @@ export default async function GuildPage({
       <div className="px-6 py-6">
         {header}
         <div className="border-2 border-line px-4 py-3 text-[13px] opacity-75">
-          Dieser Charakter ist in keiner Gilde.
+          {t("guild.notInGuild")}
         </div>
       </div>
     )
@@ -103,8 +100,9 @@ export default async function GuildPage({
       {stale && (
         <div className="mb-4 border-2 border-line px-4 py-2">
           <span className="eyebrow" style={{ color: "var(--color-accent)" }}>
-            Letzter bekannter Stand
-            {fetchedAt && ` vom ${fetchedAt.toLocaleDateString("de-CH")}`}
+            {fetchedAt
+              ? t("weekly.lastKnownFrom", { date: f.date(fetchedAt.getTime()) })
+              : t("weekly.lastKnown")}
           </span>
         </div>
       )}
@@ -119,9 +117,9 @@ export default async function GuildPage({
           </div>
 
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-            <Stat label="Fraktion" value={profile?.faction ?? "—"} />
+            <Stat label={t("card.faction")} value={profile?.faction ?? "—"} />
             <Stat
-              label="Mitglieder"
+              label={t("guild.members")}
               value={
                 profile?.memberCount !== null && profile?.memberCount !== undefined
                   ? f.number(profile.memberCount)
@@ -131,12 +129,12 @@ export default async function GuildPage({
               }
               note={
                 profile?.memberCount != null && listed !== null && listed !== profile.memberCount
-                  ? `Liste führt ${f.number(listed)}`
+                  ? t("guild.listShows", { count: f.number(listed) })
                   : undefined
               }
             />
             <Stat
-              label="Erfolgspunkte"
+              label={t("achievements.points")}
               value={
                 profile?.achievementPoints != null
                   ? f.number(profile.achievementPoints)
@@ -146,12 +144,12 @@ export default async function GuildPage({
               }
               note={
                 achievements.totalQuantity != null
-                  ? `${f.number(achievements.totalQuantity)} Erfolge`
+                  ? t("guild.achievementsCount", { count: f.number(achievements.totalQuantity) })
                   : undefined
               }
             />
             <Stat
-              label="Gegründet"
+              label={t("guild.founded")}
               value={profile?.createdAt != null ? f.date(profile.createdAt) : "—"}
             />
           </div>
@@ -160,9 +158,8 @@ export default async function GuildPage({
         <section>
           {rosterResult.failed ? (
             <div className="border-2 border-accent px-4 py-3 text-[13px]">
-              <span className="eyebrow block">Mitgliederliste nicht abrufbar</span>
-              Der Roster-Endpunkt hat nicht geantwortet, und es liegt kein
-              früherer Stand vor.
+              <span className="eyebrow block">{t("guild.rosterUnavailable")}</span>
+              {t("guild.rosterEndpointFailedText")}
             </div>
           ) : (
             <GuildRoster
@@ -174,23 +171,24 @@ export default async function GuildPage({
         </section>
 
         <section>
-          <h4 className="mb-3">Letzte Ereignisse</h4>
+          <h4 className="mb-3">{t("guild.recentEvents")}</h4>
           <ActivityList
             entries={activity}
             failed={activityResult.failed}
+            t={t}
             f={f}
           />
         </section>
 
         <section>
-          <h4 className="mb-3">Zuletzt erreichte Gildenerfolge</h4>
+          <h4 className="mb-3">{t("guild.recentAchievements")}</h4>
           {achievementsResult.failed ? (
             <div className="border-2 border-line px-4 py-3 text-[13px] opacity-75">
-              Der Endpunkt für Gildenerfolge hat nicht geantwortet.
+              {t("guild.achievementsEndpointFailed")}
             </div>
           ) : achievements.recent.length === 0 ? (
             <div className="border-2 border-line px-4 py-3 text-[13px] opacity-75">
-              Keine Gildenerfolge mit Datum vorhanden.
+              {t("guild.noAchievementsWithDate")}
             </div>
           ) : (
             <div className="border-2 border-line">
@@ -241,17 +239,18 @@ function Stat({
 function ActivityList({
   entries,
   failed,
+  t,
   f,
 }: {
   entries: GuildActivityEntry[]
   failed: boolean
+  t: Translate
   f: Format
 }) {
   if (failed) {
     return (
       <div className="border-2 border-line px-4 py-3 text-[13px] opacity-75">
-        Der Aktivitäts-Endpunkt hat nicht geantwortet. In den Classic-Modi führt
-        die API ihn nicht durchgängig.
+        {t("guild.activityEndpointFailedText")}
       </div>
     )
   }
@@ -259,7 +258,7 @@ function ActivityList({
   if (entries.length === 0) {
     return (
       <div className="border-2 border-line px-4 py-3 text-[13px] opacity-75">
-        Keine Ereignisse vorhanden.
+        {t("guild.noEvents")}
       </div>
     )
   }
@@ -273,7 +272,9 @@ function ActivityList({
         >
           <span className="w-24 flex-none">
             <span className="eyebrow">
-              {entry.kind === "achievement" ? "Erfolg" : "Bosskill"}
+              {entry.kind === "achievement"
+                ? t("guild.achievementKind")
+                : t("guild.bossKillKind")}
             </span>
           </span>
 

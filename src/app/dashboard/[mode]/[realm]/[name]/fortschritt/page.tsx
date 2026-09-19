@@ -6,6 +6,7 @@ import { MythicPanel } from "@/components/MythicPanel"
 import { GAME_MODES, type GameMode } from "@/lib/battlenet"
 import { attempt, raids, dungeons, mythicKeystone } from "@/lib/character"
 import { parseProgress, parseMythicProfile } from "@/lib/progress"
+import { getT, getFormat } from "@/lib/t"
 
 export default async function ProgressPage({
   params,
@@ -15,6 +16,8 @@ export default async function ProgressPage({
   const session = await getServerSession(await getAuthOptions())
   if (!session?.accessToken) redirect("/login")
 
+  const t = await getT()
+  const f = await getFormat()
   const { realm, name } = params
   const mode = (GAME_MODES.find((m) => m.id === params.mode)?.id ??
     "retail") as GameMode
@@ -40,18 +43,16 @@ export default async function ProgressPage({
   return (
     <div className="px-6 py-6">
       <div className="mb-6">
-        <h3>Fortschritt</h3>
-        <p className="mt-1 text-[13px] opacity-60">
-          Bosskills je Schwierigkeit. Eine Erweiterung aufklappen zeigt die
-          Instanzen, „Bosse" die einzelnen Kills mit Datum.
-        </p>
+        <h3>{t("tab.progress")}</h3>
+        <p className="mt-1 text-[13px] opacity-60">{t("progress.intro")}</p>
       </div>
 
       {stale && (
         <div className="mb-4 border-2 border-line px-4 py-2">
           <span className="eyebrow" style={{ color: "var(--color-accent)" }}>
-            Letzter bekannter Stand
-            {fetchedAt && ` vom ${fetchedAt.toLocaleDateString("de-CH")}`}
+            {fetchedAt
+              ? t("weekly.lastKnownFrom", { date: f.date(fetchedAt.getTime()) })
+              : t("weekly.lastKnown")}
           </span>
         </div>
       )}
@@ -64,25 +65,25 @@ export default async function ProgressPage({
         )}
 
         <section>
-          <h4 className="mb-3">Schlachtzüge</h4>
+          <h4 className="mb-3">{t("progress.raids")}</h4>
           <ProgressPanel
             expansions={raidProgress}
             emptyLabel={
               raidResult.failed
-                ? "Der Schlachtzug-Endpunkt hat nicht geantwortet."
-                : "Keine Schlachtzug-Fortschritte für diesen Charakter."
+                ? t("progress.raidEndpointFailed")
+                : t("progress.noRaidProgress")
             }
           />
         </section>
 
         <section>
-          <h4 className="mb-3">Dungeons</h4>
+          <h4 className="mb-3">{t("progress.dungeons")}</h4>
           <ProgressPanel
             expansions={dungeonProgress}
             emptyLabel={
               dungeonResult.failed
-                ? "Der Dungeon-Endpunkt hat nicht geantwortet."
-                : "Keine Dungeon-Fortschritte für diesen Charakter."
+                ? t("progress.dungeonEndpointFailed")
+                : t("progress.noDungeonProgress")
             }
           />
         </section>

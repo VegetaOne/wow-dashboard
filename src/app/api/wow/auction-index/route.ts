@@ -9,6 +9,7 @@ import {
   refreshHouse,
   type AuctionHouse,
 } from "@/lib/auction"
+import { getT } from "@/lib/t"
 
 /**
  * Der Auktionsabruf ist die grösste Anfrage der ganzen App – bei vollen
@@ -23,14 +24,15 @@ function resolveMode(value: unknown): GameMode {
 
 /** Häuser eines Realms und der Stand ihres letzten Durchlaufs. */
 export async function GET(req: NextRequest) {
+  const t = await getT()
   const session = await getServerSession(await getAuthOptions())
   if (!session?.accessToken) {
-    return NextResponse.json({ error: "Nicht eingeloggt" }, { status: 401 })
+    return NextResponse.json({ error: t("core.notLoggedIn") }, { status: 401 })
   }
 
   const realm = req.nextUrl.searchParams.get("realm")
   if (!realm) {
-    return NextResponse.json({ error: "Realm fehlt" }, { status: 400 })
+    return NextResponse.json({ error: t("economy.realmMissing") }, { status: 400 })
   }
 
   const mode = resolveMode(req.nextUrl.searchParams.get("mode"))
@@ -52,7 +54,7 @@ export async function GET(req: NextRequest) {
     } catch (error) {
       houses = []
       housesError =
-        error instanceof Error ? error.message : "Häuser nicht abrufbar"
+        error instanceof Error ? error.message : t("economy.housesUnavailable")
     }
 
     const statuses = await getHouseStatuses(mode, connectedRealmId)
@@ -66,7 +68,7 @@ export async function GET(req: NextRequest) {
   } catch (error) {
     console.error("Fehler beim Auflösen des Auktionshauses:", error)
     return NextResponse.json(
-      { error: "Verbundener Realm nicht ermittelbar" },
+      { error: t("economy.connectedRealmUnresolved") },
       { status: 502 }
     )
   }
@@ -74,16 +76,17 @@ export async function GET(req: NextRequest) {
 
 /** Ein Haus neu einlesen. */
 export async function POST(req: NextRequest) {
+  const t = await getT()
   const session = await getServerSession(await getAuthOptions())
   if (!session?.accessToken) {
-    return NextResponse.json({ error: "Nicht eingeloggt" }, { status: 401 })
+    return NextResponse.json({ error: t("core.notLoggedIn") }, { status: 401 })
   }
 
   let body: unknown
   try {
     body = await req.json()
   } catch {
-    return NextResponse.json({ error: "Ungültiger Request-Body" }, { status: 400 })
+    return NextResponse.json({ error: t("core.invalidRequestBody") }, { status: 400 })
   }
 
   const {
@@ -100,7 +103,7 @@ export async function POST(req: NextRequest) {
 
   if (typeof connectedRealmId !== "number" || typeof houseId !== "number") {
     return NextResponse.json(
-      { error: "connectedRealmId und houseId sind Pflicht" },
+      { error: t("economy.connectedRealmAndHouseRequired") },
       { status: 400 }
     )
   }
@@ -111,13 +114,13 @@ export async function POST(req: NextRequest) {
     const status = await refreshHouse(
       mode,
       connectedRealmId,
-      { id: houseId, name: houseName ?? `Haus ${houseId}` },
+      { id: houseId, name: houseName ?? t("economy.houseFallbackName", { id: houseId }) },
       session.accessToken
     )
     return NextResponse.json({ status })
   } catch (error) {
     const message =
-      error instanceof Error ? error.message : "Abruf fehlgeschlagen"
+      error instanceof Error ? error.message : t("economy.fetchFailed")
     console.error("Fehler beim Auktionsabruf:", error)
     return NextResponse.json({ error: message }, { status: 502 })
   }

@@ -29,6 +29,13 @@ export const en = {
   "pvp.byBattleground": "By battleground",
   "pvp.mapCount": "{count} battlegrounds · most played first",
   "pvp.showMoreMaps": "Show {count} more",
+
+  // ─── Seite ────────────────────────────────────────────────────────────────
+  "pvp.intro":
+    "Honor, rated classes and battleground statistics. Values only update once the character logs out.",
+  "pvp.unavailable": "PvP not available",
+  "pvp.unavailableText":
+    "The PvP endpoints did not answer, and no earlier state is on file. Classic does not carry this data consistently.",
 } as const
 
 export const de: Record<keyof typeof en, string> = {
@@ -51,4 +58,10 @@ export const de: Record<keyof typeof en, string> = {
   "pvp.byBattleground": "Nach Schlachtfeld",
   "pvp.mapCount": "{count} Schlachtfelder · meistgespielte zuerst",
   "pvp.showMoreMaps": "Weitere {count} anzeigen",
+
+  "pvp.intro":
+    "Ehre, gewertete Klassen und die Statistik je Schlachtfeld. Die Werte aktualisieren sich erst, wenn der Charakter sich ausloggt.",
+  "pvp.unavailable": "PvP nicht abrufbar",
+  "pvp.unavailableText":
+    "Die PvP-Endpunkte haben nicht geantwortet, und es liegt kein früherer Stand vor. In Classic führt die API diese Daten nicht durchgängig.",
 }

@@ -56,6 +56,16 @@ export const en = {
     "{count} recipes without details in the API — not calculated.",
   "economy.noOfferFor": "No offer for: {items}",
   "economy.andMore": "and {count} more",
+
+  // ─── API-Routen (auction-index, economy) ─────────────────────────────────
+  "economy.realmMissing": "Realm missing",
+  "economy.housesUnavailable": "Houses not available",
+  "economy.connectedRealmUnresolved": "Connected realm could not be determined",
+  "economy.connectedRealmAndHouseRequired":
+    "connectedRealmId and houseId are required",
+  "economy.houseFallbackName": "House {id}",
+  "economy.fetchFailed": "Fetch failed",
+  "economy.calculationFailedApi": "Calculation failed",
 } as const
 
 export const de: Record<keyof typeof en, string> = {
@@ -107,4 +117,13 @@ export const de: Record<keyof typeof en, string> = {
     "{count} Rezepte ohne Details in der API — nicht gerechnet.",
   "economy.noOfferFor": "Kein Angebot für: {items}",
   "economy.andMore": "und {count} weitere",
+
+  "economy.realmMissing": "Realm fehlt",
+  "economy.housesUnavailable": "Häuser nicht abrufbar",
+  "economy.connectedRealmUnresolved": "Verbundener Realm nicht ermittelbar",
+  "economy.connectedRealmAndHouseRequired":
+    "connectedRealmId und houseId sind Pflicht",
+  "economy.houseFallbackName": "Haus {id}",
+  "economy.fetchFailed": "Abruf fehlgeschlagen",
+  "economy.calculationFailedApi": "Berechnung fehlgeschlagen",
 }

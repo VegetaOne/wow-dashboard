@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { loadConfig } from "@/lib/config"
+import { getT } from "@/lib/t"
 
 /**
  * Eingegebene Zugangsdaten sofort gegen Battle.net prüfen.
@@ -13,9 +14,10 @@ import { loadConfig } from "@/lib/config"
  * Erreichbar ohne Anmeldung, aber nur solange der Setup offen ist.
  */
 export async function POST(req: NextRequest) {
+  const t = await getT()
   const config = await loadConfig()
   if (config.setupComplete) {
-    return NextResponse.json({ error: "Setup ist abgeschlossen" }, { status: 403 })
+    return NextResponse.json({ error: t("setup.alreadyComplete") }, { status: 403 })
   }
 
   const body = await req.json().catch(() => null)
@@ -25,7 +27,7 @@ export async function POST(req: NextRequest) {
 
   if (!clientId || !clientSecret) {
     return NextResponse.json(
-      { ok: false, error: "Client ID und Secret sind nötig." },
+      { ok: false, error: t("setup.credentialsRequired") },
       { status: 400 }
     )
   }
@@ -53,15 +55,14 @@ export async function POST(req: NextRequest) {
       ok: false,
       error:
         res.status === 401
-          ? "Battle.net weist die Zugangsdaten zurück – ID oder Secret stimmen nicht."
-          : `Battle.net antwortet mit ${res.status}.`,
+          ? t("setup.credentialsRejected")
+          : t("setup.bnetStatus", { status: res.status }),
       detail: detail.slice(0, 300),
     })
   } catch (error) {
     return NextResponse.json({
       ok: false,
-      error:
-        "Battle.net war nicht erreichbar. Das sagt nichts über die Zugangsdaten – nur, dass die Prüfung nicht stattfinden konnte.",
+      error: t("setup.bnetUnreachable"),
       detail: String(error).slice(0, 300),
     })
   }

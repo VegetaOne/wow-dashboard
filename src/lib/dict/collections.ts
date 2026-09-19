@@ -30,6 +30,14 @@ export const en = {
   "collections.titlesEmpty": "No titles unlocked yet.",
   "collections.titleSearchPlaceholder": "Search titles…",
   "collections.titleCount": "{count} titles",
+
+  // ─── Seite ────────────────────────────────────────────────────────────────
+  "collections.intro":
+    "Titles and toys of this character. Mounts and battle pets apply to the whole account —",
+  "collections.accountOverviewLink": "to the account overview",
+  "collections.titlesLoadFailed": "Titles could not be loaded.",
+  "collections.toysLoadFailed": "Toys could not be loaded.",
+  "collections.classicNoToys": "Classic namespaces do not carry toys.",
 } as const
 
 export const de: Record<keyof typeof en, string> = {
@@ -53,4 +61,11 @@ export const de: Record<keyof typeof en, string> = {
   "collections.titlesEmpty": "Noch keine Titel freigeschaltet.",
   "collections.titleSearchPlaceholder": "Titel suchen…",
   "collections.titleCount": "{count} Titel",
+
+  "collections.intro":
+    "Titel und Spielzeug dieses Charakters. Reittiere und Begleiter gelten für den ganzen Account —",
+  "collections.accountOverviewLink": "zur Account-Übersicht",
+  "collections.titlesLoadFailed": "Titel konnten nicht geladen werden.",
+  "collections.toysLoadFailed": "Spielzeug konnte nicht geladen werden.",
+  "collections.classicNoToys": "Die Classic-Namespaces führen Spielzeug nicht.",
 }

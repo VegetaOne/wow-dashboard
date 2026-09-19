@@ -44,6 +44,10 @@ export const en = {
   "loot.index.rebuild": "Rebuild",
   "loot.index.build": "Build index",
   "loot.index.cancel": "Cancel",
+
+  // ─── API-Route (SlotCandidates) ───────────────────────────────────────────
+  "loot.realmAndNameRequired": "realm and name required",
+  "loot.candidatesFailed": "Candidates could not be determined",
 } as const
 
 export const de: Record<keyof typeof en, string> = {
@@ -82,4 +86,7 @@ export const de: Record<keyof typeof en, string> = {
   "loot.index.rebuild": "Neu aufbauen",
   "loot.index.build": "Index aufbauen",
   "loot.index.cancel": "Abbrechen",
+
+  "loot.realmAndNameRequired": "realm und name nötig",
+  "loot.candidatesFailed": "Kandidaten konnten nicht ermittelt werden",
 }

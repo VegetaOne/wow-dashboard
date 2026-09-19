@@ -7,6 +7,7 @@ import { TitleList } from "@/components/TitleList"
 import { GAME_MODES, type GameMode } from "@/lib/battlenet"
 import { attempt, toys, titles } from "@/lib/character"
 import { parseToys, parseTitles, getToyIndex } from "@/lib/collections"
+import { getT, getFormat } from "@/lib/t"
 
 /**
  * Charakterbezogene Sammlungen: Titel und Spielzeug.
@@ -20,6 +21,8 @@ export default async function CollectionsPage({
   const session = await getServerSession(await getAuthOptions())
   if (!session?.accessToken) redirect("/login")
 
+  const t = await getT()
+  const f = await getFormat()
   const { realm, name } = params
   const mode = (GAME_MODES.find((m) => m.id === params.mode)?.id ??
     "retail") as GameMode
@@ -41,12 +44,11 @@ export default async function CollectionsPage({
   return (
     <div className="px-6 py-6">
       <div className="mb-6">
-        <h3>Sammlungen</h3>
+        <h3>{t("tab.collections")}</h3>
         <p className="mt-1 text-[13px] opacity-60">
-          Titel und Spielzeug dieses Charakters. Reittiere und Begleiter gelten
-          für den ganzen Account —{" "}
+          {t("collections.intro")}{" "}
           <Link href="/dashboard/account" className="btn btn-ghost text-[13px]">
-            zur Account-Übersicht
+            {t("collections.accountOverviewLink")}
           </Link>
         </p>
       </div>
@@ -54,8 +56,9 @@ export default async function CollectionsPage({
       {stale && (
         <div className="mb-4 border-2 border-line px-4 py-2">
           <span className="eyebrow" style={{ color: "var(--color-accent)" }}>
-            Letzter bekannter Stand
-            {fetchedAt && ` vom ${fetchedAt.toLocaleDateString("de-CH")}`}
+            {fetchedAt
+              ? t("weekly.lastKnownFrom", { date: f.date(fetchedAt.getTime()) })
+              : t("weekly.lastKnown")}
           </span>
         </div>
       )}
@@ -63,7 +66,7 @@ export default async function CollectionsPage({
       <div className="space-y-8">
         {titleResult.failed ? (
           <div className="border-2 border-line px-4 py-3 text-[13px] opacity-75">
-            Titel konnten nicht geladen werden.
+            {t("collections.titlesLoadFailed")}
           </div>
         ) : (
           <TitleList view={titleView} />
@@ -71,10 +74,10 @@ export default async function CollectionsPage({
 
         {toyResult.failed ? (
           <div className="border-2 border-line px-4 py-3 text-[13px] opacity-75">
-            Spielzeug konnte nicht geladen werden.
+            {t("collections.toysLoadFailed")}
             {mode !== "retail" && (
               <span className="mt-1 block opacity-65">
-                Die Classic-Namespaces führen Spielzeug nicht.
+                {t("collections.classicNoToys")}
               </span>
             )}
           </div>

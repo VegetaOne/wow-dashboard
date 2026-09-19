@@ -20,6 +20,14 @@ export const en = {
   "reputation.showMore": "Show {count} more",
   "reputation.valueOfMax": "{value} / {max}",
   "reputation.paragon": "Paragon",
+
+  // ─── Seite ────────────────────────────────────────────────────────────────
+  "reputation.heading": "Reputation",
+  "reputation.intro":
+    "Standing with every faction, highest tier first. The API returns no grouping by expansion — that's why there is a search.",
+  "reputation.unavailable": "Reputation not available",
+  "reputation.unavailableText":
+    "The endpoint did not answer, and no earlier state is on file.",
 } as const
 
 export const de: Record<keyof typeof en, string> = {
@@ -34,4 +42,11 @@ export const de: Record<keyof typeof en, string> = {
   "reputation.showMore": "Weitere {count} anzeigen",
   "reputation.valueOfMax": "{value} / {max}",
   "reputation.paragon": "Paragon",
+
+  "reputation.heading": "Ansehen",
+  "reputation.intro":
+    "Ruf bei allen Fraktionen, höchste Stufe zuerst. Die API liefert keine Gruppierung nach Erweiterung — deshalb gibt es eine Suche.",
+  "reputation.unavailable": "Ansehen nicht abrufbar",
+  "reputation.unavailableText":
+    "Der Endpunkt hat nicht geantwortet, und es liegt kein früherer Stand vor.",
 }

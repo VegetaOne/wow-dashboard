@@ -2,6 +2,7 @@ import { getServerSession } from "next-auth"
 import { NextRequest, NextResponse } from "next/server"
 import { getAuthOptions } from "@/lib/auth"
 import { getCharacterDetails, GAME_MODES, type GameMode } from "@/lib/battlenet"
+import { getT } from "@/lib/t"
 
 /** Obergrenze pro Anfrage, damit ein Client nicht den ganzen Account auf einmal zieht. */
 const MAX_PER_REQUEST = 40
@@ -11,17 +12,18 @@ const MAX_PER_REQUEST = 40
  * Der Client fragt nur die Realm-Abschnitte an, die er tatsächlich zeigt.
  */
 export async function POST(req: NextRequest) {
+  const t = await getT()
   const session = await getServerSession(await getAuthOptions())
 
   if (!session?.accessToken) {
-    return NextResponse.json({ error: "Nicht eingeloggt" }, { status: 401 })
+    return NextResponse.json({ error: t("core.notLoggedIn") }, { status: 401 })
   }
 
   let body: unknown
   try {
     body = await req.json()
   } catch {
-    return NextResponse.json({ error: "Ungültiger Request-Body" }, { status: 400 })
+    return NextResponse.json({ error: t("core.invalidRequestBody") }, { status: 400 })
   }
 
   const { mode: requestedMode, characters } = (body ?? {}) as {
@@ -49,7 +51,7 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error("Fehler beim Laden der Charakter-Details:", error)
     return NextResponse.json(
-      { error: "Details konnten nicht geladen werden" },
+      { error: t("guild.detailsLoadFailed") },
       { status: 500 }
     )
   }
