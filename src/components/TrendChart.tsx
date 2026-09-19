@@ -58,7 +58,10 @@ export function TrendChart({ series }: { series: TrendSeries }) {
                     : "var(--color-accent)",
               }}
             >
-              {`${delta.change > 0 ? "+" : ""}${f.number(delta.change)} in ${t.tPlural("core.days", delta.spanDays)}`}
+              {t("history.delta", {
+                change: `${delta.change > 0 ? "+" : ""}${f.number(delta.change)}`,
+                days: t.tPlural("core.days", delta.spanDays),
+              })}
             </span>
           )}
         </span>
@@ -67,8 +70,10 @@ export function TrendChart({ series }: { series: TrendSeries }) {
       {tooFewPoints ? (
         <div className="px-4 py-4 text-[13px] opacity-60">
           {series.points.length === 0
-            ? "Noch keine Daten aufgezeichnet."
-            : `Bisher nur ein Stand (${f.date(Date.parse(series.points[0].day))}). Ein Verlauf entsteht ab dem zweiten Tag.`}
+            ? t("history.noData")
+            : t("history.onlyOnePoint", {
+                date: f.date(Date.parse(series.points[0].day)),
+              })}
         </div>
       ) : (
         <>
@@ -189,7 +194,11 @@ export function TrendChart({ series }: { series: TrendSeries }) {
               </>
             ) : (
               <span className="eyebrow">
-                {`${f.number(series.points.length)} Stände · ${f.date(Date.parse(series.points[0].day))} bis ${f.date(Date.parse(last.day))}`}
+                {t("history.span", {
+                  count: f.number(series.points.length),
+                  from: f.date(Date.parse(series.points[0].day)),
+                  to: f.date(Date.parse(last.day)),
+                })}
               </span>
             )}
 
@@ -198,7 +207,7 @@ export function TrendChart({ series }: { series: TrendSeries }) {
               aria-expanded={showTable}
               className="ml-auto btn btn-ghost text-[12px]"
             >
-              {showTable ? "Tabelle ausblenden" : "Als Tabelle"}
+              {showTable ? t("history.hideTable") : t("history.showTable")}
             </button>
           </div>
 
@@ -208,9 +217,9 @@ export function TrendChart({ series }: { series: TrendSeries }) {
               <table className="table">
                 <thead>
                   <tr>
-                    <th>Tag</th>
-                    <th>Wert</th>
-                    <th>Änderung</th>
+                    <th>{t("history.day")}</th>
+                    <th>{t("history.value")}</th>
+                    <th>{t("history.change")}</th>
                   </tr>
                 </thead>
                 <tbody>
