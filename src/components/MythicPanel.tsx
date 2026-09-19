@@ -2,18 +2,20 @@
 
 import type { MythicProfileView, MythicRun } from "@/lib/progress"
 import { formatDuration } from "@/lib/progress"
-import { useFormat } from "./I18nProvider"
+import { useT, useFormat } from "./I18nProvider"
+import type { TranslationKey } from "@/lib/i18n"
 
 export function MythicPanel({ profile }: { profile: MythicProfileView }) {
+  const t = useT()
   return (
     <div className="border-2 border-line">
       <div className="flex flex-wrap items-baseline justify-between gap-3 border-b border-line px-4 py-2">
         <span className="font-heading text-[14px] font-extrabold uppercase tracking-[0.06em]">
-          Mythisch+
+          {t("progress.mythicPlus")}
         </span>
         {profile.currentRating !== null && (
           <span className="flex items-baseline gap-2">
-            <span className="eyebrow">Wertung</span>
+            <span className="eyebrow">{t("progress.rating")}</span>
             <span className="font-heading text-[18px] font-extrabold tracking-[-0.01em]">
               {Math.round(profile.currentRating)}
             </span>
@@ -22,16 +24,16 @@ export function MythicPanel({ profile }: { profile: MythicProfileView }) {
       </div>
 
       <RunSection
-        title="Diese Woche"
+        title="core.thisWeek"
         runs={profile.currentWeek}
-        empty="Noch keine Läufe in dieser Woche."
+        empty="progress.noRunsThisWeek"
         showAffixes
       />
 
       <RunSection
-        title="Beste Läufe der Saison"
+        title="progress.bestRunsSeason"
         runs={profile.bestRuns}
-        empty="Noch keine gewerteten Läufe."
+        empty="progress.noRatedRuns"
       />
     </div>
   )
@@ -43,20 +45,21 @@ function RunSection({
   empty,
   showAffixes = false,
 }: {
-  title: string
+  title: TranslationKey
   runs: MythicRun[]
-  empty: string
+  empty: TranslationKey
   showAffixes?: boolean
 }) {
+  const t = useT()
   const f = useFormat()
   return (
     <div className="border-b border-line last:border-0">
       <div className="border-b border-line px-4 py-1.5">
-        <span className="eyebrow">{title}</span>
+        <span className="eyebrow">{t(title)}</span>
       </div>
 
       {runs.length === 0 ? (
-        <div className="px-4 py-2.5 text-[13px] opacity-55">{empty}</div>
+        <div className="px-4 py-2.5 text-[13px] opacity-55">{t(empty)}</div>
       ) : (
         <ul className="m-0 list-none p-0">
           {runs.map((run) => (
@@ -74,7 +77,7 @@ function RunSection({
                   background: run.inTime ? "var(--faction-alliance)" : "transparent",
                   color: run.inTime ? "var(--color-bg)" : "var(--color-text)",
                 }}
-                title={run.inTime ? "In der Zeit" : "Über der Zeit"}
+                title={run.inTime ? t("progress.inTime") : t("progress.overTime")}
               >
                 {`+${run.keystoneLevel}`}
               </span>

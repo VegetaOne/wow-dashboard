@@ -14,7 +14,6 @@ export const en = {
   // Mythic+ (MythicPanel)
   "progress.mythicPlus": "Mythic+",
   "progress.rating": "Rating",
-  "progress.thisWeek": "This week",
   "progress.noRunsThisWeek": "No runs this week yet.",
   "progress.bestRunsSeason": "Best runs of the season",
   "progress.noRatedRuns": "No rated runs yet.",
@@ -29,7 +28,6 @@ export const de: Record<keyof typeof en, string> = {
 
   "progress.mythicPlus": "Mythic+",
   "progress.rating": "Rating",
-  "progress.thisWeek": "Diese Woche",
   "progress.noRunsThisWeek": "Noch keine Läufe in dieser Woche.",
   "progress.bestRunsSeason": "Beste Läufe der Saison",
   "progress.noRatedRuns": "Noch keine gewerteten Läufe.",

@@ -41,6 +41,10 @@ export const en = {
   "core.days.one": "{count} day",
   "core.days.other": "{count} days",
 
+  // „Diese Woche" stand doppelt (PvpPanel, MythicPanel) unter progress.thisWeek –
+  // jetzt ein Schlüssel für beide (V4 aus i18n-abschluss.md).
+  "core.thisWeek": "This week",
+
   // ─── Spielmodi ───────────────────────────────────────────────────────────
   "mode.retail": "Retail",
   "mode.retail.note": "The War Within · level 80",
@@ -190,6 +194,8 @@ export const de: Record<keyof typeof en, string> = {
   // Dativform „Tagen" ist beabsichtigt – der Satz lautet „in 6 Tagen".
   "core.days.one": "{count} Tag",
   "core.days.other": "{count} Tagen",
+
+  "core.thisWeek": "Diese Woche",
 
   "mode.retail": "Retail",
   "mode.retail.note": "The War Within · Stufe 80",
