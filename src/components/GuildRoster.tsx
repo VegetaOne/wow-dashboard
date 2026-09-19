@@ -7,7 +7,7 @@ import { rankLabel } from "@/lib/guild"
 import type { CharacterDetails, GameMode } from "@/lib/battlenet"
 import { CLASS_COLORS, detailKey } from "@/lib/battlenet"
 import { characterBase } from "@/lib/characterTabs"
-import { useFormat } from "./I18nProvider"
+import { useT, useFormat } from "./I18nProvider"
 
 const PAGE = 40
 /** Obergrenze der API-Route – mehr nimmt sie pro Anfrage nicht an. */
@@ -26,6 +26,7 @@ export function GuildRoster({
   mode: GameMode
   canLoadItemLevels: boolean
 }) {
+  const t = useT()
   const f = useFormat()
   const [query, setQuery] = useState("")
   const [limit, setLimit] = useState(PAGE)
@@ -81,7 +82,7 @@ export function GuildRoster({
 
       setDetails((prev) => ({ ...prev, ...merged }))
     } catch {
-      setLoadError("Gegenstandsstufen konnten nicht geladen werden.")
+      setLoadError(t("guild.itemLevelsFailed"))
     } finally {
       setLoading(false)
     }
@@ -90,7 +91,7 @@ export function GuildRoster({
   if (members.length === 0) {
     return (
       <div className="border-2 border-line px-4 py-3 text-[13px] opacity-75">
-        Die API liefert für diese Gilde keine Mitgliederliste.
+        {t("guild.noRoster")}
       </div>
     )
   }
@@ -99,17 +100,17 @@ export function GuildRoster({
     <div className="border-2 border-line">
       <div className="flex flex-wrap items-baseline justify-between gap-3 border-b border-line px-4 py-2">
         <span className="font-heading text-[14px] font-extrabold uppercase tracking-[0.06em]">
-          Mitglieder
+          {t("guild.members")}
         </span>
         <span className="eyebrow">
-          {`${f.number(members.length)} Einträge · nach Rang`}
+          {t("guild.entryCount", { count: f.number(members.length) })}
         </span>
       </div>
 
       <div className="flex flex-wrap items-center gap-3 border-b border-line px-4 py-2.5">
         <input
           className="input max-w-[220px]"
-          placeholder="Name, Klasse, Volk oder Rang…"
+          placeholder={t("guild.searchPlaceholder")}
           value={query}
           onChange={(e) => {
             setQuery(e.target.value)
@@ -122,18 +123,23 @@ export function GuildRoster({
             onClick={loadItemLevels}
             disabled={loading}
             className="btn btn-secondary text-[12px]"
-            title="Die Mitgliederliste führt keine Gegenstandsstufen – die kommen aus je einem Profilabruf"
+            title={t("guild.itemLevelsNote")}
           >
             {loading
-              ? "Lädt…"
-              : `Gegenstandsstufen laden (${f.number(Math.min(BATCH, pending.length))})`}
+              ? t("core.loading")
+              : t("guild.loadItemLevels", {
+                  count: f.number(Math.min(BATCH, pending.length)),
+                })}
           </button>
         )}
 
         <span className="ml-auto eyebrow">
           {filtered.length === members.length
-            ? `${f.number(shown.length)} von ${f.number(members.length)}`
-            : `${f.number(filtered.length)} Treffer`}
+            ? t("guild.shownOfTotal", {
+                shown: f.number(shown.length),
+                total: f.number(members.length),
+              })
+            : t("guild.matchCount", { count: f.number(filtered.length) })}
         </span>
       </div>
 
@@ -146,7 +152,7 @@ export function GuildRoster({
       )}
 
       {shown.length === 0 ? (
-        <div className="px-4 py-6 text-[13px] opacity-55">Kein Treffer.</div>
+        <div className="px-4 py-6 text-[13px] opacity-55">{t("guild.noMatch")}</div>
       ) : (
         <>
           {shown.map((member) => {
@@ -196,10 +202,10 @@ export function GuildRoster({
                     style={{ fontVariantNumeric: "tabular-nums" }}
                     title={
                       detail === undefined
-                        ? "Noch nicht geladen"
+                        ? t("guild.notLoaded")
                         : ilvl === undefined
-                          ? "Profil nicht abrufbar"
-                          : "Gegenstandsstufe angelegt"
+                          ? t("guild.profileUnavailable")
+                          : t("guild.itemLevelEquipped")
                     }
                   >
                     {ilvl !== undefined ? (
@@ -221,7 +227,9 @@ export function GuildRoster({
                 onClick={() => setLimit((l) => l + PAGE)}
                 className="btn btn-secondary text-[12px]"
               >
-                {`Weitere ${f.number(Math.min(PAGE, filtered.length - shown.length))} anzeigen`}
+                {t("guild.showMore", {
+                  count: f.number(Math.min(PAGE, filtered.length - shown.length)),
+                })}
               </button>
             </div>
           )}
