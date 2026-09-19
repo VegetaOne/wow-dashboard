@@ -5,7 +5,7 @@ import type { GameMode } from "@/lib/battlenet"
 import type { AuctionHouse, HouseStatus } from "@/lib/auction"
 import type { MarginRow } from "@/lib/economy"
 import type { ProfessionView } from "@/lib/professions"
-import { useFormat } from "./I18nProvider"
+import { useT, useFormat } from "./I18nProvider"
 
 /** Rezepte pro Berechnung – dieselbe Obergrenze wie in der Route. */
 const BATCH = 30
@@ -26,6 +26,7 @@ export function EconomyPanel({
   realm: string
   professions: ProfessionView[]
 }) {
+  const t = useT()
   const f = useFormat()
   const [index, setIndex] = useState<IndexResponse | null>(null)
   const [indexError, setIndexError] = useState<string | null>(null)
@@ -61,7 +62,7 @@ export function EconomyPanel({
         if (data.houses.length > 0) setHouseId(data.houses[0].id)
       } catch {
         if (!cancelled) {
-          setIndexError("Die Auktionshäuser dieses Realms sind nicht abrufbar.")
+          setIndexError(t("economy.houseUnreachable.body"))
         }
       }
     }
@@ -137,8 +138,8 @@ export function EconomyPanel({
     } catch (error) {
       setComputeError(
         error instanceof Error
-          ? `Preise nicht eingelesen: ${error.message}`
-          : "Preise nicht eingelesen."
+          ? t("economy.pricesNotReadError", { message: error.message })
+          : t("economy.pricesNotRead")
       )
     } finally {
       setRefreshing(false)
@@ -179,7 +180,7 @@ export function EconomyPanel({
       setComputed((c) => c + next.length)
       setUnresolved((u) => u + (data.unresolved ?? 0))
     } catch {
-      setComputeError("Die Berechnung ist fehlgeschlagen.")
+      setComputeError(t("economy.calculationFailed"))
     } finally {
       setComputing(false)
     }
@@ -190,7 +191,7 @@ export function EconomyPanel({
   if (indexError) {
     return (
       <div className="border-2 border-accent px-4 py-3 text-[13px]">
-        <span className="eyebrow block">Auktionshaus nicht erreichbar</span>
+        <span className="eyebrow block">{t("economy.houseUnreachable.title")}</span>
         {indexError}
       </div>
     )
@@ -199,7 +200,7 @@ export function EconomyPanel({
   if (!index) {
     return (
       <div className="border-2 border-line px-4 py-3 text-[13px] opacity-60">
-        Auktionshäuser werden geladen…
+        {t("economy.loadingHouses")}
       </div>
     )
   }
@@ -207,16 +208,12 @@ export function EconomyPanel({
   if (index.houses.length === 0) {
     return (
       <div className="border-2 border-accent px-4 py-3 text-[13px]">
-        <span className="eyebrow block">Keine Auktionsdaten für diesen Modus</span>
-        Die API führt für diesen Realm kein Auktionshaus.
+        <span className="eyebrow block">{t("economy.noDataForMode")}</span>
+        {t("economy.noHouseForRealm")}
         {index.housesError && (
           <span className="mt-1 block opacity-60">{index.housesError}</span>
         )}
-        <span className="mt-2 block opacity-75">
-          In Classic Era antworten die Auktionsendpunkte laut Blizzards eigenem
-          Forum seit Ende 2024 mit 404. Sobald sie wieder liefern, erscheinen die
-          Häuser hier ohne Änderung an der App.
-        </span>
+        <span className="mt-2 block opacity-75">{t("economy.classicEraNote")}</span>
       </div>
     )
   }
@@ -226,7 +223,7 @@ export function EconomyPanel({
       {/* ── Haus und Preisstand ─────────────────────────────────────────── */}
       <div className="border-2 border-line">
         <div className="flex flex-wrap items-center gap-3 border-b border-line px-4 py-2.5">
-          <span className="eyebrow">Haus</span>
+          <span className="eyebrow">{t("economy.house")}</span>
 
           {index.houses.length > 1 ? (
             <select
@@ -251,40 +248,44 @@ export function EconomyPanel({
             onClick={refreshPrices}
             disabled={refreshing}
             className="btn btn-secondary ml-auto text-[12px]"
-            title="Lädt alle Angebote dieses Hauses und verdichtet sie zu Preisen. Das ist die grösste Anfrage der App."
+            title={t("economy.readHint")}
           >
-            {refreshing ? "Liest ein…" : hasPrices ? "Preise erneuern" : "Preise einlesen"}
+            {refreshing
+              ? t("economy.readingIn")
+              : hasPrices
+                ? t("economy.refreshPrices")
+                : t("economy.readPrices")}
           </button>
         </div>
 
         <div className="grid grid-cols-2 gap-x-6 gap-y-2 px-4 py-3 lg:grid-cols-4">
           <Fact
-            label="Preisstand"
+            label={t("economy.priceStatus")}
             value={
               status?.updatedAt
                 ? new Date(status.updatedAt).toLocaleString("de-CH")
-                : "noch nicht eingelesen"
+                : t("economy.notReadYet")
             }
           />
           <Fact
-            label="Gegenstände mit Preis"
+            label={t("economy.itemsWithPrice")}
             value={status ? f.number(status.itemCount) : "—"}
           />
           <Fact
-            label="Angebote gelesen"
+            label={t("economy.listingsRead")}
             value={status ? f.number(status.auctionCount) : "—"}
           />
           <Fact
-            label="Ohne Sofortkauf"
+            label={t("economy.noBuyout")}
             value={status ? f.number(status.skippedCount) : "—"}
-            note="ergeben keinen Preis"
+            note={t("economy.noPrice")}
           />
         </div>
 
         {status?.status === "FAILED" && status.error && (
           <div className="border-t border-line px-4 py-2 text-[12px]">
             <span className="eyebrow" style={{ color: "var(--color-accent)" }}>
-              Letzter Versuch fehlgeschlagen
+              {t("economy.lastAttemptFailed")}
             </span>
             <span className="ml-2 opacity-70">{status.error}</span>
           </div>
@@ -294,18 +295,16 @@ export function EconomyPanel({
       {/* ── Rezepte ─────────────────────────────────────────────────────── */}
       {tiers.length === 0 ? (
         <div className="border-2 border-line px-4 py-3 text-[13px] opacity-75">
-          Für diesen Charakter sind keine Rezepte bekannt. Ohne Rezepte gibt es
-          nichts zu rechnen.
+          {t("economy.noKnownRecipes")}
         </div>
       ) : !hasPrices ? (
         <div className="border-2 border-line px-4 py-3 text-[13px] opacity-75">
-          Noch keine Preise für dieses Haus. Ohne Preise wären Kosten und Erlös
-          erfunden — lies die Preise zuerst ein.
+          {t("economy.noPricesYet")}
         </div>
       ) : (
         <div className="border-2 border-line">
           <div className="flex flex-wrap items-center gap-3 border-b border-line px-4 py-2.5">
-            <span className="eyebrow">Beruf</span>
+            <span className="eyebrow">{t("economy.profession")}</span>
             <select
               className="input max-w-[280px]"
               value={selectedTier?.key ?? ""}
@@ -323,7 +322,10 @@ export function EconomyPanel({
 
             <span className="ml-auto eyebrow">
               {selectedTier
-                ? `${f.number(computed)} von ${f.number(selectedTier.recipeIds.length)} Rezepten gerechnet`
+                ? t("economy.recipesCalculated", {
+                    computed: f.number(computed),
+                    total: f.number(selectedTier.recipeIds.length),
+                  })
                 : ""}
             </span>
           </div>
@@ -339,10 +341,10 @@ export function EconomyPanel({
           {rows.length > 0 && (
             <>
               <div className="hidden border-b border-line px-4 py-1.5 lg:flex">
-                <span className="eyebrow flex-1">Rezept</span>
-                <span className="eyebrow w-28 text-right">Kosten</span>
-                <span className="eyebrow w-28 text-right">Erlös</span>
-                <span className="eyebrow w-28 text-right">Gewinn</span>
+                <span className="eyebrow flex-1">{t("professions.recipe")}</span>
+                <span className="eyebrow w-28 text-right">{t("economy.cost")}</span>
+                <span className="eyebrow w-28 text-right">{t("economy.proceeds")}</span>
+                <span className="eyebrow w-28 text-right">{t("economy.profit")}</span>
               </div>
 
               {rows.map((row) => (
@@ -359,20 +361,26 @@ export function EconomyPanel({
                 className="btn btn-secondary text-[12px]"
               >
                 {computing
-                  ? "Rechnet…"
+                  ? t("economy.calculating")
                   : rows.length === 0
-                    ? `Erste ${f.number(Math.min(BATCH, selectedTier.recipeIds.length))} rechnen`
-                    : `Weitere ${f.number(Math.min(BATCH, selectedTier.recipeIds.length - computed))} rechnen`}
+                    ? t("economy.calculateFirst", {
+                        count: f.number(Math.min(BATCH, selectedTier.recipeIds.length)),
+                      })
+                    : t("economy.calculateMore", {
+                        count: f.number(
+                          Math.min(BATCH, selectedTier.recipeIds.length - computed)
+                        ),
+                      })}
               </button>
             ) : (
               <span className="text-[12px] opacity-55">
-                Alle Rezepte dieser Stufe gerechnet.
+                {t("economy.allRecipesOfTier")}
               </span>
             )}
 
             {unresolved > 0 && (
               <span className="text-[12px] opacity-55">
-                {`${f.number(unresolved)} Rezepte ohne Details in der API — nicht gerechnet.`}
+                {t("economy.recipesWithoutDetails", { count: f.number(unresolved) })}
               </span>
             )}
           </div>
@@ -403,6 +411,7 @@ function Fact({
 }
 
 export function MarginLine({ row }: { row: MarginRow }) {
+  const t = useT()
   const f = useFormat()
   const positive = row.margin !== null && row.margin > 0
 
@@ -445,18 +454,22 @@ export function MarginLine({ row }: { row: MarginRow }) {
         <div className="mt-1 text-[11px] opacity-55">
           {row.missingReagents.length > 0 && (
             <span>
-              {`Kein Angebot für: ${row.missingReagents.slice(0, 3).join(", ")}`}
+              {t("economy.noOfferFor", {
+                items: row.missingReagents.slice(0, 3).join(", "),
+              })}
               {row.missingReagents.length > 3 &&
-                ` und ${f.number(row.missingReagents.length - 3)} weitere`}
-              {" — darum keine Kostensumme."}
+                ` ${t("economy.andMore", {
+                  count: f.number(row.missingReagents.length - 3),
+                })}`}
+              {` ${t("economy.soNoCostSum")}`}
             </span>
           )}
           {row.missingReagents.length > 0 && row.saleUnknown && " "}
           {row.saleUnknown && (
             <span>
               {row.craftedItemName
-                ? `„${row.craftedItemName}" wird gerade nicht angeboten — kein Erlös bekannt.`
-                : "Das Ergebnis wird gerade nicht angeboten — kein Erlös bekannt."}
+                ? t("economy.craftedNotListedNamed", { item: row.craftedItemName })
+                : t("economy.craftedNotListed")}
             </span>
           )}
         </div>
