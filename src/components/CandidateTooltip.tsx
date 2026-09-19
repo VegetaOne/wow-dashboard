@@ -111,7 +111,7 @@ export function CandidateTooltip({
       {known?.itemLevel != null && (
         <div className="mt-2 flex items-baseline gap-2">
           <span className="font-heading text-[12px] font-extrabold uppercase tracking-[0.06em]">
-            Stufe {known.itemLevel}
+            {t("equipment.candidateLevel", { level: known.itemLevel })}
           </span>
           {levelDiff !== null && levelDiff !== 0 && (
             <span
@@ -162,7 +162,7 @@ export function CandidateTooltip({
       )}
 
       {loading && !known && (
-        <div className="mt-2 text-[11px] opacity-55">Lade Gegenstandsdaten…</div>
+        <div className="mt-2 text-[11px] opacity-55">{t("equipment.loadingItem")}</div>
       )}
     </div>
   )

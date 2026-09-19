@@ -14,6 +14,7 @@ import {
 } from "@/lib/battlenet"
 import { ItemTooltip, itemDisplayName, type TooltipTarget } from "./ItemTooltip"
 import { useT } from "./I18nProvider"
+import type { Translate, TranslationKey } from "@/lib/i18n"
 
 interface EquipmentPanelProps {
   equipment: CharacterEquipment
@@ -31,10 +32,10 @@ type Upgrade = {
   detail: string
 }
 
-const UPGRADE_LABEL: Record<Upgrade["kind"], string> = {
-  ENCHANT: "Verzauberung fehlt",
-  SOCKET: "Fassung leer",
-  WEAK: "Schwächster Slot",
+const UPGRADE_LABEL_KEY: Record<Upgrade["kind"], TranslationKey> = {
+  ENCHANT: "equipment.missingEnchant",
+  SOCKET: "equipment.emptySocketUpgrade",
+  WEAK: "equipment.weakestSlot",
 }
 
 export function EquipmentPanel({
@@ -43,6 +44,7 @@ export function EquipmentPanel({
   renderUrl = null,
   mode = "retail",
 }: EquipmentPanelProps) {
+  const t = useT()
   const [tooltip, setTooltip] = useState<TooltipTarget | null>(null)
   const [modelSize, setModelSize] = useState<"normal" | "large">("normal")
 
@@ -63,8 +65,8 @@ export function EquipmentPanel({
   const maxLevel = Math.max(1, ...levels)
 
   const upgrades = useMemo(
-    () => findUpgrades(items, slotMap, mode, levels),
-    [items, slotMap, mode, levels.join(",")]
+    () => findUpgrades(items, slotMap, mode, levels, t),
+    [items, slotMap, mode, levels.join(","), t]
   )
 
   function showTooltip(item: EquipmentSlot, slotType: string, e: React.MouseEvent) {
@@ -79,8 +81,8 @@ export function EquipmentPanel({
   if (items.length === 0) {
     return (
       <div className="border-2 border-line px-4 py-3 text-[13px] opacity-65">
-        <span className="eyebrow block">Keine Ausrüstung</span>
-        Für diesen Charakter liefert die API keine angelegten Gegenstände.
+        <span className="eyebrow block">{t("equipment.none.title")}</span>
+        {t("equipment.none.body")}
       </div>
     )
   }
@@ -94,9 +96,11 @@ export function EquipmentPanel({
         <div className="mb-8 border-2 border-accent">
           <div className="flex items-baseline justify-between gap-3 border-b border-line px-4 py-2">
             <span className="font-heading text-[12px] font-extrabold uppercase tracking-[0.08em] text-accent">
-              Upgrade-Möglichkeiten
+              {t("equipment.upgrades.title")}
             </span>
-            <span className="eyebrow">{upgrades.length} offen</span>
+            <span className="eyebrow">
+              {t("equipment.upgrades.openCount", { count: upgrades.length })}
+            </span>
           </div>
           <ul className="m-0 list-none p-0">
             {upgrades.map((u, i) => (
@@ -105,7 +109,7 @@ export function EquipmentPanel({
                 className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5 border-b border-line px-4 py-2 last:border-0"
               >
                 <span className="w-[130px] flex-none eyebrow">
-                  {UPGRADE_LABEL[u.kind]}
+                  {t(UPGRADE_LABEL_KEY[u.kind])}
                 </span>
                 <span className="text-[13px]">{u.itemName}</span>
                 <span className="ml-auto text-[12px] opacity-60">{u.detail}</span>
@@ -115,15 +119,15 @@ export function EquipmentPanel({
         </div>
       ) : (
         <div className="mb-8 border-2 border-line px-4 py-2.5">
-          <span className="eyebrow block">Upgrade-Möglichkeiten</span>
+          <span className="eyebrow block">{t("equipment.upgrades.title")}</span>
           <span className="text-[13px] opacity-75">
-            Keine offenen Punkte gefunden.
+            {t("equipment.upgrades.none")}
           </span>
         </div>
       )}
 
       {/* ── Paperdoll ───────────────────────────────────────────── */}
-      <h4 className="mb-3">Charakterfenster</h4>
+      <h4 className="mb-3">{t("equipment.characterWindow")}</h4>
 
       <div className="mb-8 border-2 border-line p-4">
         {/* Gross: eigene Reihe über den Spalten, damit das Modell den
@@ -133,7 +137,7 @@ export function EquipmentPanel({
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={renderUrl}
-              alt="Charaktermodell"
+              alt={t("equipment.characterModelAlt")}
               className="max-h-[min(860px,82vh)] w-auto max-w-full object-contain"
             />
             <ModelSizeToggle size={modelSize} onChange={setModelSize} />
@@ -169,7 +173,7 @@ export function EquipmentPanel({
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={renderUrl}
-                alt="Charaktermodell"
+                alt={t("equipment.characterModelAlt")}
                 className="max-h-[min(620px,70vh)] w-auto max-w-full object-contain"
               />
               <ModelSizeToggle size={modelSize} onChange={setModelSize} />
@@ -210,7 +214,7 @@ export function EquipmentPanel({
       </div>
 
       {/* ── Detailliste ─────────────────────────────────────────── */}
-      <h4 className="mb-3">Alle Slots</h4>
+      <h4 className="mb-3">{t("equipment.upgrades.allSlots")}</h4>
 
       <div className="border-t-2 border-line">
         {SLOT_ORDER.map((slotType) => (
@@ -236,7 +240,8 @@ function findUpgrades(
   items: EquipmentSlot[],
   slotMap: Record<string, EquipmentSlot>,
   mode: GameMode,
-  levels: number[]
+  levels: number[],
+  t: Translate
 ): Upgrade[] {
   const upgrades: Upgrade[] = []
 
@@ -247,8 +252,11 @@ function findUpgrades(
       upgrades.push({
         kind: "SOCKET",
         slotType: item.slot?.type ?? "",
-        itemName: itemDisplayName(item),
-        detail: `${empty} von ${item.sockets?.length ?? empty}`,
+        itemName: itemDisplayName(item, t),
+        detail: t("equipment.sockets", {
+          filled: empty,
+          total: item.sockets?.length ?? empty,
+        }),
       })
     }
   }
@@ -261,7 +269,7 @@ function findUpgrades(
       upgrades.push({
         kind: "ENCHANT",
         slotType,
-        itemName: itemDisplayName(item),
+        itemName: itemDisplayName(item, t),
         detail: SLOT_NAMES[slotType] ?? slotType,
       })
     }
@@ -280,8 +288,11 @@ function findUpgrades(
       upgrades.push({
         kind: "WEAK",
         slotType: item.slot?.type ?? "",
-        itemName: itemDisplayName(item),
-        detail: `Stufe ${item.level?.value} · ${median - (item.level?.value ?? 0)} unter Median`,
+        itemName: itemDisplayName(item, t),
+        detail: t("equipment.belowMedian", {
+          level: item.level?.value ?? 0,
+          delta: median - (item.level?.value ?? 0),
+        }),
       })
     }
   }
@@ -308,6 +319,7 @@ function PaperdollSlot({
   onEnter: (item: EquipmentSlot, slotType: string, e: React.MouseEvent) => void
   onLeave: () => void
 }) {
+  const t = useT()
   const slotName = SLOT_NAMES[slotType] ?? slotType
 
   if (!item) {
@@ -368,7 +380,7 @@ function PaperdollSlot({
 
       <span className="min-w-0 flex-1">
         <span className="block truncate text-[13px] leading-tight" style={{ color }}>
-          {itemDisplayName(item)}
+          {itemDisplayName(item, t)}
         </span>
         <span
           className={`mt-0.5 flex items-center gap-1.5 ${
@@ -380,16 +392,16 @@ function PaperdollSlot({
             <span
               className="h-2 w-2 flex-none"
               style={{ background: "var(--color-accent)" }}
-              title="Leere Fassung"
-              aria-label="Leere Fassung"
+              title={t("equipment.emptySocket")}
+              aria-label={t("equipment.emptySocket")}
             />
           )}
           {missingEnchant && (
             <span
               className="h-2 w-2 flex-none border"
               style={{ borderColor: "var(--color-accent)" }}
-              title="Verzauberung fehlt"
-              aria-label="Verzauberung fehlt"
+              title={t("equipment.missingEnchant")}
+              aria-label={t("equipment.missingEnchant")}
             />
           )}
         </span>
@@ -425,7 +437,7 @@ function SlotRow({
       <div className="flex items-center gap-3 border-b border-line py-2.5 opacity-40">
         <span className="h-8 w-8 flex-none border border-line" aria-hidden />
         <span className="w-24 flex-none text-[12px]">{slotName}</span>
-        <span className="flex-1 text-[13px]">Leer</span>
+        <span className="flex-1 text-[13px]">{t("equipment.empty")}</span>
       </div>
     )
   }
@@ -438,7 +450,7 @@ function SlotRow({
   const emptySocket = item.sockets?.some((s) => !s.item) ?? false
   const socketCount = item.sockets?.length ?? 0
   const hasEnchant = (item.enchantments?.length ?? 0) > 0
-  const name = itemDisplayName(item)
+  const name = itemDisplayName(item, t)
 
   return (
     <div
@@ -479,11 +491,15 @@ function SlotRow({
       </span>
 
       <span className="flex w-40 flex-none flex-wrap gap-1">
-        {emptySocket && <span className="tag tag-accent">Leere Fassung</span>}
-        {!emptySocket && socketCount > 0 && (
-          <span className="tag tag-neutral">Fassung belegt</span>
+        {emptySocket && (
+          <span className="tag tag-accent">{t("equipment.emptySocket")}</span>
         )}
-        {hasEnchant && <span className="tag tag-neutral">Verzaubert</span>}
+        {!emptySocket && socketCount > 0 && (
+          <span className="tag tag-neutral">{t("equipment.socketFilled")}</span>
+        )}
+        {hasEnchant && (
+          <span className="tag tag-neutral">{t("equipment.enchanted")}</span>
+        )}
       </span>
     </div>
   )
@@ -501,13 +517,16 @@ function ModelSizeToggle({
   size: "normal" | "large"
   onChange: (next: "normal" | "large") => void
 }) {
+  const t = useT()
+  const label = t(size === "normal" ? "equipment.enlargeModel" : "equipment.shrinkModel")
+
   return (
     <button
       onClick={() => onChange(size === "normal" ? "large" : "normal")}
       className="btn btn-secondary text-[12px]"
-      aria-label={size === "normal" ? "Modell vergrössern" : "Modell verkleinern"}
+      aria-label={label}
     >
-      {size === "normal" ? "Modell vergrössern" : "Modell verkleinern"}
+      {label}
     </button>
   )
 }

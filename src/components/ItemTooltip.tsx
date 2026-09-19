@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import type { EquipmentSlot } from "@/lib/battlenet"
 import { QUALITY_COLORS, qualityLabelKey } from "@/lib/battlenet"
 import { useT } from "./I18nProvider"
+import type { Translate } from "@/lib/i18n"
 
 export interface TooltipTarget {
   item: EquipmentSlot
@@ -12,8 +13,9 @@ export interface TooltipTarget {
   y: number
 }
 
-export function itemDisplayName(item: EquipmentSlot): string {
-  return item.name ?? item.item?.name ?? "Unbekannter Gegenstand"
+/** `t` als Parameter statt `useT()`: auch aus `findUpgrades()` gebraucht, das keine Komponente ist. */
+export function itemDisplayName(item: EquipmentSlot, t: Translate): string {
+  return item.name ?? item.item?.name ?? t("equipment.unknownItem")
 }
 
 /**
@@ -57,7 +59,7 @@ export function ItemTooltip({ target }: { target: TooltipTarget | null }) {
       style={{ left, top, width: WIDTH, borderColor: color }}
     >
       <div className="font-heading text-[14px] font-extrabold leading-tight" style={{ color }}>
-        {itemDisplayName(item)}
+        {itemDisplayName(item, t)}
       </div>
 
       <div className="mt-0.5 flex items-baseline justify-between gap-2">
@@ -67,7 +69,8 @@ export function ItemTooltip({ target }: { target: TooltipTarget | null }) {
 
       {item.level?.value != null && (
         <div className="mt-2 font-heading text-[12px] font-extrabold uppercase tracking-[0.06em]">
-          {item.level.display_string ?? `Gegenstandsstufe ${item.level.value}`}
+          {item.level.display_string ??
+            t("equipment.itemLevelValue", { level: item.level.value })}
         </div>
       )}
 
@@ -110,7 +113,9 @@ export function ItemTooltip({ target }: { target: TooltipTarget | null }) {
                 aria-hidden
               />
               {s.item?.name ?? (
-                <span style={{ color: "var(--color-accent)" }}>Leere Fassung</span>
+                <span style={{ color: "var(--color-accent)" }}>
+                  {t("equipment.emptySocket")}
+                </span>
               )}
             </div>
           ))}
