@@ -7,3 +7,12 @@ tsconfig.tsbuildinfo
 next-env.d.ts
 _backup_*
 .gh-token
+
+# Schlüsseldatei zum verschlüsselten Client Secret – gehört ins Backup,
+# niemals ins Repo. Gegenstück zu *.db oben.
+*.key
+config.key
+
+# Entwicklungslog
+dev.log
+*.log

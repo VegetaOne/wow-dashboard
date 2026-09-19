@@ -6,3 +6,11 @@ node_modules
 .DS_Store
 tsconfig.tsbuildinfo
 _backup_*
+
+# Nichts davon gehört ins Image
+*.key
+config.key
+*.log
+docs
+CLAUDE.md
+tools
