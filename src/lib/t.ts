@@ -7,8 +7,14 @@
 
 import { loadConfig } from "./config"
 import { translator, type Translate } from "./i18n"
+import { createFormat, type Format } from "./format"
 
 export async function getT(): Promise<Translate> {
   const config = await loadConfig()
   return translator(config.language)
+}
+
+export async function getFormat(): Promise<Format> {
+  const config = await loadConfig()
+  return createFormat(config.language)
 }

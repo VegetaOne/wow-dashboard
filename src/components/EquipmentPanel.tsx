@@ -6,12 +6,14 @@ import {
   SLOT_ORDER,
   SLOT_NAMES,
   QUALITY_COLORS,
+  qualityLabelKey,
   ENCHANTABLE_SLOTS,
   PAPERDOLL_LEFT,
   PAPERDOLL_RIGHT,
   PAPERDOLL_WEAPONS,
 } from "@/lib/battlenet"
 import { ItemTooltip, itemDisplayName, type TooltipTarget } from "./ItemTooltip"
+import { useT } from "./I18nProvider"
 
 interface EquipmentPanelProps {
   equipment: CharacterEquipment
@@ -20,11 +22,6 @@ interface EquipmentPanelProps {
   /** Freigestelltes Charaktermodell (main-raw), wenn die API eines liefert */
   renderUrl?: string | null
   mode?: GameMode
-}
-
-const QUALITY_LABEL: Record<string, string> = {
-  POOR: "Schlecht", COMMON: "Gewöhnlich", UNCOMMON: "Ungewöhnlich", RARE: "Selten",
-  EPIC: "Episch", LEGENDARY: "Legendär", ARTIFACT: "Artefakt", HEIRLOOM: "Erbstück",
 }
 
 type Upgrade = {
@@ -420,6 +417,7 @@ function SlotRow({
   onEnter: (item: EquipmentSlot, slotType: string, e: React.MouseEvent) => void
   onLeave: () => void
 }) {
+  const t = useT()
   const slotName = SLOT_NAMES[slotType] ?? slotType
 
   if (!item) {
@@ -433,6 +431,7 @@ function SlotRow({
   }
 
   const quality = item.quality?.type ?? "COMMON"
+  const qualityKey = qualityLabelKey(quality)
   const color = QUALITY_COLORS[quality] ?? "#FFFFFF"
   const level = item.level?.value ?? null
   const pct = level !== null ? Math.round((level / max) * 100) : 0
@@ -476,7 +475,7 @@ function SlotRow({
       </span>
 
       <span className="hidden w-24 flex-none text-[10px] uppercase tracking-[0.06em] opacity-50 sm:block">
-        {QUALITY_LABEL[quality] ?? quality}
+        {qualityKey ? t(qualityKey) : "—"}
       </span>
 
       <span className="flex w-40 flex-none flex-wrap gap-1">

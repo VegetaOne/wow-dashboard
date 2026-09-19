@@ -27,8 +27,23 @@ const DICTIONARIES: Record<Language, Record<TranslationKey, string>> = {
 
 export type TranslateVars = Record<string, string | number>
 
-/** Die Übersetzungsfunktion, wie sie Komponenten benutzen. */
-export type Translate = (key: TranslationKey, vars?: TranslateVars) => string
+/** Pluralform: `${base}.one` bei `count === 1`, sonst `${base}.other`. */
+export type TranslatePlural = (
+  base: string,
+  count: number,
+  vars?: TranslateVars
+) => string
+
+/**
+ * Die Übersetzungsfunktion, wie sie Komponenten benutzen.
+ *
+ * `tPlural` hängt an derselben gebundenen Funktion statt an einem eigenen
+ * Haken – eine Komponente hat damit für beide Fälle nur ein Ding aus
+ * `useT()` / `getT()` zu holen.
+ */
+export type Translate = ((key: TranslationKey, vars?: TranslateVars) => string) & {
+  tPlural: TranslatePlural
+}
 
 /**
  * Einen Schlüssel auflösen.
@@ -50,9 +65,32 @@ export function translate(
   )
 }
 
-/** Gebundene Übersetzungsfunktion für eine Sprache. */
+/**
+ * Pluralfall auflösen: `${base}.one` bei `count === 1`, sonst `${base}.other`,
+ * `count` wird als Variable `{count}` mitgegeben.
+ *
+ * Bewusst kein `Intl.PluralRules` – das ist genau die ICU-Abhängigkeit, wegen
+ * der `format.ts` existiert. Englisch und Deutsch haben beide zwei Formen;
+ * eine dritte Sprache mit anderer Pluralregel ist nicht geplant, und wenn sie
+ * kommt, ist diese Funktion die einzige Stelle, die sich ändert.
+ */
+export function translatePlural(
+  language: Language,
+  base: string,
+  count: number,
+  vars?: TranslateVars
+): string {
+  const suffix = count === 1 ? "one" : "other"
+  const key = `${base}.${suffix}` as TranslationKey
+  return translate(language, key, { ...vars, count })
+}
+
+/** Gebundene Übersetzungsfunktion für eine Sprache, mit `tPlural` daran. */
 export function translator(language: Language): Translate {
-  return (key, vars) => translate(language, key, vars)
+  const t = ((key: TranslationKey, vars?: TranslateVars) =>
+    translate(language, key, vars)) as Translate
+  t.tPlural = (base, count, vars) => translatePlural(language, base, count, vars)
+  return t
 }
 
 /** HTML-`lang`-Attribut zur eingestellten Sprache. */

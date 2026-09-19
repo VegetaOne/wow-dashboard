@@ -17,7 +17,8 @@ import {
   parseGuildAchievements,
   type GuildActivityEntry,
 } from "@/lib/guild"
-import { formatNumber, formatDate } from "@/lib/format"
+import { getFormat } from "@/lib/t"
+import type { Format } from "@/lib/format"
 
 export default async function GuildPage({
   params,
@@ -27,6 +28,7 @@ export default async function GuildPage({
   const session = await getServerSession(await getAuthOptions())
   if (!session?.accessToken) redirect("/login")
 
+  const f = await getFormat()
   const { realm, name } = params
   const config = GAME_MODES.find((m) => m.id === params.mode) ?? GAME_MODES[0]
   const mode = config.id as GameMode
@@ -122,14 +124,14 @@ export default async function GuildPage({
               label="Mitglieder"
               value={
                 profile?.memberCount !== null && profile?.memberCount !== undefined
-                  ? formatNumber(profile.memberCount)
+                  ? f.number(profile.memberCount)
                   : listed !== null
-                    ? formatNumber(listed)
+                    ? f.number(listed)
                     : "—"
               }
               note={
                 profile?.memberCount != null && listed !== null && listed !== profile.memberCount
-                  ? `Liste führt ${formatNumber(listed)}`
+                  ? `Liste führt ${f.number(listed)}`
                   : undefined
               }
             />
@@ -137,20 +139,20 @@ export default async function GuildPage({
               label="Erfolgspunkte"
               value={
                 profile?.achievementPoints != null
-                  ? formatNumber(profile.achievementPoints)
+                  ? f.number(profile.achievementPoints)
                   : achievements.totalPoints != null
-                    ? formatNumber(achievements.totalPoints)
+                    ? f.number(achievements.totalPoints)
                     : "—"
               }
               note={
                 achievements.totalQuantity != null
-                  ? `${formatNumber(achievements.totalQuantity)} Erfolge`
+                  ? `${f.number(achievements.totalQuantity)} Erfolge`
                   : undefined
               }
             />
             <Stat
               label="Gegründet"
-              value={profile?.createdAt != null ? formatDate(profile.createdAt) : "—"}
+              value={profile?.createdAt != null ? f.date(profile.createdAt) : "—"}
             />
           </div>
         </section>
@@ -176,6 +178,7 @@ export default async function GuildPage({
           <ActivityList
             entries={activity}
             failed={activityResult.failed}
+            f={f}
           />
         </section>
 
@@ -200,7 +203,7 @@ export default async function GuildPage({
                     {a.name}
                   </span>
                   <span className="flex-none text-[12px] opacity-50">
-                    {formatDate(a.completedAt)}
+                    {f.date(a.completedAt)}
                   </span>
                 </div>
               ))}
@@ -238,9 +241,11 @@ function Stat({
 function ActivityList({
   entries,
   failed,
+  f,
 }: {
   entries: GuildActivityEntry[]
   failed: boolean
+  f: Format
 }) {
   if (failed) {
     return (
@@ -287,7 +292,7 @@ function ActivityList({
           )}
 
           <span className="w-20 flex-none text-right text-[11px] opacity-50">
-            {formatDate(entry.timestamp)}
+            {f.date(entry.timestamp)}
           </span>
         </div>
       ))}

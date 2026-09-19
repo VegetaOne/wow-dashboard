@@ -7,7 +7,7 @@ import { rankLabel } from "@/lib/guild"
 import type { CharacterDetails, GameMode } from "@/lib/battlenet"
 import { CLASS_COLORS, detailKey } from "@/lib/battlenet"
 import { characterBase } from "@/lib/characterTabs"
-import { formatNumber } from "@/lib/format"
+import { useFormat } from "./I18nProvider"
 
 const PAGE = 40
 /** Obergrenze der API-Route – mehr nimmt sie pro Anfrage nicht an. */
@@ -26,6 +26,7 @@ export function GuildRoster({
   mode: GameMode
   canLoadItemLevels: boolean
 }) {
+  const f = useFormat()
   const [query, setQuery] = useState("")
   const [limit, setLimit] = useState(PAGE)
   const [details, setDetails] = useState<Record<string, CharacterDetails>>({})
@@ -101,7 +102,7 @@ export function GuildRoster({
           Mitglieder
         </span>
         <span className="eyebrow">
-          {`${formatNumber(members.length)} Einträge · nach Rang`}
+          {`${f.number(members.length)} Einträge · nach Rang`}
         </span>
       </div>
 
@@ -125,14 +126,14 @@ export function GuildRoster({
           >
             {loading
               ? "Lädt…"
-              : `Gegenstandsstufen laden (${formatNumber(Math.min(BATCH, pending.length))})`}
+              : `Gegenstandsstufen laden (${f.number(Math.min(BATCH, pending.length))})`}
           </button>
         )}
 
         <span className="ml-auto eyebrow">
           {filtered.length === members.length
-            ? `${formatNumber(shown.length)} von ${formatNumber(members.length)}`
-            : `${formatNumber(filtered.length)} Treffer`}
+            ? `${f.number(shown.length)} von ${f.number(members.length)}`
+            : `${f.number(filtered.length)} Treffer`}
         </span>
       </div>
 
@@ -186,7 +187,7 @@ export function GuildRoster({
                   className="w-10 flex-none text-right text-[12px] opacity-70"
                   style={{ fontVariantNumeric: "tabular-nums" }}
                 >
-                  {member.level !== null ? formatNumber(member.level) : "—"}
+                  {member.level !== null ? f.number(member.level) : "—"}
                 </span>
 
                 {canLoadItemLevels && (
@@ -203,7 +204,7 @@ export function GuildRoster({
                   >
                     {ilvl !== undefined ? (
                       <span className="font-heading text-[13px] font-extrabold">
-                        {formatNumber(Math.round(ilvl))}
+                        {f.number(Math.round(ilvl))}
                       </span>
                     ) : (
                       <span className="text-[12px] opacity-30">—</span>
@@ -220,7 +221,7 @@ export function GuildRoster({
                 onClick={() => setLimit((l) => l + PAGE)}
                 className="btn btn-secondary text-[12px]"
               >
-                {`Weitere ${formatNumber(Math.min(PAGE, filtered.length - shown.length))} anzeigen`}
+                {`Weitere ${f.number(Math.min(PAGE, filtered.length - shown.length))} anzeigen`}
               </button>
             </div>
           )}

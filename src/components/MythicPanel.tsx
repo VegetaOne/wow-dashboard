@@ -1,7 +1,8 @@
 "use client"
 
 import type { MythicProfileView, MythicRun } from "@/lib/progress"
-import { formatDuration, formatDay } from "@/lib/progress"
+import { formatDuration } from "@/lib/progress"
+import { useFormat } from "./I18nProvider"
 
 export function MythicPanel({ profile }: { profile: MythicProfileView }) {
   return (
@@ -47,6 +48,7 @@ function RunSection({
   empty: string
   showAffixes?: boolean
 }) {
+  const f = useFormat()
   return (
     <div className="border-b border-line last:border-0">
       <div className="border-b border-line px-4 py-1.5">
@@ -106,7 +108,7 @@ function RunSection({
               </span>
 
               <span className="w-20 flex-none text-right text-[11px] opacity-50">
-                {formatDay(run.completedAt)}
+                {f.date(run.completedAt)}
               </span>
             </li>
           ))}

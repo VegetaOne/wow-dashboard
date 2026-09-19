@@ -7,8 +7,7 @@ import type {
   CategoryProgress,
   CategoryCatalog,
 } from "@/lib/achievements"
-import { formatNumber, formatDate } from "@/lib/format"
-import { useT } from "./I18nProvider"
+import { useT, useFormat } from "./I18nProvider"
 
 export function AchievementsPanel({
   summary,
@@ -18,6 +17,7 @@ export function AchievementsPanel({
   mode: GameMode
 }) {
   const t = useT()
+  const f = useFormat()
   const [catalogs, setCatalogs] = useState<Record<number, CategoryCatalog | null>>({})
   const [loading, setLoading] = useState<number | null>(null)
   const [open, setOpen] = useState<number | null>(null)
@@ -78,7 +78,7 @@ export function AchievementsPanel({
               >
                 <span className="min-w-0 flex-1 truncate">{r.name}</span>
                 <span className="w-20 flex-none text-right text-[11px] opacity-50">
-                  {formatDate(r.at)}
+                  {f.date(r.at)}
                 </span>
               </li>
             ))}
@@ -116,11 +116,12 @@ export function AchievementsPanel({
 }
 
 function Stat({ label, value }: { label: string; value: number | null }) {
+  const f = useFormat()
   return (
     <div className="border-r border-line px-6 py-4 last:border-r-0">
       <span className="eyebrow">{label}</span>
       <div className="font-heading text-[30px] font-extrabold leading-none tracking-[-0.02em]">
-        {formatNumber(value)}
+        {f.number(value)}
       </div>
     </div>
   )
@@ -144,6 +145,7 @@ function CategoryRow({
   onToggle: (categoryId: number) => void
 }) {
   const t = useT()
+  const f = useFormat()
 
   // Der Fortschritt kommt aus der Charakterantwort. Die Gesamtmenge kennen
   // wir erst nach dem Aufklappen – vorher wird keine Quote gezeigt.
@@ -170,8 +172,8 @@ function CategoryRow({
 
           <span className="eyebrow">
             {t("achievements.categoryStats", {
-              quantity: formatNumber(category.quantity),
-              points: formatNumber(category.points),
+              quantity: f.number(category.quantity),
+              points: f.number(category.points),
             })}
           </span>
 

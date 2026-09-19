@@ -3,8 +3,7 @@
 import { useMemo, useState } from "react"
 import type { ReputationView } from "@/lib/reputations"
 import { tierProgress } from "@/lib/reputations"
-import { formatNumber } from "@/lib/format"
-import { useT } from "./I18nProvider"
+import { useT, useFormat } from "./I18nProvider"
 
 const PAGE = 40
 
@@ -14,6 +13,7 @@ export function ReputationList({
   reputations: ReputationView[]
 }) {
   const t = useT()
+  const f = useFormat()
   const [query, setQuery] = useState("")
   const [limit, setLimit] = useState(PAGE)
 
@@ -47,11 +47,11 @@ export function ReputationList({
         <span className="eyebrow">
           {withParagon > 0
             ? t("reputation.factionCountParagon", {
-                count: formatNumber(reputations.length),
-                paragon: formatNumber(withParagon),
+                count: f.number(reputations.length),
+                paragon: f.number(withParagon),
               })
             : t("reputation.factionCount", {
-                count: formatNumber(reputations.length),
+                count: f.number(reputations.length),
               })}
         </span>
       </div>
@@ -68,10 +68,10 @@ export function ReputationList({
         />
         <span className="ml-auto eyebrow">
           {filtered.length === reputations.length
-            ? t("reputation.entryCount", { count: formatNumber(filtered.length) })
+            ? t("reputation.entryCount", { count: f.number(filtered.length) })
             : t("reputation.countOfTotal", {
-                count: formatNumber(filtered.length),
-                total: formatNumber(reputations.length),
+                count: f.number(filtered.length),
+                total: f.number(reputations.length),
               })}
         </span>
       </div>
@@ -93,7 +93,7 @@ export function ReputationList({
                 className="btn btn-secondary text-[12px]"
               >
                 {t("reputation.showMore", {
-                  count: formatNumber(
+                  count: f.number(
                     Math.min(PAGE, filtered.length - shown.length)
                   ),
                 })}
@@ -108,6 +108,7 @@ export function ReputationList({
 
 function ReputationRow({ rep }: { rep: ReputationView }) {
   const t = useT()
+  const f = useFormat()
   const pct = tierProgress(rep)
   const paragonPct =
     rep.paragon && rep.paragon.max > 0
@@ -135,8 +136,8 @@ function ReputationRow({ rep }: { rep: ReputationView }) {
             style={{ fontVariantNumeric: "tabular-nums" }}
           >
             {t("reputation.valueOfMax", {
-              value: formatNumber(rep.value),
-              max: formatNumber(rep.max),
+              value: f.number(rep.value),
+              max: f.number(rep.max),
             })}
           </span>
         )}
@@ -166,8 +167,8 @@ function ReputationRow({ rep }: { rep: ReputationView }) {
             style={{ fontVariantNumeric: "tabular-nums" }}
           >
             {t("reputation.valueOfMax", {
-              value: formatNumber(rep.paragon.value),
-              max: formatNumber(rep.paragon.max),
+              value: f.number(rep.paragon.value),
+              max: f.number(rep.paragon.max),
             })}
           </span>
         </div>

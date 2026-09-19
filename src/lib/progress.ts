@@ -274,9 +274,10 @@ export function parseMythicProfile(
 
 // ─── Darstellungs-Helfer ──────────────────────────────────────────────────────
 
-// Formatierung liegt gemeinsam in format.ts – hier nur weiterreichen,
-// damit bestehende Importe unverändert weiterarbeiten.
-export { formatDuration, formatDate as formatDay } from "./format"
+// formatDuration ist sprachunabhängig und bleibt frei exportiert; ein Datum
+// braucht dagegen die Sprache – das holen sich die Komponenten jetzt selbst
+// über useFormat()/getFormat() statt über einen Re-Export von hier.
+export { formatDuration } from "./format"
 
 /** Summe über alle Instanzen einer Erweiterung, je Schwierigkeit. */
 export function expansionTotals(

@@ -3,7 +3,7 @@
 import { useState } from "react"
 import type { BracketView, PvpSummaryView, MatchRecord } from "@/lib/pvp"
 import { winRate } from "@/lib/pvp"
-import { formatNumber } from "@/lib/format"
+import { useFormat } from "./I18nProvider"
 
 const MAP_PAGE = 12
 
@@ -36,6 +36,7 @@ export function PvpPanel({
 // ─── Ehre ─────────────────────────────────────────────────────────────────────
 
 function Honor({ summary }: { summary: PvpSummaryView }) {
+  const f = useFormat()
   const hasAny =
     summary.honorLevel !== null || summary.honorableKills !== null
 
@@ -50,12 +51,12 @@ function Honor({ summary }: { summary: PvpSummaryView }) {
   return (
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
       {summary.honorLevel !== null && (
-        <Stat label="Ehrestufe" value={formatNumber(summary.honorLevel)} />
+        <Stat label="Ehrestufe" value={f.number(summary.honorLevel)} />
       )}
       {summary.honorableKills !== null && (
         <Stat
           label="Ehrenhafte Siege"
-          value={formatNumber(summary.honorableKills)}
+          value={f.number(summary.honorableKills)}
         />
       )}
     </div>
@@ -79,6 +80,7 @@ function Stat({ label, value }: { label: string; value: string }) {
 // ─── Wertungen ────────────────────────────────────────────────────────────────
 
 function Brackets({ brackets }: { brackets: BracketView[] }) {
+  const f = useFormat()
   if (brackets.length === 0) {
     return (
       <div className="border-2 border-line px-4 py-3 text-[13px] opacity-75">
@@ -107,7 +109,7 @@ function Brackets({ brackets }: { brackets: BracketView[] }) {
                   className="font-heading text-[18px] font-extrabold tracking-[-0.01em]"
                   style={{ fontVariantNumeric: "tabular-nums" }}
                 >
-                  {formatNumber(b.rating)}
+                  {f.number(b.rating)}
                 </span>
               ) : (
                 <span className="text-[13px] opacity-40">—</span>
@@ -132,6 +134,7 @@ function RecordRow({
   label: string
   record: MatchRecord | null
 }) {
+  const f = useFormat()
   if (!record) {
     return (
       <div className="flex items-baseline gap-2 text-[12px]">
@@ -148,7 +151,7 @@ function RecordRow({
       <span className="eyebrow w-24 flex-none">{label}</span>
 
       <span style={{ fontVariantNumeric: "tabular-nums" }}>
-        {`${formatNumber(record.won)} Siege · ${formatNumber(record.lost)} Niederlagen`}
+        {`${f.number(record.won)} Siege · ${f.number(record.lost)} Niederlagen`}
       </span>
 
       {/* Quote nur bei mindestens einem Spiel – 0 von 0 ist keine 0 % */}
@@ -172,7 +175,7 @@ function RecordRow({
         </span>
       ) : (
         <span className="ml-auto flex-none opacity-40">
-          {`${formatNumber(record.played)} Spiele`}
+          {`${f.number(record.played)} Spiele`}
         </span>
       )}
     </div>
@@ -182,6 +185,7 @@ function RecordRow({
 // ─── Schlachtfelder ───────────────────────────────────────────────────────────
 
 function MapStats({ maps }: { maps: PvpSummaryView["maps"] }) {
+  const f = useFormat()
   const [limit, setLimit] = useState(MAP_PAGE)
   const shown = maps.slice(0, limit)
 
@@ -200,7 +204,7 @@ function MapStats({ maps }: { maps: PvpSummaryView["maps"] }) {
           Nach Schlachtfeld
         </span>
         <span className="eyebrow">
-          {`${formatNumber(maps.length)} Schlachtfelder · meistgespielte zuerst`}
+          {`${f.number(maps.length)} Schlachtfelder · meistgespielte zuerst`}
         </span>
       </div>
 
@@ -219,7 +223,7 @@ function MapStats({ maps }: { maps: PvpSummaryView["maps"] }) {
               className="flex-none text-[12px] opacity-70"
               style={{ fontVariantNumeric: "tabular-nums" }}
             >
-              {`${formatNumber(m.won)} / ${formatNumber(m.played)}`}
+              {`${f.number(m.won)} / ${f.number(m.played)}`}
             </span>
 
             {rate !== null ? (
@@ -255,7 +259,7 @@ function MapStats({ maps }: { maps: PvpSummaryView["maps"] }) {
             onClick={() => setLimit((l) => l + MAP_PAGE)}
             className="btn btn-secondary text-[12px]"
           >
-            {`Weitere ${formatNumber(Math.min(MAP_PAGE, maps.length - shown.length))} anzeigen`}
+            {`Weitere ${f.number(Math.min(MAP_PAGE, maps.length - shown.length))} anzeigen`}
           </button>
         </div>
       )}

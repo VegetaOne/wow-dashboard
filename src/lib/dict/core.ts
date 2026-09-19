@@ -37,6 +37,10 @@ export const en = {
   "time.hoursMinutes": "{hours}h {minutes}m",
   "time.minutes": "{minutes}m",
 
+  // ─── Pluralfall Tage (V3 aus i18n-abschluss.md, für TrendChart) ─────────
+  "core.days.one": "{count} day",
+  "core.days.other": "{count} days",
+
   // ─── Spielmodi ───────────────────────────────────────────────────────────
   "mode.retail": "Retail",
   "mode.retail.note": "The War Within · level 80",
@@ -182,6 +186,10 @@ export const de: Record<keyof typeof en, string> = {
   "time.daysHours": "{days} T {hours} Std.",
   "time.hoursMinutes": "{hours} Std. {minutes} Min.",
   "time.minutes": "{minutes} Min.",
+
+  // Dativform „Tagen" ist beabsichtigt – der Satz lautet „in 6 Tagen".
+  "core.days.one": "{count} Tag",
+  "core.days.other": "{count} Tagen",
 
   "mode.retail": "Retail",
   "mode.retail.note": "The War Within · Stufe 80",

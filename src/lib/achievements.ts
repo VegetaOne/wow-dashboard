@@ -238,7 +238,3 @@ export async function fetchCharacterAchievements(
   // Direkt verdichten: die volle Antwort soll nie in den Snapshot
   return condenseAchievements(await res.json())
 }
-
-// ─── Darstellungs-Helfer ──────────────────────────────────────────────────────
-
-export { formatDate as formatDay } from "./format"

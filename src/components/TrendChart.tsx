@@ -4,7 +4,7 @@ import { useState } from "react"
 // Aus trend.ts, nicht history.ts: Letzteres zieht Prisma mit
 import type { TrendSeries } from "@/lib/trend"
 import { chartGeometry, deltaOf } from "@/lib/trend"
-import { formatNumber, formatDate, formatDays } from "@/lib/format"
+import { useT, useFormat } from "./I18nProvider"
 
 const WIDTH = 640
 const HEIGHT = 140
@@ -23,6 +23,8 @@ const PADDING = { top: 14, right: 46, bottom: 22, left: 8 }
  * - Beschriftungen tragen Text-Token, nie die Datenfarbe.
  */
 export function TrendChart({ series }: { series: TrendSeries }) {
+  const t = useT()
+  const f = useFormat()
   const [hover, setHover] = useState<number | null>(null)
   const [showTable, setShowTable] = useState(false)
 
@@ -43,7 +45,7 @@ export function TrendChart({ series }: { series: TrendSeries }) {
         <span className="flex items-baseline gap-3">
           {last && (
             <span className="font-heading text-[20px] font-extrabold leading-none tracking-[-0.01em]">
-              {formatNumber(last.value)}
+              {f.number(last.value)}
             </span>
           )}
           {delta && delta.change !== 0 && (
@@ -56,7 +58,7 @@ export function TrendChart({ series }: { series: TrendSeries }) {
                     : "var(--color-accent)",
               }}
             >
-              {`${delta.change > 0 ? "+" : ""}${formatNumber(delta.change)} in ${formatDays(delta.spanDays)}`}
+              {`${delta.change > 0 ? "+" : ""}${f.number(delta.change)} in ${t.tPlural("core.days", delta.spanDays)}`}
             </span>
           )}
         </span>
@@ -66,7 +68,7 @@ export function TrendChart({ series }: { series: TrendSeries }) {
         <div className="px-4 py-4 text-[13px] opacity-60">
           {series.points.length === 0
             ? "Noch keine Daten aufgezeichnet."
-            : `Bisher nur ein Stand (${formatDate(Date.parse(series.points[0].day))}). Ein Verlauf entsteht ab dem zweiten Tag.`}
+            : `Bisher nur ein Stand (${f.date(Date.parse(series.points[0].day))}). Ein Verlauf entsteht ab dem zweiten Tag.`}
         </div>
       ) : (
         <>
@@ -75,30 +77,30 @@ export function TrendChart({ series }: { series: TrendSeries }) {
               viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
               className="h-auto w-full"
               role="img"
-              aria-label={`${series.label}: ${formatNumber(geo.min)} bis ${formatNumber(geo.max)}`}
+              aria-label={`${series.label}: ${f.number(geo.min)} bis ${f.number(geo.max)}`}
               onMouseLeave={() => setHover(null)}
             >
               {/* Gitter: Haarlinie, durchgezogen, zurückgenommen */}
-              {geo.ticks.map((t) => (
-                <g key={t.value}>
+              {geo.ticks.map((tick) => (
+                <g key={tick.value}>
                   <line
                     x1={PADDING.left}
                     x2={WIDTH - PADDING.right}
-                    y1={t.y}
-                    y2={t.y}
+                    y1={tick.y}
+                    y2={tick.y}
                     stroke="var(--color-divider)"
                     strokeWidth="1"
                     opacity="0.4"
                   />
                   <text
                     x={WIDTH - PADDING.right + 6}
-                    y={t.y + 3.5}
+                    y={tick.y + 3.5}
                     fontSize="10"
                     fill="var(--color-text)"
                     opacity="0.5"
                     style={{ fontVariantNumeric: "tabular-nums" }}
                   >
-                    {formatNumber(t.value)}
+                    {f.number(tick.value)}
                   </text>
                 </g>
               ))}
@@ -178,16 +180,16 @@ export function TrendChart({ series }: { series: TrendSeries }) {
             {hover !== null && geo.coords[hover] ? (
               <>
                 <span className="eyebrow">
-                  {formatDate(Date.parse(geo.coords[hover].point.day))}
+                  {f.date(Date.parse(geo.coords[hover].point.day))}
                 </span>
                 <span className="font-heading text-[13px] font-extrabold">
-                  {formatNumber(geo.coords[hover].point.value)}
+                  {f.number(geo.coords[hover].point.value)}
                 </span>
                 {series.unit && <span className="eyebrow">{series.unit}</span>}
               </>
             ) : (
               <span className="eyebrow">
-                {`${formatNumber(series.points.length)} Stände · ${formatDate(Date.parse(series.points[0].day))} bis ${formatDate(Date.parse(last.day))}`}
+                {`${f.number(series.points.length)} Stände · ${f.date(Date.parse(series.points[0].day))} bis ${f.date(Date.parse(last.day))}`}
               </span>
             )}
 
@@ -218,17 +220,17 @@ export function TrendChart({ series }: { series: TrendSeries }) {
                     return (
                       <tr key={p.day}>
                         <td style={{ fontVariantNumeric: "tabular-nums" }}>
-                          {formatDate(Date.parse(p.day))}
+                          {f.date(Date.parse(p.day))}
                         </td>
                         <td style={{ fontVariantNumeric: "tabular-nums" }}>
-                          {formatNumber(p.value)}
+                          {f.number(p.value)}
                         </td>
                         <td style={{ fontVariantNumeric: "tabular-nums" }}>
                           {change === null
                             ? "—"
                             : change === 0
                               ? "±0"
-                              : `${change > 0 ? "+" : ""}${formatNumber(change)}`}
+                              : `${change > 0 ? "+" : ""}${f.number(change)}`}
                         </td>
                       </tr>
                     )

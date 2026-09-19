@@ -2,12 +2,8 @@
 
 import { useEffect, useState } from "react"
 import type { ItemDetails } from "@/lib/battlenet"
-import { QUALITY_COLORS } from "@/lib/battlenet"
-
-const QUALITY_LABEL: Record<string, string> = {
-  POOR: "Schlecht", COMMON: "Gewöhnlich", UNCOMMON: "Ungewöhnlich", RARE: "Selten",
-  EPIC: "Episch", LEGENDARY: "Legendär", ARTIFACT: "Artefakt", HEIRLOOM: "Erbstück",
-}
+import { QUALITY_COLORS, qualityLabelKey } from "@/lib/battlenet"
+import { useT } from "./I18nProvider"
 
 export interface CandidateTarget {
   itemId: number
@@ -40,6 +36,7 @@ export function CandidateTooltip({
   cache: Record<number, ItemDetails>
   onLoaded: (items: Record<number, ItemDetails>) => void
 }) {
+  const t = useT()
   const [viewport, setViewport] = useState({ w: 0, h: 0 })
   const [loading, setLoading] = useState(false)
 
@@ -80,6 +77,7 @@ export function CandidateTooltip({
   if (!target) return null
 
   const quality = known?.quality ?? "COMMON"
+  const qualityKey = qualityLabelKey(quality)
   const color = QUALITY_COLORS[quality] ?? "#FFFFFF"
 
   const WIDTH = 300
@@ -105,8 +103,8 @@ export function CandidateTooltip({
 
       <div className="mt-0.5 flex items-baseline justify-between gap-2">
         <span className="eyebrow">{target.slotName}</span>
-        {known?.quality && (
-          <span className="eyebrow">{QUALITY_LABEL[quality] ?? quality}</span>
+        {known?.quality && qualityKey && (
+          <span className="eyebrow">{t(qualityKey)}</span>
         )}
       </div>
 

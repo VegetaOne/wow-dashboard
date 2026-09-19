@@ -4,6 +4,7 @@
  */
 
 import { apiBase, locale, region } from "./runtime"
+import type { TranslationKey } from "./i18n"
 
 /** Wie viele Charakter-Requests parallel laufen dürfen (Rate-Limit-Schutz) */
 const CONCURRENCY = 8
@@ -642,6 +643,28 @@ export const QUALITY_COLORS: Record<string, string> = {
   LEGENDARY: "#FF8000",
   ARTIFACT: "#E6CC80",
   HEIRLOOM: "#00CCFF",
+}
+
+const QUALITY_LABEL_KEYS: Record<string, TranslationKey> = {
+  POOR: "equipment.quality.poor",
+  COMMON: "equipment.quality.common",
+  UNCOMMON: "equipment.quality.uncommon",
+  RARE: "equipment.quality.rare",
+  EPIC: "equipment.quality.epic",
+  LEGENDARY: "equipment.quality.legendary",
+  ARTIFACT: "equipment.quality.artifact",
+  HEIRLOOM: "equipment.quality.heirloom",
+}
+
+/**
+ * Wörterbuchschlüssel zum API-Qualitätstyp – ersetzt die früher dreifache
+ * Tabelle in EquipmentPanel, ItemTooltip und CandidateTooltip. Ein
+ * unbekannter oder fehlender Typ gibt `null`; die aufrufende Stelle zeigt
+ * dann „—" statt des rohen API-Werts.
+ */
+export function qualityLabelKey(quality: string | null): TranslationKey | null {
+  if (!quality) return null
+  return QUALITY_LABEL_KEYS[quality] ?? null
 }
 
 export const SLOT_ORDER = [

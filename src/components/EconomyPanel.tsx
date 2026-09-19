@@ -5,8 +5,7 @@ import type { GameMode } from "@/lib/battlenet"
 import type { AuctionHouse, HouseStatus } from "@/lib/auction"
 import type { MarginRow } from "@/lib/economy"
 import type { ProfessionView } from "@/lib/professions"
-import { formatMoney } from "@/lib/money"
-import { formatNumber } from "@/lib/format"
+import { useFormat } from "./I18nProvider"
 
 /** Rezepte pro Berechnung – dieselbe Obergrenze wie in der Route. */
 const BATCH = 30
@@ -27,6 +26,7 @@ export function EconomyPanel({
   realm: string
   professions: ProfessionView[]
 }) {
+  const f = useFormat()
   const [index, setIndex] = useState<IndexResponse | null>(null)
   const [indexError, setIndexError] = useState<string | null>(null)
   const [houseId, setHouseId] = useState<number | null>(null)
@@ -268,15 +268,15 @@ export function EconomyPanel({
           />
           <Fact
             label="Gegenstände mit Preis"
-            value={status ? formatNumber(status.itemCount) : "—"}
+            value={status ? f.number(status.itemCount) : "—"}
           />
           <Fact
             label="Angebote gelesen"
-            value={status ? formatNumber(status.auctionCount) : "—"}
+            value={status ? f.number(status.auctionCount) : "—"}
           />
           <Fact
             label="Ohne Sofortkauf"
-            value={status ? formatNumber(status.skippedCount) : "—"}
+            value={status ? f.number(status.skippedCount) : "—"}
             note="ergeben keinen Preis"
           />
         </div>
@@ -323,7 +323,7 @@ export function EconomyPanel({
 
             <span className="ml-auto eyebrow">
               {selectedTier
-                ? `${formatNumber(computed)} von ${formatNumber(selectedTier.recipeIds.length)} Rezepten gerechnet`
+                ? `${f.number(computed)} von ${f.number(selectedTier.recipeIds.length)} Rezepten gerechnet`
                 : ""}
             </span>
           </div>
@@ -361,8 +361,8 @@ export function EconomyPanel({
                 {computing
                   ? "Rechnet…"
                   : rows.length === 0
-                    ? `Erste ${formatNumber(Math.min(BATCH, selectedTier.recipeIds.length))} rechnen`
-                    : `Weitere ${formatNumber(Math.min(BATCH, selectedTier.recipeIds.length - computed))} rechnen`}
+                    ? `Erste ${f.number(Math.min(BATCH, selectedTier.recipeIds.length))} rechnen`
+                    : `Weitere ${f.number(Math.min(BATCH, selectedTier.recipeIds.length - computed))} rechnen`}
               </button>
             ) : (
               <span className="text-[12px] opacity-55">
@@ -372,7 +372,7 @@ export function EconomyPanel({
 
             {unresolved > 0 && (
               <span className="text-[12px] opacity-55">
-                {`${formatNumber(unresolved)} Rezepte ohne Details in der API — nicht gerechnet.`}
+                {`${f.number(unresolved)} Rezepte ohne Details in der API — nicht gerechnet.`}
               </span>
             )}
           </div>
@@ -403,6 +403,7 @@ function Fact({
 }
 
 export function MarginLine({ row }: { row: MarginRow }) {
+  const f = useFormat()
   const positive = row.margin !== null && row.margin > 0
 
   return (
@@ -419,14 +420,14 @@ export function MarginLine({ row }: { row: MarginRow }) {
           className="w-28 flex-none text-right text-[12px] opacity-75"
           style={{ fontVariantNumeric: "tabular-nums" }}
         >
-          {formatMoney(row.totalCost)}
+          {f.money(row.totalCost)}
         </span>
 
         <span
           className="w-28 flex-none text-right text-[12px] opacity-75"
           style={{ fontVariantNumeric: "tabular-nums" }}
         >
-          {formatMoney(row.revenue)}
+          {f.money(row.revenue)}
         </span>
 
         <span
@@ -436,7 +437,7 @@ export function MarginLine({ row }: { row: MarginRow }) {
           {/* Vorzeichen statt Farbe allein – lesbar auch ohne Farbwahrnehmung */}
           {row.margin === null
             ? "—"
-            : `${positive ? "+" : "−"}${formatMoney(Math.abs(row.margin))}`}
+            : `${positive ? "+" : "−"}${f.money(Math.abs(row.margin))}`}
         </span>
       </div>
 
@@ -446,7 +447,7 @@ export function MarginLine({ row }: { row: MarginRow }) {
             <span>
               {`Kein Angebot für: ${row.missingReagents.slice(0, 3).join(", ")}`}
               {row.missingReagents.length > 3 &&
-                ` und ${formatNumber(row.missingReagents.length - 3)} weitere`}
+                ` und ${f.number(row.missingReagents.length - 3)} weitere`}
               {" — darum keine Kostensumme."}
             </span>
           )}

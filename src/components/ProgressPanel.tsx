@@ -2,8 +2,8 @@
 
 import { useState } from "react"
 import type { ExpansionProgress, InstanceProgress, DifficultyProgress } from "@/lib/progress"
-import { expansionTotals, formatDay } from "@/lib/progress"
-import { useT } from "./I18nProvider"
+import { expansionTotals } from "@/lib/progress"
+import { useT, useFormat } from "./I18nProvider"
 
 /** Farbe je Schwierigkeit – Mythisch am kräftigsten. */
 const DIFFICULTY_COLOR: Record<string, string> = {
@@ -100,6 +100,7 @@ export function ProgressPanel({
 
 function InstanceRow({ instance }: { instance: InstanceProgress }) {
   const t = useT()
+  const f = useFormat()
   const [showBosses, setShowBosses] = useState(false)
   const hasEncounters = instance.modes.some((m) => m.encounters.length > 0)
 
@@ -155,7 +156,7 @@ function InstanceRow({ instance }: { instance: InstanceProgress }) {
                         {`${enc.completedCount}×`}
                       </span>
                       <span className="w-20 flex-none text-right opacity-50">
-                        {formatDay(enc.lastKillAt)}
+                        {f.date(enc.lastKillAt)}
                       </span>
                     </li>
                   ))}

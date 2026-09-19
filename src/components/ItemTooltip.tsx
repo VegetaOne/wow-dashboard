@@ -2,18 +2,14 @@
 
 import { useEffect, useState } from "react"
 import type { EquipmentSlot } from "@/lib/battlenet"
-import { QUALITY_COLORS } from "@/lib/battlenet"
+import { QUALITY_COLORS, qualityLabelKey } from "@/lib/battlenet"
+import { useT } from "./I18nProvider"
 
 export interface TooltipTarget {
   item: EquipmentSlot
   slotName: string
   x: number
   y: number
-}
-
-const QUALITY_LABEL: Record<string, string> = {
-  POOR: "Schlecht", COMMON: "Gewöhnlich", UNCOMMON: "Ungewöhnlich", RARE: "Selten",
-  EPIC: "Episch", LEGENDARY: "Legendär", ARTIFACT: "Artefakt", HEIRLOOM: "Erbstück",
 }
 
 export function itemDisplayName(item: EquipmentSlot): string {
@@ -25,6 +21,7 @@ export function itemDisplayName(item: EquipmentSlot): string {
  * damit der Kasten nicht aus dem Fenster läuft.
  */
 export function ItemTooltip({ target }: { target: TooltipTarget | null }) {
+  const t = useT()
   const [viewport, setViewport] = useState({ w: 0, h: 0 })
 
   useEffect(() => {
@@ -39,6 +36,7 @@ export function ItemTooltip({ target }: { target: TooltipTarget | null }) {
 
   const { item, slotName, x, y } = target
   const quality = item.quality?.type ?? "COMMON"
+  const qualityKey = qualityLabelKey(quality)
   const color = QUALITY_COLORS[quality] ?? "#FFFFFF"
 
   const WIDTH = 280
@@ -64,7 +62,7 @@ export function ItemTooltip({ target }: { target: TooltipTarget | null }) {
 
       <div className="mt-0.5 flex items-baseline justify-between gap-2">
         <span className="eyebrow">{slotName}</span>
-        <span className="eyebrow">{QUALITY_LABEL[quality] ?? quality}</span>
+        <span className="eyebrow">{qualityKey ? t(qualityKey) : "—"}</span>
       </div>
 
       {item.level?.value != null && (
