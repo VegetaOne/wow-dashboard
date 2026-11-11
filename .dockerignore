@@ -14,3 +14,4 @@ config.key
 docs
 CLAUDE.md
 tools
+tests

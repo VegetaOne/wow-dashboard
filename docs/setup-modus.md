@@ -1,6 +1,7 @@
 # WoW Dashboard – Setup-Modus
 
-> Stand: 2026-09-16 · gebaut, noch nicht im laufenden Betrieb geprüft
+> Stand: 2026-11-11 · Durchlauf im Container geprüft; Einrichtungscode und
+> Hintergrund-Auffrischung neu, noch nicht mit echten Daten geprüft
 > Vorüberlegungen und Einordnung: [Reihenfolge und Entscheide](./reihenfolge.md)
 
 ## Entscheide
@@ -11,6 +12,8 @@
 | **Secret** | Verschlüsselt (AES-256-GCM), Schlüssel als `config.key` neben der Datenbank. |
 | **Rechte** | Eine Instanz, ein Besitzer: wer den Setup abschliesst, darf danach als Einziger ändern. |
 | **Migration** | Kein Rückfall auf die `.env`. Wer aktualisiert, durchläuft den Setup einmal. |
+| **Absicherung** | Einrichtungscode im Log des Containers (2026-11-11), siehe unten. |
+| **Auffrischung** | Timer im Container, nur für den Besitzer, mit App-Token (2026-11-11), siehe unten. |
 
 ## Warum zwei Stufen
 
@@ -25,8 +28,8 @@ Token-Endpunkt (Client-Credentials-Fluss). Schlägt die Prüfung nur wegen eines
 Netzproblems fehl, lässt sich trotzdem fortfahren — ein Netzausfall sagt nichts über die
 Daten. Erreichbar ausschliesslich, solange der Setup offen ist; danach 403 und Weiterleitung.
 
-**Stufe 2, `/setup/schritt-2`, nach der Anmeldung.** Spielmodi, Startansicht,
-Abrufintervall, optional Warcraft Logs. Wer hier ankommt, hat sich erfolgreich
+**Stufe 2, `/setup/schritt-2`, nach der Anmeldung.** Abrufintervall, optional
+Warcraft Logs. Wer hier ankommt, hat sich erfolgreich
 angemeldet — der Beweis, dass Stufe 1 stimmt. Der Account wird als Besitzer festgehalten,
 danach ist der Setup gesperrt.
 
@@ -105,20 +108,76 @@ rechnet Next nichts vor – darum fiel es dort nie auf.
 zwischen Seiten und Routen teilen will, legt es an `globalThis` (mit `Symbol.for`) oder
 liest es aus der Datenbank.
 
+## Einrichtungscode (seit 2026-11-11)
+
+Stufe 1 ist ohne Anmeldung erreichbar. Ohne weiteren Schutz konnte jeder im Heimnetz,
+der die Seite vor dem Besitzer öffnet, eigene Zugangsdaten eintragen und sich in Stufe 2
+zum Besitzer machen.
+
+- Beim Start schreibt der Container, solange der Setup offen ist, einen Code ins Log:
+  `docker compose logs app | grep setup` → `[setup] Einrichtungscode: ABCD-EFGH`.
+  Acht Zeichen ohne verwechselbare (0/O, 1/I/L), Gross-/Kleinschreibung und Bindestrich
+  egal.
+- **Stufe 1** (`/api/setup`) und die **Prüfung** (`/api/setup/verify`) verlangen ihn. Die
+  Prüfung auch, weil die Instanz sonst für jeden im Netz fremde Zugangsdaten testete.
+- **Stufe 2** (`/api/setup/complete`) verlangt den Nachweis daraus: Stufe 1 setzt nach
+  richtigem Code ein `httpOnly`-Cookie mit dem SHA-256-Hash des Codes. Nur wer es trägt,
+  wird Besitzer. Danach wird der Code verworfen.
+- Der Code lebt im Speicher des Prozesses (an `globalThis`) und **gilt bis zum Neustart**.
+  Startet der Container zwischen Stufe 1 und 2 neu, meldet Stufe 2 das und schickt
+  zurück zu Stufe 1.
+- **Bewusste Ausnahme** von „nichts Geheimes ins Log": der Code ist einmalig, nach dem
+  Setup wertlos, und das Log ist genau der Ort, an den nur kommt, wer die Maschine hat.
+
+Erzeugt wird er in `src/instrumentation.ts` → `src/lib/startup.ts`, und zur Sicherheit
+noch einmal, wenn jemand `/setup` öffnet und es noch keinen gibt.
+
+## Hintergrund-Auffrischung (seit 2026-11-11)
+
+Der Verlauf entsteht aus einem Stand je Tag – aber nur an Tagen, an denen jemand die
+Seite öffnet. Der Auffrischer füllt die Lücken.
+
+- **Wann:** täglich 15 Minuten nach dem Tagesreset der Region (`nextRefreshAt` in
+  `src/lib/reset.ts`, mit Tests). Ein Timer im Server-Prozess, gestartet aus
+  `src/instrumentation.ts`. Kein Cron auf dem Host. Abschalten mit `WOW_REFRESH=off`.
+- **Wen:** nur die Charaktere des **Besitzers**. Die Liste selbst braucht ein Nutzertoken;
+  die App merkt sie sich darum, wenn der Besitzer die Startseite öffnet
+  (Datensatz `owner-characters`).
+- **Was:** Profil, Ausrüstung, Berufe, Schlachtzüge, Erfolge – die Quellen des Verlaufs.
+  Über die Snapshot-Schicht, mit denselben Ladern wie die Seiten.
+- **Womit:** einem **App-Token** (Client-Credentials) aus Client ID und Secret.
+  Ursprünglich war ein verschlüsselt gespeichertes Refresh-Token geplant (vom Nutzer
+  freigegeben). Battle.net stellt aber **keine Refresh-Tokens** aus; ein Nutzertoken lebt
+  24 Stunden und wäre für einen täglichen Lauf meist schon tot. Gespeichert wird darum
+  kein Token.
+- **Ungeprüft:** ob Forever die Charakter-Endpunkte für ein App-Token freigibt (bei Retail
+  tun sie es). Der Lauf probiert es am ersten Charakter an der Snapshot-Schicht vorbei –
+  die würde einen 401/403 sonst mit dem alten Stand überdecken – und bricht bei
+  Ablehnung ab.
+- **Anzeige:** die Einstellungsseite zeigt den letzten Lauf (Tabelle `RefreshRun`,
+  Migration `0009_auffrischer`), seinen Ausgang und den nächsten Termin. Im Log steht
+  `[auffrischer] …`.
+
+**Falle:** `src/instrumentation.ts` wird auch fürs Edge-Bündel übersetzt. Der Import der
+Node-Module muss in genau der Form `if (process.env.NEXT_RUNTIME === "nodejs") { await
+import(…) }` stehen; mit einem frühen `return` davor bricht der Bau an `crypto`.
+
+**Nebenbefund:** `refreshBattleNetToken` in `src/lib/auth.ts` versucht einen
+Refresh-Token-Fluss, den Battle.net nicht anbietet. Nach 24 Stunden endet die Sitzung
+also mit `RefreshAccessTokenError`, und man meldet sich neu an. Nicht angefasst.
+
 ## Offen und ungeprüft
 
 - ~~**Der OAuth-Durchlauf selbst.**~~ **Geprüft 2026-11-11** im Docker-Container über
   `localhost`: Setup Stufe 1 und 2, Anmeldung mit Battle.net, danach die Charakterliste.
   Die Ableitung von `NEXTAUTH_URL` aus der Anfrage greift. Über die lokale IP aus dem
   Heimnetz ist es noch nicht geprüft.
-- **Sprache betrifft bisher nur die API-Locale**, nicht die Oberfläche. Der
-  Sprachumschalter für die Oberfläche bleibt eigene Arbeit.
 - **Hauptcharakter** ist noch nicht im Setup — `UserPreference` führt die Felder bereits.
-- **Region umstellen** lässt alte Snapshots liegen; sie zeigen dann Charaktere der alten
-  Region. Noch kein Aufräumen dafür.
-- Eine Datei liess sich nicht schreiben, weil sie zu tief im Verzeichnisbaum liegt:
-  `src/app/api/wow/character/[realm]/[name]/equipment/route.ts`. Dort ist `authOptions`
-  von Hand auf `await getAuthOptions()` umzustellen.
+- **Region umstellen** lässt alte Snapshots liegen. Sie sind nach Region getrennt und
+  erscheinen erst wieder, wenn zurückgestellt wird; die Einstellungsseite sagt das. Kein
+  Aufräumen dafür.
+- **Einrichtungscode und Auffrischer** sind ohne echte Zugangsdaten gebaut; geprüft sind
+  Typen, Bau, die Reset-Arithmetik und die Ablehnung falscher Codes an der laufenden App.
 
 ## Dateien
 
@@ -134,6 +193,10 @@ liest es aus der Datenbank.
 | `src/app/dashboard/einstellungen/` | Einstellungsseite |
 | `src/app/api/settings/` | Änderungen, nur für den Besitzer |
 | `src/app/dashboard/layout.tsx` | Schranke vor dem Dashboard |
+| `src/lib/setup-code.ts` | Einrichtungscode und Nachweis für Stufe 2 |
+| `src/lib/refresher.ts`, `src/lib/client-token.ts` | Hintergrund-Auffrischung, App-Token |
+| `src/instrumentation.ts`, `src/lib/startup.ts` | Was beim Start passiert |
+| `prisma/migrations/0009_auffrischer/` | Tabelle `RefreshRun` |
 
 ## Geprüft
 

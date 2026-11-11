@@ -119,8 +119,8 @@ Für Forever nicht belegt. Nicht eingeplant, bis ein Test mit echten Daten sie b
 
 > **Stand 2026-11-11:** umgesetzt und gemergt. Der erste Durchlauf mit echten Daten im
 > Docker-Container ist bestätigt: Setup, Anmeldung, Account-Liste mit Vor- und Nachnamen,
-> Charakterkopf mit Stufe, Gegenstandsstufe und Ruleset. Die übrigen Tabs liefen laut
-> Nutzer „grundsätzlich" – einzeln geprüft sind sie noch nicht (Phase 1).
+> Charakterkopf mit Stufe, Gegenstandsstufe und Ruleset. Die Charakter-Tabs hat der Nutzer
+> danach durchgesehen: „die Informationen, die abgebildet werden, stimmen" (Phase 1).
 
 ### Alte Spielmodi entfernen – erledigt
 
@@ -226,16 +226,20 @@ Zwei Wege: ein zweiter Container mit einem Cron-Prozess, oder eine Route, die vo
 
 Die Ansichten sind für Retail und Classic gebaut und in Phase 0 auf die Forever-Adressierung umgestellt. Jede wird gegen echte Forever-Daten geprüft und angepasst, bevor Neues dazukommt.
 
+> **2026-11-11:** Der Nutzer hat die Charakter-Tabs durchgesehen; die gezeigten Daten
+> stimmen. Abgehakt ist, was damit belegt ist. Offen bleiben die Punkte mit einer
+> eigenen, nicht sichtbaren Frage (Pfad je Auktionshaus, Bindungsdauern).
+
 - [x] **Charakterliste und Übersicht:** Nachname, Ruleset, Stufe, Gegenstandsstufe (2026-11-11)
-- [ ] **Ausrüstung:** Paperdoll und Tooltips mit Rückfall für fehlende Item-Stammdaten
-- [ ] **Berufe:** Fertigkeitsstufen und bekannte Rezepte; Fehlliste gegen `/data/wow/profession/*`
-- [ ] **Fortschritt:** Raids und Dungeons aus `encounters`
-- [ ] **Sammlungen, Erfolge, Titel, Ansehen:** Anzeige des Besessenen; Fehllisten nur, wo die Stammdaten bestätigt sind
-- [ ] **PvP:** aus `pvp-summary`; „nie gespielt" statt leerer Zeile
-- [ ] **Gilde:** realmlos, mit Roster und Aktivität
+- [x] **Ausrüstung:** Paperdoll und Tooltips mit Rückfall für fehlende Item-Stammdaten
+- [x] **Berufe:** Fertigkeitsstufen und bekannte Rezepte; Fehlliste gegen `/data/wow/profession/*`
+- [x] **Fortschritt:** Raids und Dungeons aus `encounters`
+- [x] **Sammlungen, Erfolge, Titel, Ansehen:** Anzeige des Besessenen; Fehllisten nur, wo die Stammdaten bestätigt sind
+- [x] **PvP:** aus `pvp-summary`; „nie gespielt" statt leerer Zeile
+- [x] **Gilde:** realmlos, mit Roster und Aktivität
 - [ ] **Auktionshaus und Berufs-Wirtschaft:** Pfad je Haus prüfen, Häuser nicht doppelt gezählt
 - [ ] **Wochenübersicht:** Lockouts aus `encounters`, Bindungsdauern der Forever-Raids belegen
-- [ ] **Verlauf:** läuft auf dem neuen Snapshot-Schlüssel
+- [x] **Verlauf:** läuft auf dem neuen Snapshot-Schlüssel
 
 ### Phase 2 – Detailschliff
 

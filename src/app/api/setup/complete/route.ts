@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth"
 import { getAuthOptions } from "@/lib/auth"
 import { loadConfig, saveConfig } from "@/lib/config"
 import { getT } from "@/lib/t"
+import { checkSetupProof, clearSetupCode, SETUP_PROOF_COOKIE } from "@/lib/setup-code"
 
 /**
  * Stufe 2 des Setups: alles, was einen angemeldeten Account voraussetzt.
@@ -25,6 +26,11 @@ export async function POST(req: NextRequest) {
     )
   }
 
+  // Nur wer Stufe 1 mit dem Einrichtungscode bestanden hat, wird Besitzer
+  if (!checkSetupProof(req.cookies.get(SETUP_PROOF_COOKIE)?.value)) {
+    return NextResponse.json({ error: t("setup.proofMissing") }, { status: 403 })
+  }
+
   const body = await req.json().catch(() => null)
 
   // Seit WoW Forever gibt es keine Spielmodus-Auswahl mehr
@@ -36,5 +42,8 @@ export async function POST(req: NextRequest) {
     markComplete: true,
   })
 
-  return NextResponse.json({ ok: true })
+  clearSetupCode()
+  const response = NextResponse.json({ ok: true })
+  response.cookies.delete(SETUP_PROOF_COOKIE)
+  return response
 }

@@ -21,14 +21,16 @@
 | **Talentbuilds** | Zurückgestellt, bis die Talentbaum-Daten für Forever bestätigt sind. Siehe eigenen Abschnitt unten. |
 | **Snapshot-Historie** | Behalten, ein Stand je Tag. Grundlage für alles Verlaufsbezogene. |
 | **Loot-Bereich** | **Entfernt** (2026-11-11). Die Journal-API liefert für WoW Forever keine Instanzen; ein Loot-Index ohne Inhalt bringt nichts. Tabellen mit Migration `0008_loot_entfernen` gelöscht. Kommt die Journal-API, steht der Code in der Git-Historie. |
+| **Hintergrund-Auffrischung** | **Timer im Container**, täglich 15 Minuten nach dem Tagesreset, **nur für den Besitzer** (2026-11-11). Nimmt ein App-Token (Client-Credentials), kein gespeichertes Nutzertoken: Battle.net stellt keine Refresh-Tokens aus, ein Nutzertoken lebt 24 Stunden. Die Charakterliste merkt sich die App beim Besuch des Besitzers. Abschaltbar mit `WOW_REFRESH=off`. Siehe [Setup-Modus](./setup-modus.md), Abschnitt „Hintergrund-Auffrischung". |
+| **Absicherung des Setups** | **Einrichtungscode im Log des Containers** (2026-11-11). Stufe 1 verlangt ihn, Stufe 2 den Nachweis daraus per Cookie. Gilt bis zum Neustart. |
 | **Wochenübersicht** | Eigene Account-Seite, Status aus `last_kill_timestamp` statt aus Snapshot-Diffs, Lockout-Längen als gepflegte Tabelle. Siehe [Wochenübersicht](./wochenuebersicht.md). |
 
 ## Fertig – für die alten Spielmodi
 
 Gebaut für Retail und Classic, in Phase 0 auf die Forever-Adressierung umgestellt.
-**Mit echten Forever-Daten bestätigt (2026-11-11):** Charakterliste und Charakterkopf. Die
-übrigen Ansichten liefen im ersten Durchlauf, sind aber nicht einzeln geprüft – das ist
-[Roadmap](./roadmap.md), Phase 1.
+**Mit echten Forever-Daten bestätigt (2026-11-11):** Charakterliste und Charakterkopf, und
+die Charakter-Tabs zeigen nach Durchsicht des Nutzers stimmige Daten (Phase 1 der
+[Roadmap](./roadmap.md)).
 
 Charakterübersicht · Ausrüstung mit Paperdoll, Icons, Tooltips und Charaktermodell ·
 Upgrades (Sockel, Verzauberungen, schwache Slots) · Berufe · Fortschritt (Raids, Dungeons) ·
@@ -47,24 +49,24 @@ Bindungsdauern gelten für Forever als angenommen.
 
 ## Offene Arbeit, in dieser Reihenfolge
 
-1. **Bestehende Ansichten auf Forever prüfen** — [Roadmap](./roadmap.md), Phase 1. Die
-   Umstellung selbst (Phase 0) ist umgesetzt, gemergt und in der Grundfunktion mit echten
-   Daten bestätigt (2026-11-11). Offen ist, die übrigen Tabs einzeln durchzugehen und
-   festzuhalten, was jeweils kommt.
-2. **Sprachumschalter fertigstellen** — **bereits angefangen, etwa zur Hälfte fertig.**
-   Mechanik, Umschalter und die Wörterbücher für Kern, Setup, Fortschritt, Ansehen,
-   Erfolge und Sammlungen stehen; elf Komponenten hatten noch feste deutsche Strings und
-   sechs Bereichswörterbücher waren leere Hüllen (Stand vor der Umstellung). Restliste und
-   Vorgehen:
-   [i18n](./i18n.md). Kommt direkt nach der Umstellung, weil die Umstellung Ansichten
-   entfernt hat und die Restliste damit kürzer wird (Mythisch+, Spielmodus-Auswahl). Der
-   Charakterkopf ist mit der Umstellung bereits übersetzt.
-3. **Hintergrund-Auffrischer** — blockiert durch einen Entscheid: dafür müssten
-   Refresh-Tokens verschlüsselt und dauerhaft gespeichert werden.
-4. **Setup-Modus abschliessen** — der Durchlauf im Container ist seit 2026-11-11 geprüft
-   (dabei zwei Fehler behoben, siehe [Setup-Modus](./setup-modus.md)). Offen sind die
-   Punkte unten im Abschnitt „Setup-Modus", etwa die Absicherung der Setup-Seite und ein
-   Hinweis beim Wechsel der Region.
+Erledigt am 2026-11-11, in dieser Reihenfolge:
+
+1. ~~**Bestehende Ansichten auf Forever prüfen**~~ — vom Nutzer durchgesehen, die Tabs
+   zeigen stimmige Daten.
+2. ~~**Sprachumschalter fertigstellen**~~ — die letzten festen Texte liegen im Wörterbuch,
+   die Abnahme-Greps aus [Auftrag](./auftraege/i18n-abschluss.md) sind leer. Ungeprüft:
+   das Umschalten mit echten Daten durch jede Ansicht.
+3. ~~**Hintergrund-Auffrischer**~~ — gebaut. **Ungeprüft:** ob Forever Charakterdaten an ein
+   App-Token herausgibt. Die Einstellungsseite zeigt nach dem ersten Lauf, wie er ausging.
+4. ~~**Setup-Modus abschliessen**~~ — Einrichtungscode gebaut; der Hinweis beim Wechsel der
+   Region stand schon und ist an die getrennte Ablage je Region angepasst.
+
+Offen als Nächstes:
+
+1. **Auffrischer mit echten Daten prüfen** — nach dem ersten Lauf in den Einstellungen
+   ablesen. Endet er mit „Abgebrochen", braucht es einen anderen Weg (etwa ein
+   Nutzertoken, das bei jeder Anmeldung ersetzt wird und 24 Stunden trägt).
+2. **Einrichtungscode im echten Setup durchlaufen** — mit frischem Volume.
 
 Nachzuziehen, wenn die Wochenübersicht im Betrieb steht: wöchentliche Quests und
 Belohnungen, und die offenen Punkte aus [Wochenübersicht](./wochenuebersicht.md).
@@ -152,6 +154,7 @@ unangemeldet erreichbar sein. Damit nicht jeder im Heimnetz die App umkonfigurie
 kann, braucht es eine Absicherung: entweder nur solange keine Konfiguration existiert
 („first run"), oder ein Einmal-Token, das beim Start in die Container-Logs geschrieben
 wird. Letzteres ist sicherer, weil es auch beim späteren Ändern greift.
+**Umgesetzt 2026-11-11:** Einrichtungscode im Log, siehe [Setup-Modus](./setup-modus.md).
 
 **2. `.env` schreiben oder in die Datenbank?**
 
@@ -172,8 +175,8 @@ ein selbst erzeugtes `NEXTAUTH_SECRET` (das kann der Setup ohne Nachfrage generi
 **Region:** vorausgewählt EU, wählbar US, KR, TW. Sie bestimmt bei Forever die
 Namespaces (`profile-forever-{region}` usw.) und den API-Host, und sie steht in jedem
 Datenbankschlüssel. Wird die Region später gewechselt, erscheinen die Stände der alten
-Region nicht mehr – sie bleiben in der Datenbank, werden aber nicht gemischt. Ein Hinweis
-beim Umstellen fehlt noch.
+Region nicht mehr – sie bleiben in der Datenbank, werden aber nicht gemischt. Die
+Einstellungsseite sagt das beim Feld „Region".
 Warcraft-Logs-Zugangsdaten entfallen, solange Warcraft Logs zurückgestellt ist.
 
 Sinnvoll obendrein: der Setup prüft die eingegebenen Zugangsdaten sofort gegen die
@@ -193,7 +196,8 @@ Forever gelöscht. `GAME_MODES` ist ebenfalls entfallen; Namespaces kommen aus
 `namespace()` in `src/lib/battlenet.ts`.
 
 **2. Die Tests liegen nicht im Repo.** — Teilweise behoben 2026-11-11 (PR #2): `npm test`
-gibt es jetzt, es deckt aber nur das Secret-Format ab. [Setup-Modus](./setup-modus.md) und
+gibt es jetzt; es deckt das Secret-Format und seit dem Auffrischer die Reset-Arithmetik
+(`tests/reset.test.mjs`) ab. [Setup-Modus](./setup-modus.md) und
 [Wochenübersicht](./wochenuebersicht.md) berufen sich auf 14 und 26 grüne Testfälle,
 aber `package.json` hat kein Testskript und keinen Runner. Die Fälle waren Wegwerf-
 Skripte. Wer die Reset-Arithmetik oder die Verschlüsselung anfasst, hat also kein

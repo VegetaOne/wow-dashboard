@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test": "node --test tools/secret-format.test.mjs"
+    "test": "node --test tools/secret-format.test.mjs tests/reset.test.mjs"
   },
   "dependencies": {
     "next": "^14.2.5",
