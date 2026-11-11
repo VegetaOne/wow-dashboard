@@ -18,6 +18,21 @@ export async function generateMetadata(): Promise<Metadata> {
   }
 }
 
+/**
+ * Jede Seite wird je Anfrage gerendert, nie beim Bauen.
+ *
+ * Gefunden 2026-11-11 beim ersten echten Setup im Container: Next hielt `/`,
+ * `/login`, `/setup` und `/setup/schritt-2` für statisch und rechnete sie beim
+ * `next build` vor. Zu dem Zeitpunkt gibt es keine Datenbank und damit keine
+ * Zugangsdaten – die Weiterleitung `redirect("/setup")` landete fest im
+ * HTML. Nach dem Speichern im Setup schickte jede dieser Seiten deshalb
+ * wieder zum Setup zurück, egal was in der Datenbank stand.
+ *
+ * Alles hier hängt an der Konfiguration in der Datenbank (Sprache, Setup-
+ * Stand, Anmeldung). Eine vorgerechnete Seite wäre immer falsch.
+ */
+export const dynamic = "force-dynamic"
+
 // Setzt das Theme vor dem ersten Paint — verhindert Hell/Dunkel-Flackern.
 const themeBootstrap = `
 try {

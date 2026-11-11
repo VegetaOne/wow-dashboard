@@ -148,6 +148,10 @@ ihre Daten selbst und erst wenn sie sichtbar ist.
   und jede Route einzeln; eine `let cache` gibt es dann einmal pro Bündel. Das hat den
   Setup in eine Endlosschleife geschickt. Geteilter Zustand gehört an `globalThis`
   (`Symbol.for(...)`), siehe `config-cache.ts`.
+- **Keine Seite darf beim Bauen vorgerechnet werden.** Alles hängt an der Konfiguration
+  in der Datenbank, die es beim `next build` nicht gibt. Das Root-Layout setzt darum
+  `dynamic = "force-dynamic"`. Im Build-Protokoll muss jede Seite `ƒ` sein; ein `○`
+  heisst, ihr Ergebnis – samt Weiterleitungen – ist fest im Image.
 - **`config.key` gehört zur Datenbank.** Beides zusammen ins Backup, sonst ist das
   verschlüsselte Secret verloren.
 
