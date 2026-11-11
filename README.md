@@ -345,7 +345,6 @@ Two splits are deliberate:
 | **💰 Auction house / craft economy** | Crafting cost versus sale price — needs its own index, responses run to several MB |
 | **📅 Weekly overview** | Resets, open lockouts, weekly rewards |
 | **⚖️ Character comparison** | Two characters side by side |
-| **🔄 Background refresher** | Built: daily after the reset, owner's characters only, with an app token. Whether Forever serves character data to an app token is still to be confirmed |
 | **📊 Warcraft Logs** | Raid performance; needs a separate application registered at warcraftlogs.com |
 | **♾️ WoW Forever** | As soon as the API namespace is known |
 
@@ -552,10 +551,9 @@ angezeigt. Die Region ist standardmässig EU und im Setup wie in den Einstellung
 
 ### Offen
 
-Charaktervergleich · Warcraft Logs (eigene App-Registrierung) · Talentbuilds. Der
-Hintergrund-Auffrischer läuft täglich nach dem Reset für die Charaktere des Besitzers;
-ob Forever Charakterdaten an ein App-Token herausgibt, ist noch zu bestätigen
-(Einstellungen zeigen den letzten Lauf). Abschalten mit `WOW_REFRESH=off`.
+Charaktervergleich · Warcraft Logs (eigene App-Registrierung) · Talentbuilds. Einen
+Hintergrund-Auffrischer gibt es bewusst nicht: der Companion läuft, während gespielt
+wird, und die Profile ziehen erst beim Ausloggen nach.
 
 ### Sicherheit
 

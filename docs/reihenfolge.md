@@ -21,7 +21,7 @@
 | **Talentbuilds** | Zurückgestellt, bis die Talentbaum-Daten für Forever bestätigt sind. Siehe eigenen Abschnitt unten. |
 | **Snapshot-Historie** | Behalten, ein Stand je Tag. Grundlage für alles Verlaufsbezogene. |
 | **Loot-Bereich** | **Entfernt** (2026-11-11). Die Journal-API liefert für WoW Forever keine Instanzen; ein Loot-Index ohne Inhalt bringt nichts. Tabellen mit Migration `0008_loot_entfernen` gelöscht. Kommt die Journal-API, steht der Code in der Git-Historie. |
-| **Hintergrund-Auffrischung** | **Timer im Container**, täglich 15 Minuten nach dem Tagesreset, **nur für den Besitzer** (2026-11-11). Nimmt ein App-Token (Client-Credentials), kein gespeichertes Nutzertoken: Battle.net stellt keine Refresh-Tokens aus, ein Nutzertoken lebt 24 Stunden. Die Charakterliste merkt sich die App beim Besuch des Besitzers. Abschaltbar mit `WOW_REFRESH=off`. Siehe [Setup-Modus](./setup-modus.md), Abschnitt „Hintergrund-Auffrischung". |
+| **Hintergrund-Auffrischung** | **Verworfen** (2026-11-11). Der Companion läuft, während gespielt wird; und ohne Spielen ändert sich an den Profilen nichts, weil sie erst beim Ausloggen nachziehen. Ein täglicher Timer hätte höchstens den genauen Tag einer Änderung festgehalten. Kurz gebaut (PR #7) und wieder entfernt; Tabelle mit Migration `0010_auffrischer_entfernen` gelöscht. Der Verlauf bleibt: er entsteht aus den Ständen, die beim Öffnen der Seiten gespeichert werden. |
 | **Absicherung des Setups** | **Einrichtungscode im Log des Containers** (2026-11-11). Stufe 1 verlangt ihn, Stufe 2 den Nachweis daraus per Cookie. Gilt bis zum Neustart. |
 | **Wochenübersicht** | Eigene Account-Seite, Status aus `last_kill_timestamp` statt aus Snapshot-Diffs, Lockout-Längen als gepflegte Tabelle. Siehe [Wochenübersicht](./wochenuebersicht.md). |
 
@@ -56,17 +56,14 @@ Erledigt am 2026-11-11, in dieser Reihenfolge:
 2. ~~**Sprachumschalter fertigstellen**~~ — die letzten festen Texte liegen im Wörterbuch,
    die Abnahme-Greps aus [Auftrag](./auftraege/i18n-abschluss.md) sind leer. Ungeprüft:
    das Umschalten mit echten Daten durch jede Ansicht.
-3. ~~**Hintergrund-Auffrischer**~~ — gebaut. **Ungeprüft:** ob Forever Charakterdaten an ein
-   App-Token herausgibt. Die Einstellungsseite zeigt nach dem ersten Lauf, wie er ausging.
+3. ~~**Hintergrund-Auffrischer**~~ — gebaut und auf Wunsch wieder entfernt, siehe
+   Entscheid oben.
 4. ~~**Setup-Modus abschliessen**~~ — Einrichtungscode gebaut; der Hinweis beim Wechsel der
    Region stand schon und ist an die getrennte Ablage je Region angepasst.
 
 Offen als Nächstes:
 
-1. **Auffrischer mit echten Daten prüfen** — nach dem ersten Lauf in den Einstellungen
-   ablesen. Endet er mit „Abgebrochen", braucht es einen anderen Weg (etwa ein
-   Nutzertoken, das bei jeder Anmeldung ersetzt wird und 24 Stunden trägt).
-2. **Einrichtungscode im echten Setup durchlaufen** — mit frischem Volume.
+1. **Einrichtungscode im echten Setup durchlaufen** — mit frischem Volume.
 
 Nachzuziehen, wenn die Wochenübersicht im Betrieb steht: wöchentliche Quests und
 Belohnungen, und die offenen Punkte aus [Wochenübersicht](./wochenuebersicht.md).
@@ -196,7 +193,7 @@ Forever gelöscht. `GAME_MODES` ist ebenfalls entfallen; Namespaces kommen aus
 `namespace()` in `src/lib/battlenet.ts`.
 
 **2. Die Tests liegen nicht im Repo.** — Teilweise behoben 2026-11-11 (PR #2): `npm test`
-gibt es jetzt; es deckt das Secret-Format und seit dem Auffrischer die Reset-Arithmetik
+gibt es jetzt; es deckt das Secret-Format und die Reset-Arithmetik
 (`tests/reset.test.mjs`) ab. [Setup-Modus](./setup-modus.md) und
 [Wochenübersicht](./wochenuebersicht.md) berufen sich auf 14 und 26 grüne Testfälle,
 aber `package.json` hat kein Testskript und keinen Runner. Die Fälle waren Wegwerf-

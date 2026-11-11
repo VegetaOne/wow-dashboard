@@ -1,8 +1,7 @@
 /**
- * Läuft einmal beim Start des Servers: Einrichtungscode, Hintergrundaufgaben.
+ * Läuft einmal beim Start des Servers: schreibt den Einrichtungscode ins Log.
  *
- * Nur in der Node-Laufzeit: beides braucht Prisma, `crypto` und
- * `fs`. Die Bedingung muss genau so dastehen – `if (… === "nodejs") { import }`.
+ * Nur in der Node-Laufzeit: das braucht Prisma, `crypto` und `fs`. Die Bedingung muss genau so dastehen – `if (… === "nodejs") { import }`.
  * Next ersetzt `NEXT_RUNTIME` beim Bündeln und wirft den Zweig fürs
  * Edge-Bündel nur in dieser Form weg; mit einem frühen `return` davor
  * versucht es, `crypto` für Edge aufzulösen, und der Bau bricht.

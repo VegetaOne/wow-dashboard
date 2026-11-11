@@ -214,7 +214,7 @@ Tab-Leiste unter dem Charakterkopf. Die Spielmodus-Tabs sind entfallen. Die Regi
 
 Momentan zieht der Browser. Für einen Companion wäre ein serverseitiger Auffrischer besser: einmal täglich alle Charaktere durchgehen, Snapshots schreiben, damit die Verlaufsdaten auch entstehen, wenn niemand die Seite offen hat.
 
-**Umgesetzt 2026-11-11** – anders als hier ursprünglich geplant: ein Timer im Server-Prozess statt Cron auf dem Host, nur für den Besitzer, und mit einem App-Token statt eines gespeicherten Refresh-Tokens. Battle.net stellt keine Refresh-Tokens aus; ein Nutzertoken lebt 24 Stunden. Ob Forever Charakterdaten an ein App-Token herausgibt, ist ungeprüft. Details in [Setup-Modus](./setup-modus.md), Abschnitt „Hintergrund-Auffrischung".
+**Verworfen 2026-11-11.** Der Companion läuft, während gespielt wird, und die Profile ziehen erst beim Ausloggen nach – an Tagen ohne Spielen gäbe es nichts Neues zu holen. Kurz gebaut und wieder entfernt. Nebenbei geklärt: Battle.net stellt keine Refresh-Tokens aus, ein Nutzertoken lebt 24 Stunden. Siehe [Setup-Modus](./setup-modus.md).
 
 ---
 
@@ -285,7 +285,7 @@ Die verbindliche Reihenfolge steht in [Reihenfolge](./reihenfolge.md). Die Empfe
 
 - [x] **Alte Snapshots** von Retail- und Classic-Charakteren werden gelöscht – Migration `0007_wow_forever`, mit Backup davor.
 - [x] **Region:** Standard EU, im Setup bzw. in den Einstellungen auf US, KR oder TW umstellbar.
-- [x] **Hintergrund-Auffrischer:** gebaut – Timer im Container, nur der Besitzer, App-Token. Siehe 4.3.
+- [x] **Hintergrund-Auffrischer:** verworfen – der Companion läuft beim Spielen. Siehe 4.3.
 
 ### Offen
 
