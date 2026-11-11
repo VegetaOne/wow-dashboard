@@ -58,6 +58,32 @@ hat beides. Das ist die Grenze des Verfahrens und wird auch so im README benannt
 Angezeigt wird das Secret nie. Das Einstellungsformular sendet es auch nicht zurück:
 ein leeres Feld bedeutet „unverändert".
 
+## Schlüssel erneuern (seit 2026-11-11)
+
+`prisma/config.key` und `dev.log` lagen bis 2026-11-11 im öffentlichen Repo – eingecheckt,
+bevor `.gitignore` sie nannte. Seitdem sind sie aus der Versionsverwaltung genommen; in
+älteren Commits stehen sie weiter. Die alte Schlüsseldatei passt nur zu einer
+Datenbank, die mit ihr verschlüsselt wurde, und Datenbanken lagen nie im Repo. Trotzdem
+gilt sie als offengelegt.
+
+**Erneuern mit `node tools/rotate-key.mjs`** (bei gestoppter App, nach einem Backup von
+Datenbank und Schlüssel). Das Skript entschlüsselt die Secrets mit dem alten Schlüssel,
+verschlüsselt sie mit einem neuen und tauscht die Datei erst aus, wenn die Datenbank
+geschrieben ist. Kann ein Secret nicht entschlüsselt werden, bricht es ab, bevor etwas
+geschrieben wird.
+
+Einfach die Schlüsseldatei zu löschen geht **nicht**: die App erzeugt dann einen neuen
+Schlüssel, liest das gespeicherte Secret nicht mehr, und weil der Setup nach dem
+Abschluss gesperrt ist, kommt man nicht mehr an die Einstellungen.
+
+**Betroffen ist nur die Entwicklungsinstanz** (`npm run dev`, Schlüssel unter `prisma/`).
+Der Docker-Container erzeugt seinen Schlüssel im Volume unter `/data`; `.dockerignore`
+hält `*.key` aus dem Image. Der Container braucht keinen Tausch.
+
+Getestet ist das Format gegen einen Vektor aus `secrets.ts` (`npm test`) und der Ablauf
+mit einer nachgebildeten Datenbank. Gegen eine echte SQLite-Datei ist das Skript noch
+nicht gelaufen.
+
 ## Offen und ungeprüft
 
 - **Der OAuth-Durchlauf selbst.** Ohne gültige Zugangsdaten nicht nachstellbar. Das
