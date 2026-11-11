@@ -41,7 +41,7 @@ Setup-Modus abschliessen → Warcraft Logs → WoW Forever.
 - **Warcraft Logs** — eigene App-Registrierung bei warcraftlogs.com nötig
 - **Talentbuilds** — zurückgestellt: liefert die Forever-Spieldaten-API überhaupt Talentbäume?
 - **Battle.net Client Secret** — einmal offengelegt, muss neu generiert werden
-- **`prisma/config.key` und `dev.log`** — sind eingecheckt, siehe [reihenfolge.md](./reihenfolge.md), „Korrekturen aus dem Code"
+- **Schlüssel der Entwicklungsinstanz erneuern** — `config.key` lag im öffentlichen Repo, siehe [setup-modus.md](./setup-modus.md), „Schlüssel erneuern"
 
 ## Verhältnis zum Obsidian-Vault
 

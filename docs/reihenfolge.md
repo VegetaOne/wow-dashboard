@@ -191,20 +191,21 @@ Stellen etwas anderes behaupten als der Code tut.
 Forever gelöscht. `GAME_MODES` ist ebenfalls entfallen; Namespaces kommen aus
 `namespace()` in `src/lib/battlenet.ts`.
 
-**2. Die Tests liegen nicht im Repo.** [Setup-Modus](./setup-modus.md) und
+**2. Die Tests liegen nicht im Repo.** — Teilweise behoben 2026-11-11 (PR #2): `npm test`
+gibt es jetzt, es deckt aber nur das Secret-Format ab. [Setup-Modus](./setup-modus.md) und
 [Wochenübersicht](./wochenuebersicht.md) berufen sich auf 14 und 26 grüne Testfälle,
 aber `package.json` hat kein Testskript und keinen Runner. Die Fälle waren Wegwerf-
 Skripte. Wer die Reset-Arithmetik oder die Verschlüsselung anfasst, hat also kein
 Netz. Vorschlag: `node:test` — steckt in Node 20, braucht keine Abhängigkeit,
 `node --test` reicht als Skript.
 
-**3. `dev.log` und `prisma/config.key` sind im Repo.** Nachgeprüft 2026-11-11: beide
-Dateien sind **eingecheckt**, obwohl `.gitignore` sie inzwischen nennt – das Ignorieren
-greift nur für noch nicht verfolgte Dateien. Das Repo ist öffentlich. Die Schlüsseldatei ist
-das Gegenstück zum verschlüsselten Client Secret in der Datenbank. Nötig: beide aus der
-Versionsverwaltung nehmen (`git rm --cached`), einen neuen Schlüssel erzeugen und das
-Client Secret danach neu eintragen; wer das alte Secret für kompromittiert hält, erzeugt es
-in der Developer Console neu. Die alte Datei bleibt in der Git-Historie.
+**3. `dev.log` und `prisma/config.key` waren im Repo.** Nachgeprüft 2026-11-11: beide
+Dateien waren **eingecheckt**, obwohl `.gitignore` sie nennt – das Ignorieren greift nur
+für noch nicht verfolgte Dateien. Das Repo ist öffentlich. — **Behoben 2026-11-11 (PR #2):**
+beide aus der Versionsverwaltung genommen, in älteren Commits stehen sie weiter (bewusst
+keine umgeschriebene Historie). Der Schlüssel der Entwicklungsinstanz wird mit
+`node tools/rotate-key.mjs` erneuert, siehe [Setup-Modus](./setup-modus.md),
+„Schlüssel erneuern". Der Docker-Container ist nicht betroffen.
 
 **4. Lint ist nicht eingerichtet.** `npm run lint` startet den interaktiven Einrichtungs-
 dialog von Next, statt zu prüfen – es gibt keine ESLint-Konfiguration im Repo.

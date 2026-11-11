@@ -15,7 +15,7 @@
 | Sprache | Deutsche Oberfläche, API-Locale `de_DE` |
 | Spielmodi | **Nur WoW Forever** (seit 2026-11-11); Retail, Classic und Classic Era entfernt |
 | Warcraft Logs | Bewusst als **Letztes**; alles andere zuerst |
-| Code | GitHub, privates Repo `wow-dashboard` |
+| Code | GitHub, **öffentliches** Repo `VegetaOne/wow-dashboard` (bewusst so belassen, 2026-11-11) |
 
 **Stack (umgesetzt):** Next.js 14 App Router, React 18, Tailwind, NextAuth, Prisma + SQLite.
 Abweichungen zur alten Planung: **kein TanStack Query** (Server Components plus eigene
