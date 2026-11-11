@@ -22,10 +22,11 @@ npx prisma studio                    # Datenbank ansehen
 docker compose up --build            # wie es beim Nutzer läuft
 ```
 
-Es gibt **kein Testskript**. Wenn du etwas mit Arithmetik oder Krypto anfasst
-(`src/lib/reset.ts`, `lockouts.ts`, `secrets.ts`), lege Tests als `node:test` an
-(`node --test`, steckt in Node 20, braucht keine Abhängigkeit) und trage das Skript in
-`package.json` ein. Vorhandene Testbehauptungen in `docs/` stammen aus Wegwerf-Skripten,
+`npm test` läuft mit `node:test` (steckt in Node 20, braucht keine Abhängigkeit) und
+deckt bisher nur das Secret-Format in `tools/` ab. Wenn du etwas mit Arithmetik oder Krypto
+anfasst (`src/lib/reset.ts`, `lockouts.ts`, `secrets.ts`), lege Tests dazu an und trage sie
+im Skript in `package.json` ein. Ändert sich das Format in `secrets.ts`, muss
+`tools/secret-format.mjs` mitziehen – der Testvektor bricht sonst. Vorhandene Testbehauptungen in `docs/` stammen aus Wegwerf-Skripten,
 die nicht im Repo liegen.
 
 ## Wo was hingehört
