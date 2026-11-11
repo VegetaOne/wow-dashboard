@@ -143,7 +143,9 @@ ihre Daten selbst und erst wenn sie sichtbar ist.
   Version aus dem Account-Profil und weicht bei 403 darauf aus – nie hart verdrahten.
 - **Auktionshäuser hängen am Ruleset, aber alle Rulesets liefern dieselben.** Gespeichert
   wird je Region und Haus; über Rulesets summiert stünde jeder Preis mehrfach da.
-  Der Index braucht den Schrägstrich am Ende (`/auctions/`), sonst 404.
+  Der Index braucht den Schrägstrich am Ende (`/auctions/`), sonst 404. **Waren
+  (Leder, Stoff, Erz …) stehen nicht in `auctions`**, sondern unter `commodities` –
+  wer nur `auctions` liest, hat keinen einzigen Reagenzpreis.
 - **Prisma auf Alpine** braucht `apk add openssl` und den Binary-Target
   `linux-musl-openssl-3.0.x`.
 - **Zustand auf Modulebene ist nicht geteilt.** Next bündelt `src/lib/*` in jede Seite

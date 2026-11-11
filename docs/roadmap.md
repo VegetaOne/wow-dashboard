@@ -77,7 +77,7 @@ Account-weit (`/profile/user/wow`, Scope `wow.profile`): listet die Forever-Char
 | `/data/wow/ruleset/index` | Rulesets | Auktionshaus |
 | `/data/wow/ruleset/{id}/auctions/` | Auktionshäuser, dann je Haus | Berufs-Wirtschaft |
 
-**Auktionshaus:** Schrägstrich am Ende nötig, sonst 404. 15 Häuser (IDs 110–121, 123–125). Jedes Ruleset liefert dieselben Häuser und Angebote – **nicht über Rulesets aufsummieren**. Commodities laufen pro Haus; der alte Commodities-Endpunkt liefert 404. Die Häuser 112, 115 und 118 hatten kein `auctions`-Feld. Der Pfad je Haus (`/auctions/{houseId}`) ist aus dem Index abgeleitet und **ungeprüft**.
+**Auktionshaus:** Schrägstrich am Ende nötig, sonst 404. 15 Häuser (IDs 110–121, 123–125). Jedes Ruleset liefert dieselben Häuser und Angebote – **nicht über Rulesets aufsummieren**. **Waren (Commodities) laufen pro Haus, aber getrennt:** im Feld `commodities` der Hausantwort bzw. unter `/data/wow/ruleset/{id}/auctions/{houseId}/commodities`; `auctions` enthält nur Einzelstücke. Der alte regionsweite Commodities-Endpunkt liefert 404. Die Häuser 112, 115 und 118 hatten kein `auctions`-Feld. Der Pfad je Haus (`/auctions/{houseId}`) ist **bestätigt** (2026-11-11, rund 110'000 Angebote).
 
 ### 404, das kein Fehler ist
 
@@ -226,7 +226,8 @@ Die Ansichten sind für Retail und Classic gebaut und in Phase 0 auf die Forever
 
 > **2026-11-11:** Der Nutzer hat die Charakter-Tabs durchgesehen; die gezeigten Daten
 > stimmen. Abgehakt ist, was damit belegt ist. Offen bleiben die Punkte mit einer
-> eigenen, nicht sichtbaren Frage (Pfad je Auktionshaus, Bindungsdauern).
+> eigenen, nicht sichtbaren Frage (Waren im Auktionshaus, Bindungsdauern – Letztere vom
+> Nutzer vorerst zurückgestellt).
 
 - [x] **Charakterliste und Übersicht:** Nachname, Ruleset, Stufe, Gegenstandsstufe (2026-11-11)
 - [x] **Ausrüstung:** Paperdoll und Tooltips mit Rückfall für fehlende Item-Stammdaten
@@ -235,7 +236,7 @@ Die Ansichten sind für Retail und Classic gebaut und in Phase 0 auf die Forever
 - [x] **Sammlungen, Erfolge, Titel, Ansehen:** Anzeige des Besessenen; Fehllisten nur, wo die Stammdaten bestätigt sind
 - [x] **PvP:** aus `pvp-summary`; „nie gespielt" statt leerer Zeile
 - [x] **Gilde:** realmlos, mit Roster und Aktivität
-- [ ] **Auktionshaus und Berufs-Wirtschaft:** Pfad je Haus prüfen, Häuser nicht doppelt gezählt
+- [ ] **Auktionshaus und Berufs-Wirtschaft:** Pfad je Haus bestätigt (2026-11-11); dabei fehlten die Waren im Index – behoben, Kostensummen mit echten Daten noch zu prüfen
 - [ ] **Wochenübersicht:** Lockouts aus `encounters`, Bindungsdauern der Forever-Raids belegen
 - [x] **Verlauf:** läuft auf dem neuen Snapshot-Schlüssel
 
