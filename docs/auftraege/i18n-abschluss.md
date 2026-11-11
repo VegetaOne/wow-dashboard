@@ -25,9 +25,12 @@ Fehlermeldungen oder zusammengesetzten Sätzen.
 3. Jede Datei in `src/lib/dict/` hat in `en` mindestens einen Schlüssel — keine leere Hülle.
 4. Kein Schlüssel kommt in zwei Bereichsdateien vor. Gegenprobe:
    ```bash
-   grep -rhoE '^\s+"[a-zA-Z0-9._]+":' src/lib/dict/*.ts | tr -d ' ":' | sort | uniq -d
+   for f in src/lib/dict/*.ts; do
+     grep -hoE '^\s+"[a-zA-Z0-9._]+":' "$f" | tr -d ' ":' | sort -u
+   done | sort | uniq -d
    ```
-   Muss leer sein.
+   Muss leer sein. (Die frühere Fassung ohne `sort -u` je Datei meldete jeden Schlüssel,
+   weil er in `en` und `de` derselben Datei steht.)
 5. Von Hand: mit dem Umschalter zwischen `en` und `de` wechseln und jede Ansicht einmal
    aufrufen. Was dabei nicht ohne echte Battle.net-Daten zu sehen ist, wird als ungeprüft
    benannt, nicht als fertig.

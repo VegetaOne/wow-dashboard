@@ -25,6 +25,7 @@
  */
 
 import { bnetGet, characterPath, characterSlug } from "./battlenet"
+import type { Translate } from "./i18n"
 
 
 // ─── Sichten ──────────────────────────────────────────────────────────────────
@@ -206,8 +207,8 @@ export function parseRoster(raw: RawGuildRoster | null): GuildRosterView {
 }
 
 /** Rang als Text. Nur Rang 0 hat einen von der API gedeckten Namen. */
-export function rankLabel(rank: number): string {
-  return rank === 0 ? "Gildenmeister" : `Rang ${rank}`
+export function rankLabel(rank: number, t: Translate): string {
+  return rank === 0 ? t("guild.rank.master") : t("guild.rank.number", { rank })
 }
 
 export function parseActivity(

@@ -30,7 +30,7 @@ export default async function PvpPage({
 
   const raw = bracketResult.value ?? {}
   const brackets = PVP_BRACKETS.map((b) =>
-    parseBracket(raw[b.slug] ?? null, b.slug, b.label)
+    parseBracket(raw[b.slug] ?? null, b.slug, t(b.labelKey))
   ).filter((b): b is BracketView => b !== null)
 
   const stale = summaryResult.stale || bracketResult.stale

@@ -46,6 +46,8 @@ export const en = {
   "guild.noEvents": "No events available.",
   "guild.achievementKind": "Achievement",
   "guild.bossKillKind": "Boss kill",
+  "guild.rank.master": "Guild master",
+  "guild.rank.number": "Rank {rank}",
 } as const
 
 export const de: Record<keyof typeof en, string> = {
@@ -87,4 +89,6 @@ export const de: Record<keyof typeof en, string> = {
   "guild.noEvents": "Keine Ereignisse vorhanden.",
   "guild.achievementKind": "Erfolg",
   "guild.bossKillKind": "Bosskill",
+  "guild.rank.master": "Gildenmeister",
+  "guild.rank.number": "Rang {rank}",
 }

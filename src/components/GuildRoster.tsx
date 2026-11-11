@@ -38,7 +38,7 @@ export function GuildRoster({ members }: { members: GuildMember[] }) {
         (m.surname ?? "").toLowerCase().includes(q) ||
         (m.className ?? "").toLowerCase().includes(q) ||
         (m.raceName ?? "").toLowerCase().includes(q) ||
-        rankLabel(m.rank).toLowerCase().includes(q)
+        rankLabel(m.rank, t).toLowerCase().includes(q)
     )
   }, [members, query])
 
@@ -158,7 +158,7 @@ export function GuildRoster({ members }: { members: GuildMember[] }) {
                 className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5 border-b border-line px-4 py-2 last:border-0"
               >
                 <span className="w-24 flex-none">
-                  <span className="eyebrow">{rankLabel(member.rank)}</span>
+                  <span className="eyebrow">{rankLabel(member.rank, t)}</span>
                 </span>
 
                 <Link

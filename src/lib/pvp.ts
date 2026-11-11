@@ -11,14 +11,15 @@
  */
 
 import { bnetGet, characterPath } from "./battlenet"
+import type { TranslationKey } from "./i18n"
 
 
 /** Die gewerteten Klassen, wie die API sie im Pfad erwartet. */
-export const PVP_BRACKETS = [
-  { slug: "2v2", label: "Arena 2v2" },
-  { slug: "3v3", label: "Arena 3v3" },
-  { slug: "rbg", label: "Gewertete Schlachtfelder" },
-] as const
+export const PVP_BRACKETS: { slug: string; labelKey: TranslationKey }[] = [
+  { slug: "2v2", labelKey: "pvp.bracket.2v2" },
+  { slug: "3v3", labelKey: "pvp.bracket.3v3" },
+  { slug: "rbg", labelKey: "pvp.bracket.rbg" },
+]
 
 export interface MatchRecord {
   played: number

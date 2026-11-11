@@ -53,9 +53,9 @@ function InstanceRow({
             {t("weekly.lockoutAssumed")}
           </span>
         )}
-        {instance.lockoutNote && (
+        {instance.lockoutNoteKey && (
           <div className="mt-0.5 text-[12px] opacity-55">
-            {instance.lockoutNote}
+            {t(instance.lockoutNoteKey)}
           </div>
         )}
       </td>

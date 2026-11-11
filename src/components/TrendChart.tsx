@@ -39,7 +39,7 @@ export function TrendChart({ series }: { series: TrendSeries }) {
     <div className="border-2 border-line">
       <div className="flex flex-wrap items-baseline justify-between gap-3 border-b border-line px-4 py-2">
         <span className="font-heading text-[13px] font-extrabold uppercase tracking-[0.06em]">
-          {series.label}
+          {t(series.labelKey)}
         </span>
 
         <span className="flex items-baseline gap-3">
@@ -82,7 +82,11 @@ export function TrendChart({ series }: { series: TrendSeries }) {
               viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
               className="h-auto w-full"
               role="img"
-              aria-label={`${series.label}: ${f.number(geo.min)} bis ${f.number(geo.max)}`}
+              aria-label={t("history.range", {
+                label: t(series.labelKey),
+                min: f.number(geo.min),
+                max: f.number(geo.max),
+              })}
               onMouseLeave={() => setHover(null)}
             >
               {/* Gitter: Haarlinie, durchgezogen, zurückgenommen */}
@@ -190,7 +194,7 @@ export function TrendChart({ series }: { series: TrendSeries }) {
                 <span className="font-heading text-[13px] font-extrabold">
                   {f.number(geo.coords[hover].point.value)}
                 </span>
-                {series.unit && <span className="eyebrow">{series.unit}</span>}
+                {series.unitKey && <span className="eyebrow">{t(series.unitKey)}</span>}
               </>
             ) : (
               <span className="eyebrow">

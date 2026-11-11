@@ -9,6 +9,7 @@ export const en = {
   "professions.eyebrow": "Professions",
   "professions.none": "The API returns no professions for this character.",
   "professions.noSkillData": "No skill data from the API.",
+  "professions.uncategorized": "Uncategorized",
   "professions.loadingRecipes": "Loading recipe list…",
 
   // "Stufe" ist hier die Fertigkeitsstufe eines Berufs – bewusst getrennt
@@ -51,6 +52,7 @@ export const de: Record<keyof typeof en, string> = {
   "professions.eyebrow": "Berufe",
   "professions.none": "Für diesen Charakter liefert die API keine Berufe.",
   "professions.noSkillData": "Keine Fertigkeitsangaben von der API.",
+  "professions.uncategorized": "Ohne Kategorie",
   "professions.loadingRecipes": "Lade Rezeptliste…",
 
   "professions.tier": "Stufe",

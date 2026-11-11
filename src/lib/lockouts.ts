@@ -19,13 +19,15 @@
  * Bestätigte Längen hier eintragen und `known` für sie freigeben.
  */
 
+import type { TranslationKey } from "./i18n"
+
 export interface LockoutRule {
   /** Nennlänge in Tagen */
   days: number
   /** Namen, unter denen die Instanz auftauchen kann (DE und EN) */
   names: string[]
-  /** Kurzer Hinweis, wenn an der Zahl etwas erklärungsbedürftig ist */
-  note?: string
+  /** Kurzer Hinweis, wenn an der Zahl etwas erklärungsbedürftig ist (Wörterbuchschlüssel) */
+  noteKey?: TranslationKey
 }
 
 /** Standard, wenn die Instanz unten nicht steht: eine Woche, angenommen. */
@@ -49,13 +51,13 @@ const RULES: LockoutRule[] = [
   {
     days: 5,
     names: ["Onyxias Hort", "Onyxia's Lair", "Onyxia"],
-    note: "Fünf Tage wie im Original. In späteren Erweiterungen wurde daraus eine Woche – sollte deine Version das schon so handhaben, gehört hier eine 7 hin.",
+    noteKey: "weekly.lockoutNote.onyxia",
   },
   { days: 3, names: ["Zul'Gurub"] },
   {
     days: 3,
     names: ["Ruinen von Ahn'Qiraj", "Ruins of Ahn'Qiraj"],
-    note: "Drei Tage, verankert am Wochenreset – der letzte Abschnitt der Woche ist darum kürzer.",
+    noteKey: "weekly.lockoutNote.aq20",
   },
 ]
 
@@ -76,7 +78,7 @@ function normalize(name: string): string {
 
 export interface Lockout {
   days: number
-  note?: string
+  noteKey?: TranslationKey
   /**
    * false = die Länge ist eine Annahme. Für Forever derzeit immer: die
    * Bindungsdauern sind nicht belegt (siehe Dateikopf).
@@ -89,7 +91,7 @@ export function lockoutFor(instanceName: string): Lockout {
   for (const rule of RULES) {
     if (rule.names.some((n) => normalize(n) === needle)) {
       const known = rule.names.some((n) => CONFIRMED.includes(normalize(n)))
-      return { days: rule.days, note: rule.note, known }
+      return { days: rule.days, noteKey: rule.noteKey, known }
     }
   }
 

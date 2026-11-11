@@ -113,7 +113,7 @@ export function parseRecipe(raw: RawRecipe | null): RecipeDetail | null {
       if (typeof itemId !== "number") return null
       return {
         itemId,
-        name: r.reagent?.name ?? `Gegenstand ${itemId}`,
+        name: r.reagent?.name ?? `#${itemId}`,
         quantity: typeof r.quantity === "number" && r.quantity > 0 ? r.quantity : 1,
       }
     })
@@ -121,7 +121,7 @@ export function parseRecipe(raw: RawRecipe | null): RecipeDetail | null {
 
   return {
     recipeId: raw.id,
-    name: raw.name ?? `Rezept ${raw.id}`,
+    name: raw.name ?? `#${raw.id}`,
     craftedItemId: typeof crafted?.id === "number" ? crafted.id : null,
     craftedItemName: crafted?.name ?? null,
     craftedQuantity: craftedQuantity(raw),

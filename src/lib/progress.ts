@@ -100,7 +100,7 @@ function parseEncounters(raw: RawEncounter[] | undefined): EncounterKill[] {
       if (typeof id !== "number") return null
       return {
         encounterId: id,
-        name: e.encounter?.name ?? `Boss ${id}`,
+        name: e.encounter?.name ?? `#${id}`,
         completedCount:
           typeof e.completed_count === "number" ? e.completed_count : 0,
         lastKillAt:
@@ -146,7 +146,7 @@ function parseInstance(raw: RawInstance): InstanceProgress | null {
 
   return {
     instanceId: id,
-    name: raw.instance?.name ?? `Instanz ${id}`,
+    name: raw.instance?.name ?? `#${id}`,
     modes,
     bestCompleted: modes.reduce((max, m) => Math.max(max, m.completed), 0),
   }
@@ -173,7 +173,7 @@ export function parseProgress(raw: RawEncounters | null): ExpansionProgress[] {
 
       return {
         expansionId: id,
-        name: exp.expansion?.name ?? `Erweiterung ${id}`,
+        name: exp.expansion?.name ?? `#${id}`,
         instances,
       }
     })
