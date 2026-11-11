@@ -8,14 +8,19 @@ import { getT } from "@/lib/t"
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: { error?: string }
+  searchParams: { error?: string; expired?: string }
 }) {
   // Ohne Zugangsdaten gäbe es hier nur einen Anmeldeknopf, der scheitert.
   const config = await loadConfig()
   if (!config.hasCredentials) redirect("/setup")
 
   const session = await getServerSession(await getAuthOptions())
-  if (session) redirect(config.setupComplete ? "/dashboard" : "/setup/schritt-2")
+  // Nur mit gültigem Token weiter – eine abgelaufene Sitzung bleibt hier,
+  // sonst pendelte sie zwischen Dashboard und Anmeldung
+  if (session?.accessToken) {
+    redirect(config.setupComplete ? "/dashboard" : "/setup/schritt-2")
+  }
+  const expired = searchParams.expired === "1" && !searchParams.error
 
   const t = await getT()
 
@@ -38,6 +43,13 @@ export default async function LoginPage({
 
           <p className="text-[14px] opacity-70">{t("login.intro")}</p>
 
+          {expired && (
+            <div className="mt-6 border-2 border-line px-4 py-3 text-[13px]">
+              <span className="eyebrow block">{t("core.sessionExpired")}</span>
+              {t("login.expiredAuto")}
+            </div>
+          )}
+
           {searchParams.error && (
             <div className="mt-6 border-2 border-accent px-4 py-3 text-[13px]">
               <span className="eyebrow block">{t("login.failed")}</span>
@@ -48,7 +60,7 @@ export default async function LoginPage({
           )}
 
           <div className="mt-8">
-            <LoginButton />
+            <LoginButton autoStart={expired} />
           </div>
 
           <hr className="rule-thin my-6" />

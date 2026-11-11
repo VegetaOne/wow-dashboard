@@ -32,7 +32,10 @@ export default async function DashboardLayout({
   }
 
   const session = await getServerSession(await getAuthOptions())
+  // Eine Sitzung ohne Token ist abgelaufen (24 Stunden, siehe auth.ts):
+  // die Anmeldeseite meldet sich dann gleich selbst neu an
   if (!session) redirect("/login")
+  if (!session.accessToken) redirect("/login?expired=1")
 
   return <>{children}</>
 }

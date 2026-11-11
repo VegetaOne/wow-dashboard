@@ -75,47 +75,6 @@ const BattleNetProvider: OAuthConfig<BattleNetProfile> = {
   },
 }
 
-// ─── Token-Refresh ────────────────────────────────────────────────────────────
-
-async function refreshBattleNetToken(token: JWT): Promise<JWT> {
-  if (!token.refreshToken) {
-    return { ...token, error: "NoRefreshToken" }
-  }
-
-  const { id, secret } = credentials()
-  if (!id || !secret) {
-    return { ...token, error: "RefreshAccessTokenError" }
-  }
-
-  try {
-    const response = await fetch(`${oauthBase()}/oauth/token`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-        Authorization:
-          "Basic " + Buffer.from(`${id}:${secret}`).toString("base64"),
-      },
-      body: new URLSearchParams({
-        grant_type: "refresh_token",
-        refresh_token: token.refreshToken,
-      }),
-    })
-
-    const refreshed = await response.json()
-    if (!response.ok) throw refreshed
-
-    return {
-      ...token,
-      accessToken: refreshed.access_token,
-      expiresAt: Math.floor(Date.now() / 1000 + refreshed.expires_in),
-      refreshToken: refreshed.refresh_token ?? token.refreshToken,
-      error: undefined,
-    }
-  } catch {
-    return { ...token, error: "RefreshAccessTokenError" }
-  }
-}
-
 // ─── Auth-Konfiguration ───────────────────────────────────────────────────────
 
 export const authOptions: AuthOptions = {
@@ -137,18 +96,21 @@ export const authOptions: AuthOptions = {
       if (account) {
         token.accessToken = account.access_token
         token.expiresAt = account.expires_at
-        token.refreshToken = account.refresh_token
+        token.error = undefined
         const p = profile as unknown as BattleNetProfile | undefined
         if (p?.battletag) token.battleTag = p.battletag
       }
 
-      // Token noch gültig → unverändert zurück
-      if (token.expiresAt && Date.now() < token.expiresAt * 1000) {
-        return token
+      // Battle.net stellt keine Refresh-Tokens aus: ein Nutzertoken lebt
+      // 24 Stunden, danach geht es nur über eine neue Anmeldung. Früher stand
+      // hier ein Refresh-Versuch, der nie gelingen konnte – die Sitzung lief
+      // dann mit einem toten Token weiter, und jede Ansicht scheiterte für sich.
+      // Jetzt wird das Token verworfen; die Schranke im Dashboard-Layout
+      // schickt zur Anmeldung (siehe `/login?expired=1`).
+      if (token.expiresAt && Date.now() >= token.expiresAt * 1000) {
+        return { ...token, accessToken: undefined, error: "SessionExpired" }
       }
-
-      // Abgelaufen → Refresh versuchen
-      return refreshBattleNetToken(token)
+      return token
     },
 
     async session({ session, token }) {
