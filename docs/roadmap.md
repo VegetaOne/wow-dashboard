@@ -11,7 +11,7 @@
 
 Diese Regeln haben sich beim Bau der ersten Version bewährt und gelten weiter:
 
-**Ehrlich beschriften.** Was die Daten nicht hergeben, wird nicht behauptet. „Loot-Kandidaten" statt „Best in Slot", „aus 12 von 30 geladen" statt eines stillschweigend wandernden Schnitts. Eine Zahl ohne Grundlage ist schlimmer als keine Zahl. Für Forever heisst das zusätzlich: ein 404 der API ist oft „noch keine Daten", nicht „Fehler" – und die Oberfläche sagt, welches von beiden.
+**Ehrlich beschriften.** Was die Daten nicht hergeben, wird nicht behauptet. „schwache Slots" statt „Best in Slot", „aus 12 von 30 geladen" statt eines stillschweigend wandernden Schnitts. Eine Zahl ohne Grundlage ist schlimmer als keine Zahl. Für Forever heisst das zusätzlich: ein 404 der API ist oft „noch keine Daten", nicht „Fehler" – und die Oberfläche sagt, welches von beiden.
 
 **Nur laden, was gebraucht wird.** Ein Companion hat viele Ansichten. Würde jede beim Aufruf alles holen, wäre die App unbenutzbar. Jede neue Ansicht lädt ihre Daten selbst und erst wenn sie sichtbar ist.
 
@@ -92,7 +92,7 @@ Für Forever nicht belegt. Nicht eingeplant, bis ein Test mit echten Daten sie b
 
 | Quelle | Hängt daran | Stand |
 |---|---|---|
-| `/data/wow/journal-instance/*`, `journal-encounter/*` | **Loot-Kandidaten** und Upgrade-Vorschläge | Kein Bericht, dass die Journal-API in static-forever liefert. Das ist die Lücke mit den grössten Folgen – die Upgrade-Funktion steht darauf. Als Erstes prüfen. Der Code ist noch da und meldet „keine Instanzen", wenn nichts kommt. |
+| `/data/wow/journal-instance/*`, `journal-encounter/*` | Loot-Kandidaten je Slot | **Geprüft 2026-11-11: liefert keine Instanzen.** Die Abfrage scheitert nicht (kein Fehler im Log), die Liste ist aber leer. Loot-Index und Kandidatenliste sind darum entfernt, die Tabellen gelöscht (Migration `0008_loot_entfernen`). Der Code steht in der Git-Historie, falls Blizzard nachzieht. |
 | `/data/wow/media/item/{id}` | Item-Icons | Kein ausdrücklicher Bericht für Forever |
 | Stammdaten Reittiere, Begleiter, Spielzeug, Erfolge, Titel | Fehllisten in Sammlungen und Erfolgen | Nur in der Abdeckungsliste eines Community-SDK genannt, ohne Testbericht |
 | Talentbäume (`talent-tree`) | Talentbuilds | Nur in derselben SDK-Liste genannt; Struktur ungeprüft |
@@ -115,12 +115,12 @@ Für Forever nicht belegt. Nicht eingeplant, bis ein Test mit echten Daten sie b
 
 ---
 
-## 3. Phase 0 – Umstellung auf Forever (umgesetzt, ungeprüft)
+## 3. Phase 0 – Umstellung auf Forever (umgesetzt, Grundfunktion geprüft)
 
-> **Stand 2026-11-11:** im Branch `wow-forever-umstellung` umgesetzt. `tsc` und `next build`
-> laufen durch. **Nicht geprüft** ist alles, was echte Battle.net-Zugangsdaten braucht –
-> Anmeldung, Account-Liste, jeder Charakterabruf – und das Einspielen der Migration auf eine
-> bestehende Datenbank. Das ist der nächste Schritt (unten, „Mit echten Daten prüfen").
+> **Stand 2026-11-11:** umgesetzt und gemergt. Der erste Durchlauf mit echten Daten im
+> Docker-Container ist bestätigt: Setup, Anmeldung, Account-Liste mit Vor- und Nachnamen,
+> Charakterkopf mit Stufe, Gegenstandsstufe und Ruleset. Die übrigen Tabs liefen laut
+> Nutzer „grundsätzlich" – einzeln geprüft sind sie noch nicht (Phase 1).
 
 ### Alte Spielmodi entfernen – erledigt
 
@@ -144,18 +144,21 @@ Für Forever nicht belegt. Nicht eingeplant, bis ein Test mit echten Daten sie b
 - [x] Charakterliste nach Fraktion gruppiert – die Account-Liste nennt weder Realm noch Ruleset
 - [x] Wochenübersicht: Bindungsdauern gelten als angenommen (siehe „Gestrichen bis bestätigt")
 
-### 404 sauber einordnen – erledigt, ein Rest
+### 404 sauber einordnen – erledigt
 
 - [x] `attempt()` setzt `notFound` bei 404; gemeinsame Darstellung `<NoDataYet />` im Charakterkopf und auf allen Charakterseiten
 - [x] Ein Account ohne Forever-Charakter ergibt eine leere Liste, keinen Fehler
-- [ ] Gegenstände ohne Stammdaten: die Ausrüstung kommt ohne sie aus (Name, Stufe und Werte stehen in der Ausrüstungsantwort), es fehlt nur das Icon. Ein ausdrücklicher Hinweis im Kandidaten-Tooltip fehlt noch.
+- [x] Gegenstände ohne Stammdaten: die Ausrüstung kommt ohne sie aus (Name, Stufe und Werte stehen in der Ausrüstungsantwort), es fehlt höchstens das Icon. Der Kandidaten-Tooltip, der Stammdaten gebraucht hätte, ist mit dem Loot-Bereich entfallen.
 
-### Mit echten Daten prüfen – offen
+### Mit echten Daten prüfen – Grundfunktion erledigt (2026-11-11)
 
-- [ ] Migration auf eine Kopie der echten Datenbank einspielen
-- [ ] Mit dem eigenen EU-Charakter anmelden und jeden Endpunkt aus Abschnitt 2 einmal aufrufen; festhalten, was tatsächlich liefert
-- [ ] Dabei die Punkte aus „Gestrichen bis bestätigt" mitprüfen, allen voran die Journal-API
-- [ ] Prüfen, in welcher Form das Profil `ruleset` und die Gilde `slug` führen – beides wird tolerant gelesen, die Form ist nicht belegt
+- [x] Migrationen im Container eingespielt
+- [x] Setup und Anmeldung im Container – dabei zwei Fehler gefunden und behoben: der Konfigurationsspeicher war je Seite getrennt, und `next build` hatte die Setup-Seiten samt Weiterleitung vorgerechnet (siehe [Setup-Modus](./setup-modus.md))
+- [x] Account-Liste: Vor- und Nachname, Stufe kommen
+- [x] Profil: Stufe, Gegenstandsstufe und Ruleset kommen und werden angezeigt
+- [x] Journal-API: liefert keine Instanzen → Loot-Bereich entfernt
+- [ ] Gilde: in welcher Form `guild.slug` kommt, ist nicht einzeln geprüft
+- [ ] Die übrigen Endpunkte aus Abschnitt 2 einzeln festhalten (Phase 1)
 
 ---
 
@@ -223,7 +226,7 @@ Zwei Wege: ein zweiter Container mit einem Cron-Prozess, oder eine Route, die vo
 
 Die Ansichten sind für Retail und Classic gebaut und in Phase 0 auf die Forever-Adressierung umgestellt. Jede wird gegen echte Forever-Daten geprüft und angepasst, bevor Neues dazukommt.
 
-- [ ] **Charakterliste und Übersicht:** Nachname, Ruleset, Stufe aus dem Charakterprofil
+- [x] **Charakterliste und Übersicht:** Nachname, Ruleset, Stufe, Gegenstandsstufe (2026-11-11)
 - [ ] **Ausrüstung:** Paperdoll und Tooltips mit Rückfall für fehlende Item-Stammdaten
 - [ ] **Berufe:** Fertigkeitsstufen und bekannte Rezepte; Fehlliste gegen `/data/wow/profession/*`
 - [ ] **Fortschritt:** Raids und Dungeons aus `encounters`
@@ -264,7 +267,7 @@ Baut auf der Snapshot-Historie auf und ist der Teil, den es so nirgends fertig g
 
 Die verbindliche Reihenfolge steht in [Reihenfolge](./reihenfolge.md). Die Empfehlung aus Sicht dieser Roadmap:
 
-1. **Prüfung mit echten Daten** – schliesst Phase 0 ab und entscheidet, was aus „Gestrichen bis bestätigt" zurückkommt
+1. ~~**Prüfung mit echten Daten**~~ – Grundfunktion erledigt 2026-11-11
 2. **Phase 1** (Bestand prüfen) – macht die vorhandenen Ansichten für Forever brauchbar
 3. **Phase 2** (Detailschliff) – schnelle Erfolge
 4. **Phase 3** (Forever-Eigenes) – erst wenn klar ist, was die API dazu führt

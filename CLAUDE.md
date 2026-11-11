@@ -64,7 +64,8 @@ so gibt es nie einen Tab ins Leere), Beschriftung als Wörterbuchschlüssel.
   „vollständig" aussehen.
 - **Keine DPS-Zahlen, kein Best-in-Slot, keine Itemwertung.** Der API fehlen die
   Statgewichte; jede Rangfolge wäre erfunden. Gezeigt wird das Belegbare: fehlende
-  Verzauberungen, leere Sockel, schwache Slots, Loot-Kandidaten.
+  Verzauberungen, leere Sockel, schwache Slots. (Loot-Kandidaten sind entfallen: die
+  Journal-API liefert für Forever keine Instanzen.)
 - **404 heisst „nie gespielt", nicht „Fehler"** (PvP-Klassen). Solche Abschnitte
   erscheinen gar nicht, statt leer.
 - Ein unbekannter Reagenzpreis macht eine Kostensumme **unbekannt**, nicht kleiner.

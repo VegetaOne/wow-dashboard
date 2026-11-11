@@ -39,9 +39,8 @@ Snapshot-Schicht reichen), **kein Raider.IO** (Mythisch+ kommt aus der Blizzard-
 
 ### Upgrades
 - Fehlende Verzauberungen, leere Sockel, schwächste Slots gegen den eigenen Schnitt
-- **Loot-Kandidaten** aus den Journal-Loot-Tabellen: welcher Boss welcher Instanz etwas
-  für diesen Slot droppt, mit Icon und Tooltip. Index wird im Hintergrund aufgebaut
-  und in SQLite gehalten
+- ~~Loot-Kandidaten~~ – entfernt 2026-11-11: die Journal-API liefert für WoW Forever
+  keine Instanzen
 
 ### Tabs je Charakter
 Ausrüstung · Berufe · Fortschritt (Raids, Dungeons, Mythisch+) · Sammlungen (Titel,

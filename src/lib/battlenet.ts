@@ -731,7 +731,7 @@ const QUALITY_LABEL_KEYS: Record<string, TranslationKey> = {
 
 /**
  * Wörterbuchschlüssel zum API-Qualitätstyp – ersetzt die früher dreifache
- * Tabelle in EquipmentPanel, ItemTooltip und CandidateTooltip. Ein
+ * Tabelle in EquipmentPanel, ItemTooltip und dem früheren CandidateTooltip. Ein
  * unbekannter oder fehlender Typ gibt `null`; die aufrufende Stelle zeigt
  * dann „—" statt des rohen API-Werts.
  */
