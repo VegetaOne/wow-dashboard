@@ -11,6 +11,7 @@ export const en = {
   "login.intro":
     "Sign in with your Battle.net account to see your characters, gear and open to-dos.",
   "login.failed": "Sign-in failed",
+  "login.expiredAuto": "Battle.net sign-ins last 24 hours. Signing you in again…",
   "login.errorCallback":
     "The Battle.net callback could not be processed. Please try again.",
   "login.errorUnknown": "An unexpected error occurred.",
@@ -137,6 +138,7 @@ export const de: Record<keyof typeof en, string> = {
   "login.intro":
     "Melde dich mit deinem Battle.net-Account an, um deine Charaktere, Ausrüstung und offenen To-Dos zu sehen.",
   "login.failed": "Anmeldung fehlgeschlagen",
+  "login.expiredAuto": "Eine Anmeldung bei Battle.net gilt 24 Stunden. Du wirst neu angemeldet…",
   "login.errorCallback":
     "Der Battle.net-Rückruf konnte nicht verarbeitet werden. Bitte erneut versuchen.",
   "login.errorUnknown": "Ein unerwarteter Fehler ist aufgetreten.",

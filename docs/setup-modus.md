@@ -148,9 +148,13 @@ ohne Spielen ändert sich an den Profilen nichts. Festgehalten, was dabei heraus
 Node-Module muss in genau der Form `if (process.env.NEXT_RUNTIME === "nodejs") { await
 import(…) }` stehen; mit einem frühen `return` davor bricht der Bau an `crypto`.
 
-**Nebenbefund:** `refreshBattleNetToken` in `src/lib/auth.ts` versucht einen
-Refresh-Token-Fluss, den Battle.net nicht anbietet. Nach 24 Stunden endet die Sitzung
-also mit `RefreshAccessTokenError`, und man meldet sich neu an. Nicht angefasst.
+**Ablauf der Sitzung (behoben 2026-11-11):** `src/lib/auth.ts` versuchte nach 24 Stunden
+einen Refresh-Token-Fluss, den Battle.net nicht anbietet. Die Sitzung lief dann mit einem
+toten Token weiter, und jede Ansicht scheiterte für sich. Jetzt verwirft der `jwt`-Callback
+das abgelaufene Token, das Dashboard-Layout schickt nach `/login?expired=1`, und die
+Anmeldeseite meldet sich dort selbst neu an. Ist man bei Battle.net noch angemeldet, ist
+das ein Hin und Zurück ohne Eingabe. Scheitert die Anmeldung, bleibt es beim Knopf –
+keine Schleife.
 
 ## Offen und ungeprüft
 

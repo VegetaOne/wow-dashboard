@@ -15,13 +15,6 @@ export async function GET() {
     return NextResponse.json({ error: t("core.notLoggedIn") }, { status: 401 })
   }
 
-  if (session.error === "RefreshAccessTokenError") {
-    return NextResponse.json(
-      { error: t("core.sessionExpired") },
-      { status: 401 }
-    )
-  }
-
   try {
     const user = await getOrCreateUser(session.battleTag ?? "unknown")
     const favorites = await getFavorites(user.id, region())
