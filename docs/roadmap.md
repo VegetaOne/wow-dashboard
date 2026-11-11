@@ -95,11 +95,17 @@ Für Forever nicht belegt. Nicht eingeplant, bis ein Test mit echten Daten sie b
 | `/data/wow/journal-instance/*`, `journal-encounter/*` | Loot-Kandidaten je Slot | **Geprüft 2026-11-11: liefert keine Instanzen.** Die Abfrage scheitert nicht (kein Fehler im Log), die Liste ist aber leer. Loot-Index und Kandidatenliste sind darum entfernt, die Tabellen gelöscht (Migration `0008_loot_entfernen`). Der Code steht in der Git-Historie, falls Blizzard nachzieht. |
 | `/data/wow/media/item/{id}` | Item-Icons | Kein ausdrücklicher Bericht für Forever |
 | Stammdaten Reittiere, Begleiter, Spielzeug, Erfolge, Titel | Fehllisten in Sammlungen und Erfolgen | Nur in der Abdeckungsliste eines Community-SDK genannt, ohne Testbericht |
-| Talentbäume (`talent-tree`) | Talentbuilds | Nur in derselben SDK-Liste genannt; Struktur ungeprüft |
 | `mythic-keystone-profile` | – | Antwortet laut Tests, aber Mythisch+ hat in Forever keinen erkennbaren Inhalt. Aus der App entfernt. |
 | `hunter-pets` | Jägertiere | Liefert 404 |
 | Warcraft Logs | Raid-Leistung | Nicht geklärt, ob Warcraft Logs Forever führt |
 | Bindungsdauern der Schlachtzüge | Wochenübersicht | Die Vanilla-Tabelle gilt als Annahme; jede Länge wird als „angenommen" angezeigt |
+
+### Bestätigt nach Test mit echten Daten
+
+| Quelle | Hängt daran | Stand |
+|---|---|---|
+| `/data/wow/talent-tree/index`, `/data/wow/talent-tree/{id}/playable-specialization/{specId}`, `/data/wow/talent/index`, `/data/wow/playable-specialization/index` | Talentbuilds | **200, 2026-11-11** (static, versionierter Namespace). Ein Baum je Spezialisierung, klassisch drei je Klasse; Knoten in `spec_talent_nodes` mit Rängen und Tooltips. Ob Position und Voraussetzungen dabei sind, wird noch geprüft. |
+| `/profile/wow/character/{slug}/specializations` | Talentbuilds, Übersicht | **200, 2026-11-11.** `specialization_groups` mit aktiver Gruppe, je Baum `talents` (mit `talent_rank`) und `spent_points`. |
 
 ### Nicht verfügbar – unabhängig vom Aufwand
 

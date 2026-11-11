@@ -18,7 +18,7 @@
 | **Sprache** | Umschalter Englisch/Deutsch, **Englisch als Standard**. |
 | **Setup-Modus** | Die `.env` soll nicht mehr von Hand gefüllt werden: beim ersten Start fragt die Website die Werte ab. |
 | **Warcraft Logs** | Zurückgestellt, bis geklärt ist, ob Warcraft Logs WoW Forever führt. |
-| **Talentbuilds** | Zurückgestellt, bis die Talentbaum-Daten für Forever bestätigt sind. Siehe eigenen Abschnitt unten. |
+| **Talentbuilds** | War zurückgestellt, bis die Talentbaum-Daten für Forever bestätigt sind. **Bestätigt 2026-11-11**: Bäume, Talente und die gesetzten Talente eines Charakters kommen. Offen nur noch, ob die Knoten Position und Voraussetzungen tragen; die Einordnung in die Reihenfolge folgt danach. Siehe eigenen Abschnitt unten. |
 | **Snapshot-Historie** | Behalten, ein Stand je Tag. Grundlage für alles Verlaufsbezogene. |
 | **Loot-Bereich** | **Entfernt** (2026-11-11). Die Journal-API liefert für WoW Forever keine Instanzen; ein Loot-Index ohne Inhalt bringt nichts. Tabellen mit Migration `0008_loot_entfernen` gelöscht. Kommt die Journal-API, steht der Code in der Git-Historie. |
 | **Hintergrund-Auffrischung** | **Verworfen** (2026-11-11). Der Companion läuft, während gespielt wird; und ohne Spielen ändert sich an den Profilen nichts, weil sie erst beim Ausloggen nachziehen. Ein täglicher Timer hätte höchstens den genauen Tag einer Änderung festgehalten. Kurz gebaut (PR #7) und wieder entfernt; Tabelle mit Migration `0010_auffrischer_entfernen` gelöscht. Der Verlauf bleibt: er entsteht aus den Ständen, die beim Öffnen der Seiten gespeichert werden. |
@@ -78,7 +78,9 @@ sie keinen Platz besetzen, den sie nicht verdienen.
 bei warcraftlogs.com; vorher zu klären, ob Warcraft Logs Forever-Kämpfe überhaupt führt.
 
 **Talentbuilds** — zurückgestellt am 2026-11-11, bis die Talentbaum-Daten für Forever
-bestätigt sind. Die Vorüberlegungen stehen unten im eigenen Abschnitt.
+bestätigt sind. **Die Daten kommen (geprüft 2026-11-11)**; die Einordnung folgt, sobald
+klar ist, ob die Knoten Position und Voraussetzungen tragen. Die Vorüberlegungen stehen
+unten im eigenen Abschnitt.
 
 **Charaktervergleich** — zwei Charaktere nebeneinander. Zurückgestellt am 2026-09-19.
 Vor einer Umsetzung ist zu klären, was verglichen wird: nur Ausrüstung und
@@ -88,7 +90,7 @@ entfällt mit der Umstellung auf Forever.
 
 ---
 
-## Talentbuilds (zurückgestellt)
+## Talentbuilds
 
 **Gewünscht:** ein Talentbaum, der interaktiv gefüllt werden kann; Builds exportieren und
 importieren; mehrere Builds speichern.
@@ -98,10 +100,12 @@ Das ist der erste Teil der App, der nicht nur *anzeigt*, sondern den der Nutzer 
 
 **1. Woher kommt der Baum?** Zum Zeichnen braucht es die Struktur – Knoten, Positionen,
 Verbindungen, Ränge, Voraussetzungen. Ein Community-SDK nennt Talentbäume im Namespace
-`static-forever-{region}`, aber ohne Testbericht. **Das ist der Grund für die
-Zurückstellung** und wird als Erstes nachgesehen, nicht angenommen. Liefert die API es
-nicht, muss die Baumstruktur als statische Daten in die App, und dann ist sie von Hand
-zu pflegen.
+`static-forever-{region}`, aber ohne Testbericht. **Geprüft 2026-11-11:** die API liefert
+die Bäume – je Spezialisierung `/data/wow/talent-tree/{id}/playable-specialization/{specId}`
+mit `spec_talent_nodes`, je Knoten Ränge mit Talent, Zauber und Beschreibung. Was ein
+Charakter gesetzt hat, steht in `/profile/wow/character/{slug}/specializations`
+(`talent_rank` je Talent, `spent_points` je Baum). Ob die Knoten Zeile, Spalte und
+Voraussetzungen tragen, wird mit der Diagnose-Route `/api/wow/probe/talents` geprüft.
 
 **2. Welches Exportformat?** Für Forever ist kein offizieller Build-Code des Spiels
 bekannt. Damit bleibt ein **eigenes JSON**: sofort machbar, verlustfrei, aber nur
