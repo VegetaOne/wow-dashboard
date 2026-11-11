@@ -185,20 +185,3 @@ export function lockoutWindow(
     shortened,
   }
 }
-
-/**
- * Nächster Lauf der Hintergrund-Auffrischung: täglich kurz nach dem
- * Tagesreset. Der Abstand gibt den Servern Zeit, die Profile nach dem
- * Reset neu auszuliefern; liegt der heutige Zeitpunkt noch vor `now`,
- * gilt er – sonst der morgige.
- */
-export function nextRefreshAt(
-  now: Date,
-  cfg: ResetConfig,
-  offsetMinutes = 15
-): Date {
-  const offset = offsetMinutes * 60 * 1000
-  const today = new Date(lastDailyReset(now, cfg).getTime() + offset)
-  if (today.getTime() > now.getTime()) return today
-  return new Date(nextDailyReset(now, cfg).getTime() + offset)
-}

@@ -105,10 +105,8 @@ Ohne Warcraft Logs:
   → siehe [Wochenübersicht](./wochenuebersicht.md)
 - **Charaktervergleich** – zwei Charaktere nebeneinander. Zurückgestellt, siehe
   [Reihenfolge und Entscheide](./reihenfolge.md)
-- **Hintergrund-Auffrischer** – gebaut 2026-11-11: täglich nach dem Tagesreset, nur für
-  den Besitzer, mit App-Token (Battle.net kennt keine Refresh-Tokens). Ob Forever
-  Charakterdaten an ein App-Token herausgibt, ist ungeprüft. Siehe
-  [Setup-Modus](./setup-modus.md)
+- **Hintergrund-Auffrischer** – verworfen 2026-11-11: der Companion läuft beim Spielen,
+  und ohne Spielen ändern sich die Profile nicht. Siehe [Setup-Modus](./setup-modus.md)
 
 Danach:
 - **Warcraft Logs** – braucht eine eigene Anwendung bei warcraftlogs.com (Client ID und

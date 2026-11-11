@@ -161,22 +161,3 @@ model AppConfig {
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
 }
-
-/// Stand des letzten Hintergrundlaufs, eine Zeile je Aufgabe.
-///
-/// Nur fürs Anzeigen in den Einstellungen: ob und wann der Auffrischer
-/// zuletzt lief und wie viel davon geklappt hat. Kein Verlauf – der steckt
-/// in den Schnappschüssen selbst.
-model RefreshRun {
-  /// "characters" – bisher die einzige Aufgabe
-  job        String    @id
-  startedAt  DateTime
-  finishedAt DateTime?
-  /// Charaktere, die aufgefrischt werden sollten
-  total      Int       @default(0)
-  /// Charaktere, bei denen jeder Datensatz neu geholt oder als „noch keine Daten" erkannt wurde
-  refreshed  Int       @default(0)
-  failed     Int       @default(0)
-  /// Warum der Lauf nicht oder nur teilweise stattfand – Schlüssel, kein Text
-  reason     String?
-}

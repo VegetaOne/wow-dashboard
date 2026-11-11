@@ -157,9 +157,10 @@ ihre Daten selbst und erst wenn sie sichtbar ist.
 - **`src/instrumentation.ts` wird auch fürs Edge-Bündel übersetzt.** Node-Module nur in
   genau der Form `if (process.env.NEXT_RUNTIME === "nodejs") { await import(…) }` laden;
   ein frühes `return` davor lässt den Bau an `crypto` brechen.
-- **Battle.net stellt keine Refresh-Tokens aus.** Ein Nutzertoken lebt 24 Stunden.
-  Hintergrundarbeit läuft darum mit dem App-Token (`client-token.ts`), nicht mit einem
-  gespeicherten Nutzertoken.
+- **Battle.net stellt keine Refresh-Tokens aus.** Ein Nutzertoken lebt 24 Stunden; danach
+  meldet man sich neu an. Arbeit ohne Nutzer im Browser hätte nur ein App-Token – ein
+  Hintergrund-Auffrischer ist darum gebaut und bewusst wieder verworfen worden
+  (`docs/setup-modus.md`).
 - **Der Einrichtungscode steht absichtlich im Log** – die einzige Ausnahme von „Secrets nie
   in Logs" (`setup-code.ts`). Keine weiteren.
 - **`config.key` gehört zur Datenbank.** Beides zusammen ins Backup, sonst ist das

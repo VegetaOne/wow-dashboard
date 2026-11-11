@@ -4,7 +4,6 @@
  */
 
 import { loadConfig } from "./config"
-import { startRefresher } from "./refresher"
 import { ensureSetupCode } from "./setup-code"
 
 export async function onServerStart(): Promise<void> {
@@ -12,6 +11,4 @@ export async function onServerStart(): Promise<void> {
   // dort, bevor jemand die Seite öffnet
   const config = await loadConfig(true)
   if (!config.setupComplete) ensureSetupCode()
-
-  startRefresher()
 }
