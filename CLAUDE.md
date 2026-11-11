@@ -153,6 +153,14 @@ ihre Daten selbst und erst wenn sie sichtbar ist.
   in der Datenbank, die es beim `next build` nicht gibt. Das Root-Layout setzt darum
   `dynamic = "force-dynamic"`. Im Build-Protokoll muss jede Seite `ƒ` sein; ein `○`
   heisst, ihr Ergebnis – samt Weiterleitungen – ist fest im Image.
+- **`src/instrumentation.ts` wird auch fürs Edge-Bündel übersetzt.** Node-Module nur in
+  genau der Form `if (process.env.NEXT_RUNTIME === "nodejs") { await import(…) }` laden;
+  ein frühes `return` davor lässt den Bau an `crypto` brechen.
+- **Battle.net stellt keine Refresh-Tokens aus.** Ein Nutzertoken lebt 24 Stunden.
+  Hintergrundarbeit läuft darum mit dem App-Token (`client-token.ts`), nicht mit einem
+  gespeicherten Nutzertoken.
+- **Der Einrichtungscode steht absichtlich im Log** – die einzige Ausnahme von „Secrets nie
+  in Logs" (`setup-code.ts`). Keine weiteren.
 - **`config.key` gehört zur Datenbank.** Beides zusammen ins Backup, sonst ist das
   verschlüsselte Secret verloren.
 

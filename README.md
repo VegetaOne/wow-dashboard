@@ -120,7 +120,9 @@ docker compose up -d --build
 ```
 
 The app is then on <http://localhost:3000>, where it walks you through setup on the
-first visit: language, region and your Battle.net client ID and secret. There is no
+first visit: a one-time setup code from the container log
+(`docker compose logs app | grep setup`), language, region and your Battle.net client ID
+and secret. There is no
 configuration file to fill in — the values go into the database and can be changed
 later under Settings.
 
@@ -167,8 +169,11 @@ setup in two stages:
 1. **Before signing in** — language, region, Battle.net client ID and secret. It has to
    be this way round: without those credentials there is no Battle.net login to put the
    setup behind. The page shows the exact redirect URI to paste into the Developer
-   Console and checks the credentials against Battle.net before saving. It is reachable
-   only while the setup is unfinished; afterwards it is closed.
+   Console and checks the credentials against Battle.net before saving. It asks for a
+   **setup code** the container prints to its log at start
+   (`docker compose logs app | grep setup`), so nobody else on the network can claim the
+   instance first. It is reachable only while the setup is unfinished; afterwards it is
+   closed.
 2. **After signing in** — how often the roster refreshes, and optionally Warcraft Logs
    credentials.
 
@@ -340,7 +345,7 @@ Two splits are deliberate:
 | **💰 Auction house / craft economy** | Crafting cost versus sale price — needs its own index, responses run to several MB |
 | **📅 Weekly overview** | Resets, open lockouts, weekly rewards |
 | **⚖️ Character comparison** | Two characters side by side |
-| **🔄 Background refresher** | Open question — it would require persisting encrypted refresh tokens |
+| **🔄 Background refresher** | Built: daily after the reset, owner's characters only, with an app token. Whether Forever serves character data to an app token is still to be confirmed |
 | **📊 Warcraft Logs** | Raid performance; needs a separate application registered at warcraftlogs.com |
 | **♾️ WoW Forever** | As soon as the API namespace is known |
 
@@ -355,7 +360,9 @@ Two splits are deliberate:
   somewhere else — a chat, a commit, a screenshot — regenerate it in the Developer
   Console. A secret that has been exposed stays exposed
 - The setup page is reachable without signing in, because the Battle.net login needs the
-  credentials it collects. It is closed as soon as the setup is finished
+  credentials it collects. It asks for a one-time code from the container log and is
+  closed as soon as the setup is finished. That code is the one deliberate secret in the
+  log: single-use, worthless after setup, valid until the next restart
 - Session cookies are signed with a key generated during setup; replacing it would
   invalidate all sessions, so it is written once and never touched again
 - `.env` is in `.gitignore` **and** `.dockerignore`, and holds nothing secret any more
@@ -456,8 +463,11 @@ Die Konfiguration liegt in der Datenbank, nicht in einer Datei. Beim ersten Aufr
 1. **Vor der Anmeldung** — Sprache, Region, Battle.net Client ID und Secret. Diese
    Reihenfolge ist zwingend: ohne Zugangsdaten gibt es keinen Battle.net-Login, hinter
    dem der Setup liegen könnte. Die Seite zeigt die exakte Redirect-URI zum Kopieren und
-   prüft die Zugangsdaten vor dem Speichern gegen Battle.net. Erreichbar ist sie nur,
-   solange der Setup offen ist; danach wird sie gesperrt.
+   prüft die Zugangsdaten vor dem Speichern gegen Battle.net. Sie verlangt einen
+   **Einrichtungscode**, den der Container beim Start ins Log schreibt
+   (`docker compose logs app | grep setup`) – so kann niemand sonst im Netz die Instanz
+   zuerst für sich beanspruchen. Erreichbar ist sie nur, solange der Setup offen ist;
+   danach wird sie gesperrt.
 2. **Nach der Anmeldung** — wie oft die Kaderliste nachzieht, optional
    Warcraft-Logs-Zugangsdaten.
 
@@ -542,10 +552,10 @@ angezeigt. Die Region ist standardmässig EU und im Setup wie in den Einstellung
 
 ### Offen
 
-Umschalter Englisch/Deutsch (Englisch als Standard) · Gilde · Auktionshaus und
-Berufs-Wirtschaft · Wochenübersicht · Charaktervergleich · Hintergrund-Auffrischer
-(braucht persistente, verschlüsselte Refresh-Tokens) · Warcraft Logs (eigene App-
-Registrierung) · WoW Forever.
+Charaktervergleich · Warcraft Logs (eigene App-Registrierung) · Talentbuilds. Der
+Hintergrund-Auffrischer läuft täglich nach dem Reset für die Charaktere des Besitzers;
+ob Forever Charakterdaten an ein App-Token herausgibt, ist noch zu bestätigen
+(Einstellungen zeigen den letzten Lauf). Abschalten mit `WOW_REFRESH=off`.
 
 ### Sicherheit
 
@@ -554,7 +564,9 @@ daneben: eine kopierte Datenbankdatei allein nützt nichts, wer aufs Dateisystem
 hat beides. Angezeigt wird es nie. Landet es woanders (Chat, Commit, Screenshot), in
 der Developer Console neu generieren — ein offengelegtes Secret bleibt offengelegt.
 Die Einrichtungsseite ist ohne Anmeldung erreichbar, weil der Login die Daten braucht,
-die sie einsammelt; sobald der Setup durch ist, wird sie gesperrt. Ohne HTTPS gehören
+die sie einsammelt; sie verlangt den Einrichtungscode aus dem Log, und sobald der Setup
+durch ist, wird sie gesperrt. Der Code ist die eine bewusste Ausnahme von „nichts
+Geheimes ins Log": einmalig, nach dem Setup wertlos, gültig bis zum Neustart. Ohne HTTPS gehören
 Tokens nicht über fremde Netze.
 
 </details>

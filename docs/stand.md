@@ -12,7 +12,7 @@
 | Betrieb | Docker Compose, **nur Heimnetz**, kein HTTPS, `docker compose up` und lokal aufrufen |
 | Teilen | Per URL. Der Kollege meldet sich mit **seinem eigenen** Battle.net-Account an und sieht nur seine Charaktere |
 | Kein Claude Artifact | Artifacts dürfen keine externen API-Aufrufe machen (CSP), und eine `claude.ai`-Subdomain lässt sich nicht als Battle.net-Redirect-URI registrieren |
-| Sprache | Deutsche Oberfläche, API-Locale `de_DE` |
+| Sprache | Umschalter Englisch/Deutsch, Englisch als Standard; die API-Locale folgt der Sprache |
 | Spielmodi | **Nur WoW Forever** (seit 2026-11-11); Retail, Classic und Classic Era entfernt |
 | Warcraft Logs | Bewusst als **Letztes**; alles andere zuerst |
 | Code | GitHub, **öffentliches** Repo `VegetaOne/wow-dashboard` (bewusst so belassen, 2026-11-11) |
@@ -105,8 +105,10 @@ Ohne Warcraft Logs:
   → siehe [Wochenübersicht](./wochenuebersicht.md)
 - **Charaktervergleich** – zwei Charaktere nebeneinander. Zurückgestellt, siehe
   [Reihenfolge und Entscheide](./reihenfolge.md)
-- **Hintergrund-Auffrischer** – blockiert durch einen Entscheid: dafür müssten
-  Refresh-Tokens verschlüsselt und dauerhaft gespeichert werden
+- **Hintergrund-Auffrischer** – gebaut 2026-11-11: täglich nach dem Tagesreset, nur für
+  den Besitzer, mit App-Token (Battle.net kennt keine Refresh-Tokens). Ob Forever
+  Charakterdaten an ein App-Token herausgibt, ist ungeprüft. Siehe
+  [Setup-Modus](./setup-modus.md)
 
 Danach:
 - **Warcraft Logs** – braucht eine eigene Anwendung bei warcraftlogs.com (Client ID und
