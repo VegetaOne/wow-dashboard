@@ -407,6 +407,13 @@ export function MarginLine({ row }: { row: MarginRow }) {
   const t = useT()
   const f = useFormat()
   const positive = row.margin !== null && row.margin > 0
+  // Null Gewinn bleibt neutral; ohne Gewinnangabe sowieso
+  const marginColor =
+    row.margin === null || row.margin === 0
+      ? undefined
+      : positive
+        ? "var(--color-gain)"
+        : "var(--color-loss)"
 
   return (
     <div className="border-b border-line px-4 py-2.5 last:border-0">
@@ -434,12 +441,14 @@ export function MarginLine({ row }: { row: MarginRow }) {
 
         <span
           className="w-28 flex-none text-right font-heading text-[13px] font-extrabold"
-          style={{ fontVariantNumeric: "tabular-nums" }}
+          style={{ fontVariantNumeric: "tabular-nums", color: marginColor }}
         >
-          {/* Vorzeichen statt Farbe allein – lesbar auch ohne Farbwahrnehmung */}
+          {/* Farbe und Vorzeichen – lesbar auch ohne Farbwahrnehmung */}
           {row.margin === null
             ? "—"
-            : `${positive ? "+" : "−"}${f.money(Math.abs(row.margin))}`}
+            : row.margin === 0
+              ? f.money(0)
+              : `${positive ? "+" : "−"}${f.money(Math.abs(row.margin))}`}
         </span>
       </div>
 
