@@ -214,9 +214,7 @@ Tab-Leiste unter dem Charakterkopf. Die Spielmodus-Tabs sind entfallen. Die Regi
 
 Momentan zieht der Browser. Für einen Companion wäre ein serverseitiger Auffrischer besser: einmal täglich alle Charaktere durchgehen, Snapshots schreiben, damit die Verlaufsdaten auch entstehen, wenn niemand die Seite offen hat.
 
-Zwei Wege: ein zweiter Container mit einem Cron-Prozess, oder eine Route, die von einem `cron`-Eintrag auf dem Host angestossen wird. Der zweite ist einfacher und reicht im Heimnetz.
-
-**Wichtig:** Das braucht einen gültigen Refresh-Token ohne Nutzer im Browser. Battle.net-Refresh-Tokens sind langlebig, müssen aber verschlüsselt persistiert werden – bisher liegen sie nur in der Session. Das ist der eigentliche Aufwand an diesem Punkt.
+**Umgesetzt 2026-11-11** – anders als hier ursprünglich geplant: ein Timer im Server-Prozess statt Cron auf dem Host, nur für den Besitzer, und mit einem App-Token statt eines gespeicherten Refresh-Tokens. Battle.net stellt keine Refresh-Tokens aus; ein Nutzertoken lebt 24 Stunden. Ob Forever Charakterdaten an ein App-Token herausgibt, ist ungeprüft. Details in [Setup-Modus](./setup-modus.md), Abschnitt „Hintergrund-Auffrischung".
 
 ---
 
@@ -272,7 +270,7 @@ Baut auf der Snapshot-Historie auf und ist der Teil, den es so nirgends fertig g
 Die verbindliche Reihenfolge steht in [Reihenfolge](./reihenfolge.md). Die Empfehlung aus Sicht dieser Roadmap:
 
 1. ~~**Prüfung mit echten Daten**~~ – Grundfunktion erledigt 2026-11-11
-2. **Phase 1** (Bestand prüfen) – macht die vorhandenen Ansichten für Forever brauchbar
+2. ~~**Phase 1**~~ (Bestand prüfen) – bis auf Auktionshaus und Wochenübersicht erledigt 2026-11-11
 3. **Phase 2** (Detailschliff) – schnelle Erfolge
 4. **Phase 3** (Forever-Eigenes) – erst wenn klar ist, was die API dazu führt
 5. **Phase 4** (Verlauf) – braucht gesammelte Forever-Snapshots, wird mit der Zeit besser
@@ -287,10 +285,10 @@ Die verbindliche Reihenfolge steht in [Reihenfolge](./reihenfolge.md). Die Empfe
 
 - [x] **Alte Snapshots** von Retail- und Classic-Charakteren werden gelöscht – Migration `0007_wow_forever`, mit Backup davor.
 - [x] **Region:** Standard EU, im Setup bzw. in den Einstellungen auf US, KR oder TW umstellbar.
+- [x] **Hintergrund-Auffrischer:** gebaut – Timer im Container, nur der Besitzer, App-Token. Siehe 4.3.
 
 ### Offen
 
-- [ ] **Hintergrund-Auffrischer** jetzt oder später? Erfordert persistente, verschlüsselte Refresh-Tokens.
 - [ ] **Mehrere Nutzer**: Bisher sieht jeder nur seine Charaktere. Sollen du und dein Kollege Gilden- oder Vergleichsansichten teilen können?
 - [ ] **Fremd-Viewer für das 3D-Modell** – bewusst dagegen entschieden oder als abschaltbarer Zusatz?
 
