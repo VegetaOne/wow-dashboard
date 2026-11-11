@@ -10,7 +10,10 @@ export const prisma =
     log: process.env.NODE_ENV === "development" ? ["query"] : [],
   })
 
-if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma
+// Auch in Produktion merken: Next bündelt dieses Modul in jede Seite und
+// jede Route einzeln, ohne `globalThis` entstünde je Bündel ein eigener
+// Client mit eigener Verbindung. Siehe `config-cache.ts`.
+globalForPrisma.prisma = prisma
 
 // ─── Typen ────────────────────────────────────────────────────────────────────
 

@@ -55,7 +55,24 @@ export const CONFIG_DEFAULTS: LoadedConfig = {
   authSecret: null,
 }
 
-let cache: LoadedConfig | null = null
+/**
+ * Der Speicher hängt an `globalThis`, nicht an einer Modulvariablen.
+ *
+ * Grund (gefunden 2026-11-11): Next.js bündelt dieses Modul in **jede** Seite
+ * und **jede** API-Route einzeln – im Build steht es in `setup/page.js`,
+ * `setup/schritt-2/page.js`, `api/setup/route.js`, `api/auth/…/route.js`
+ * usw. je für sich. Eine Modulvariable gab es damit einmal pro Bündel. Der
+ * Setup speicherte über `/api/setup` und aktualisierte nur dessen Kopie;
+ * `/setup/schritt-2` las danach weiter seine alte („keine Zugangsdaten") und
+ * schickte zurück zum Setup – eine Endlosschleife. `globalThis` gibt es
+ * dagegen einmal pro Prozess.
+ */
+const STORE_KEY = Symbol.for("wow-dashboard.config-cache")
+
+function store(): { cache: LoadedConfig | null } {
+  const g = globalThis as unknown as Record<symbol, { cache: LoadedConfig | null } | undefined>
+  return (g[STORE_KEY] ??= { cache: null })
+}
 
 /**
  * Zuletzt gelesener Stand, ohne zu warten.
@@ -65,10 +82,10 @@ let cache: LoadedConfig | null = null
  * Einstiegspunkte tun das.
  */
 export function configSnapshot(): LoadedConfig | null {
-  return cache
+  return store().cache
 }
 
 export function setConfigCache(next: LoadedConfig): LoadedConfig {
-  cache = next
+  store().cache = next
   return next
 }
