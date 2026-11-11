@@ -2,8 +2,6 @@ import { getServerSession } from "next-auth"
 import { getAuthOptions } from "@/lib/auth"
 import { redirect } from "next/navigation"
 import { EquipmentPanel } from "@/components/EquipmentPanel"
-import { LootIndexPanel } from "@/components/LootIndexPanel"
-import { SlotCandidates } from "@/components/SlotCandidates"
 import { NoDataYet } from "@/components/NoDataYet"
 import { getItemIcons } from "@/lib/battlenet"
 import { attempt, characterFromParam, equipment, media } from "@/lib/character"
@@ -38,12 +36,6 @@ export default async function CharacterEquipmentPage({
 
   return (
     <div className="px-6 py-6">
-      <LootIndexPanel />
-
-      <div className="mb-8">
-        <SlotCandidates slug={ref.slug} />
-      </div>
-
       {eq ? (
         <EquipmentPanel equipment={eq} icons={icons} renderUrl={renderUrl} />
       ) : equipmentResult.notFound ? (

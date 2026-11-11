@@ -107,9 +107,10 @@ liest es aus der Datenbank.
 
 ## Offen und ungeprüft
 
-- **Der OAuth-Durchlauf selbst.** Ohne gültige Zugangsdaten nicht nachstellbar. Das
-  grösste Risiko liegt bei `NEXTAUTH_URL`: falls die Ableitung aus der Anfrage nicht
-  greift, hilft ein gesetztes `NEXTAUTH_URL` in `docker-compose.yml`.
+- ~~**Der OAuth-Durchlauf selbst.**~~ **Geprüft 2026-11-11** im Docker-Container über
+  `localhost`: Setup Stufe 1 und 2, Anmeldung mit Battle.net, danach die Charakterliste.
+  Die Ableitung von `NEXTAUTH_URL` aus der Anfrage greift. Über die lokale IP aus dem
+  Heimnetz ist es noch nicht geprüft.
 - **Sprache betrifft bisher nur die API-Locale**, nicht die Oberfläche. Der
   Sprachumschalter für die Oberfläche bleibt eigene Arbeit.
 - **Hauptcharakter** ist noch nicht im Setup — `UserPreference` führt die Felder bereits.

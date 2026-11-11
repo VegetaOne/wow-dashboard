@@ -1,5 +1,8 @@
 # Auftrag: Sprachumschalter fertigstellen
 
+> **Nachtrag 2026-11-11:** Teil 2 (`loot`) entfällt – `SlotCandidates`, `CandidateTooltip`
+> und `LootIndexPanel` sind entfernt, weil die Journal-API für WoW Forever keine Instanzen liefert.
+
 > Angelegt: 2026-09-19 · Für Claude Code im Repo `wow-dashboard`
 > Vorwissen: [i18n](../i18n.md) (Aufbau und Regeln), [CLAUDE.md](../../CLAUDE.md)
 

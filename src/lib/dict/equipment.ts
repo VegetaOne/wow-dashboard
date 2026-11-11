@@ -46,10 +46,6 @@ export const en = {
   "equipment.unknownItem": "Unknown item",
   "equipment.itemLevelValue": "Item level {level}",
 
-  // ─── CandidateTooltip (equipment-Teil, Rest folgt unter loot) ────────────
-  "equipment.loadingItem": "Loading item data…",
-  "equipment.candidateLevel": "Level {level}",
-
   // ─── API-Route ────────────────────────────────────────────────────────────
   "equipment.loadFailed": "Equipment could not be loaded",
   "equipment.noData": "No equipment data",
@@ -91,8 +87,6 @@ export const de: Record<keyof typeof en, string> = {
   "equipment.unknownItem": "Unbekannter Gegenstand",
   "equipment.itemLevelValue": "Gegenstandsstufe {level}",
 
-  "equipment.loadingItem": "Lade Gegenstandsdaten…",
-  "equipment.candidateLevel": "Stufe {level}",
 
   "equipment.loadFailed": "Ausrüstung konnte nicht geladen werden",
   "equipment.noData": "Keine Ausrüstungsdaten",

@@ -20,22 +20,25 @@
 | **Warcraft Logs** | Zurückgestellt, bis geklärt ist, ob Warcraft Logs WoW Forever führt. |
 | **Talentbuilds** | Zurückgestellt, bis die Talentbaum-Daten für Forever bestätigt sind. Siehe eigenen Abschnitt unten. |
 | **Snapshot-Historie** | Behalten, ein Stand je Tag. Grundlage für alles Verlaufsbezogene. |
+| **Loot-Bereich** | **Entfernt** (2026-11-11). Die Journal-API liefert für WoW Forever keine Instanzen; ein Loot-Index ohne Inhalt bringt nichts. Tabellen mit Migration `0008_loot_entfernen` gelöscht. Kommt die Journal-API, steht der Code in der Git-Historie. |
 | **Wochenübersicht** | Eigene Account-Seite, Status aus `last_kill_timestamp` statt aus Snapshot-Diffs, Lockout-Längen als gepflegte Tabelle. Siehe [Wochenübersicht](./wochenuebersicht.md). |
 
 ## Fertig – für die alten Spielmodi
 
-Gebaut für Retail und Classic, in Phase 0 auf die Forever-Adressierung umgestellt,
-**mit echten Forever-Daten noch ungeprüft**. Die Prüfung ist [Roadmap](./roadmap.md), Phase 1.
+Gebaut für Retail und Classic, in Phase 0 auf die Forever-Adressierung umgestellt.
+**Mit echten Forever-Daten bestätigt (2026-11-11):** Charakterliste und Charakterkopf. Die
+übrigen Ansichten liefen im ersten Durchlauf, sind aber nicht einzeln geprüft – das ist
+[Roadmap](./roadmap.md), Phase 1.
 
 Charakterübersicht · Ausrüstung mit Paperdoll, Icons, Tooltips und Charaktermodell ·
-Upgrades und Loot-Kandidaten · Berufe · Fortschritt (Raids, Dungeons) ·
+Upgrades (Sockel, Verzauberungen, schwache Slots) · Berufe · Fortschritt (Raids, Dungeons) ·
 Sammlungen · Erfolge · Ansehen · PvP · Gilde · Auktionshaus-Preisindex und
 Berufs-Wirtschaft · Verlauf.
 
 **Mythisch+** ist mit Retail entfallen.
 
-**Loot-Kandidaten** stehen auf der Journal-API. Ob sie für Forever liefert, ist nicht
-belegt – bis dahin ist die Upgrade-Funktion für Forever offen.
+**Loot-Kandidaten** sind entfernt: die Journal-API liefert für Forever keine Instanzen
+(geprüft 2026-11-11).
 
 **Wochenübersicht / Reset-Tracker** — gebaut, aber noch nicht mit echten Daten
 geprüft. Details und offene Punkte in [Wochenübersicht](./wochenuebersicht.md). Wöchentliche
@@ -44,13 +47,10 @@ Bindungsdauern gelten für Forever als angenommen.
 
 ## Offene Arbeit, in dieser Reihenfolge
 
-1. **Umstellung auf WoW Forever** — [Roadmap](./roadmap.md), Phase 0. **Umgesetzt im Branch
-   `wow-forever-umstellung` (2026-11-11), ungeprüft.** Offen ist der Teil, der echte
-   Zugangsdaten braucht: Migration auf eine Kopie der Datenbank einspielen, mit dem eigenen
-   EU-Charakter anmelden und festhalten, was die Endpunkte tatsächlich liefern – allen voran
-   die Journal-API. Danach die bestehenden Ansichten auf Forever prüfen (Phase 1).
-   *Vom sechsten auf den ersten Platz gerückt am 2026-11-11: Forever-Snapshots entstehen
-   erst, wenn die App Forever abruft – jede Woche davor fehlt später im Verlauf.*
+1. **Bestehende Ansichten auf Forever prüfen** — [Roadmap](./roadmap.md), Phase 1. Die
+   Umstellung selbst (Phase 0) ist umgesetzt, gemergt und in der Grundfunktion mit echten
+   Daten bestätigt (2026-11-11). Offen ist, die übrigen Tabs einzeln durchzugehen und
+   festzuhalten, was jeweils kommt.
 2. **Sprachumschalter fertigstellen** — **bereits angefangen, etwa zur Hälfte fertig.**
    Mechanik, Umschalter und die Wörterbücher für Kern, Setup, Fortschritt, Ansehen,
    Erfolge und Sammlungen stehen; elf Komponenten hatten noch feste deutsche Strings und
@@ -61,9 +61,10 @@ Bindungsdauern gelten für Forever als angenommen.
    Charakterkopf ist mit der Umstellung bereits übersetzt.
 3. **Hintergrund-Auffrischer** — blockiert durch einen Entscheid: dafür müssten
    Refresh-Tokens verschlüsselt und dauerhaft gespeichert werden.
-4. **Setup-Modus abschliessen** — gebaut, aber ungeprüft; siehe unten und
-   [Setup-Modus](./setup-modus.md). Die Spielmodus-Auswahl ist entfallen; die Regionswahl
-   mit Standard EU war schon drin.
+4. **Setup-Modus abschliessen** — der Durchlauf im Container ist seit 2026-11-11 geprüft
+   (dabei zwei Fehler behoben, siehe [Setup-Modus](./setup-modus.md)). Offen sind die
+   Punkte unten im Abschnitt „Setup-Modus", etwa die Absicherung der Setup-Seite und ein
+   Hinweis beim Wechsel der Region.
 
 Nachzuziehen, wenn die Wochenübersicht im Betrieb steht: wöchentliche Quests und
 Belohnungen, und die offenen Punkte aus [Wochenübersicht](./wochenuebersicht.md).

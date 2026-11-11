@@ -72,9 +72,8 @@ Everyone signs in with their own Battle.net account and sees only their own char
 
 - **Missing enchants and empty sockets**, per slot
 - **Weakest slots** relative to your own average
-- **Loot candidates** from the Journal API loot tables: which boss in which instance
-  drops something for that slot, with icon and tooltip. The index is built in the
-  background and kept in the database
+- **No loot candidates**: the Journal API returns no instances for WoW Forever
+  (checked 2026-11-11), so there is nothing to suggest per slot
 
 > [!WARNING]
 > No DPS numbers and no best-in-slot list. The API does not publish stat weights, so any
@@ -87,7 +86,7 @@ Everyone signs in with their own Battle.net account and sees only their own char
 
 | Tab | Contents |
 | --- | --- |
-| **Gear** | Equipped items, paperdoll, character model, upgrades, loot candidates |
+| **Gear** | Equipped items, paperdoll, character model, upgrades |
 | **Professions** | Primary and secondary professions, skill tiers per expansion, known recipes |
 | **Progression** | Raid and dungeon boss kills per difficulty with dates, Mythic+ rating and runs |
 | **Collections** | Titles, toys, mounts and pets (account-wide, fetched once) |
@@ -287,7 +286,6 @@ src/
     battlenet.ts             API access, namespaces, slots, colours
     character.ts             cached fetches per dataset
     snapshot.ts              snapshots, stale fallback, history
-    journal.ts / loot.ts     loot tables and candidates
     reputations.ts / pvp.ts  reputation and PvP
     trend.ts / history.ts    sparkline geometry (pure) / data access
     format.ts                numbers and dates without toLocaleString
@@ -333,8 +331,7 @@ Two splits are deliberate:
 
 ## 🗺 Roadmap
 
-**Done:** character overview, gear with paperdoll and tooltips, upgrades and loot
-candidates, professions, progression, collections, achievements, reputation, PvP, history.
+**Done:** character overview, gear with paperdoll and tooltips, upgrades, professions, progression, collections, achievements, reputation, PvP, history.
 
 | Next | What it needs |
 | --- | --- |
@@ -404,8 +401,8 @@ der Mitte, vergrössert und drehbar. Item-Icons mit Rahmen in der Qualitätsfarb
 Hover-Tooltip mit Itemstufe, Attributen, Verzauberung und Sockeln.
 
 **Upgrades** — Fehlende Verzauberungen, leere Sockel, schwächste Slots gegen den eigenen
-Schnitt. **Loot-Kandidaten** aus den Journal-Loot-Tabellen: welcher Boss welcher Instanz
-etwas für diesen Slot droppt, mit Icon und Tooltip.
+Schnitt. Loot-Kandidaten gibt es nicht: die Journal-API liefert für WoW Forever keine
+Instanzen (geprüft 2026-11-11).
 
 > [!WARNING]
 > Keine DPS-Zahlen und keine BiS-Liste. Die API liefert keine Statgewichte — jede solche

@@ -20,11 +20,13 @@ Entscheide, Reihenfolge, offene Fragen.
 
 ## Stand auf einen Blick
 
-**Fertig:** Charakterübersicht · Ausrüstung mit Paperdoll und Tooltips · Upgrades und
-Loot-Kandidaten · Berufe · Fortschritt (Raids, Dungeons, Mythisch+) · Sammlungen ·
+**Fertig:** Charakterübersicht · Ausrüstung mit Paperdoll und Tooltips · Upgrades ·
+Berufe · Fortschritt (Raids, Dungeons) · Sammlungen ·
 Erfolge · Ansehen · PvP · Gilde · Auktionshaus-Preisindex und Berufs-Wirtschaft · Verlauf.
 
-**Gebaut, aber nicht mit echten Daten geprüft:** Wochenübersicht, Setup-Modus.
+**Mit echten Forever-Daten geprüft (2026-11-11):** Setup-Modus im Container, Anmeldung,
+Charakterliste, Charakterkopf. **Noch nicht einzeln geprüft:** Wochenübersicht und die
+übrigen Tabs.
 
 **In Arbeit:** Sprachumschalter, etwa zur Hälfte — Aufbau in [i18n.md](./i18n.md),
 die Restarbeit als Auftrag in [auftraege/i18n-abschluss.md](./auftraege/i18n-abschluss.md).

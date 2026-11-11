@@ -41,41 +41,6 @@ model UserPreference {
   user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
-/// Loot-Tabelle aus der Journal-API, vorberechnet.
-/// Der Journal-Durchlauf kostet hunderte Anfragen – deshalb einmal
-/// indexieren und lokal abfragen, statt bei jedem Seitenaufruf zu laufen.
-model LootItem {
-  id            String @id @default(cuid())
-  /// Die Stammdaten hängen an der Region (eigener Namespace je Region)
-  region        String
-  itemId        Int
-  name          String
-  /// Rohwert der API (HEAD, CLOAK, ROBE, TRINKET, …)
-  inventoryType String
-  itemLevel     Int?
-  quality       String?
-  instanceName  String
-  encounterName String
-
-  @@unique([region, itemId, encounterName])
-  @@index([region, inventoryType])
-}
-
-/// Fortschritt des Index-Durchlaufs je Region.
-model LootIndexRun {
-  id                String    @id @default(cuid())
-  region            String    @unique
-  status            String    @default("PENDING")
-  totalInstances    Int       @default(0)
-  indexedInstances  Int       @default(0)
-  itemCount         Int       @default(0)
-  /// Noch offene Instanz-IDs, als JSON-Array
-  pendingInstanceIds   String    @default("[]")
-  error             String?
-  startedAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
-}
-
 /// Verdichteter Preisstand eines Auktionshauses.
 ///
 /// Die Rohantwort des Auktionsendpunkts ist je Haus mehrere
