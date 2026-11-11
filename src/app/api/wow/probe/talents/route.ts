@@ -122,6 +122,25 @@ export async function GET(req: NextRequest) {
     )
   }
 
+  // 1b. Bilder: Icon des ersten Talents (Zauber-Medien) und Hintergrund des Baums
+  if (firstTree) {
+    const tree = await bnetGet<{
+      media?: { key?: { href?: string } }
+      spec_talent_nodes?: { ranks?: { tooltip?: { spell_tooltip?: { spell?: { id?: number } } } }[] }[]
+    }>(firstTree, token, "static", 0).catch(() => null)
+
+    const spellId = tree?.spec_talent_nodes?.[0]?.ranks?.[0]?.tooltip?.spell_tooltip?.spell?.id
+    if (typeof spellId === "number") {
+      const path = `/data/wow/media/spell/${spellId}`
+      results.push(await probe("spell media (talent icon)", path, () => bnetGet(path, token, "static", 0)))
+    }
+
+    const treeMedia = pathFromHref(tree?.media?.key?.href)
+    if (treeMedia) {
+      results.push(await probe("talent tree media", treeMedia, () => bnetGet(treeMedia, token, "static", 0)))
+    }
+  }
+
   // 2. Einzelne Talente und Spezialisierungen
   for (const [name, path] of [
     ["talent index", "/data/wow/talent/index"],
