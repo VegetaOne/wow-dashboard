@@ -84,6 +84,20 @@ Getestet ist das Format gegen einen Vektor aus `secrets.ts` (`npm test`) und der
 mit einer nachgebildeten Datenbank. Gegen eine echte SQLite-Datei ist das Skript noch
 nicht gelaufen.
 
+## Behoben: Endlosschleife nach dem Speichern (2026-11-11)
+
+Erster echter Durchlauf: Zugangsdaten eingeben, prüfen, speichern – und die App führte
+immer wieder zurück zum Setup. Ursache: Next.js bündelt `config-cache.ts` in **jede**
+Seite und jede API-Route einzeln, eine Modulvariable gab es also einmal pro Bündel. Der
+Setup speicherte über `/api/setup` und aktualisierte nur dessen Kopie; `/setup/schritt-2`
+und die Auth-Route lasen weiter ihren alten Stand ohne Zugangsdaten. Der Zwischenspeicher
+hängt jetzt an `globalThis` und gilt damit einmal pro Prozess. Dasselbe für den
+Prisma-Client und den gelernten Static-Namespace.
+
+**Falle für später:** Zustand auf Modulebene ist in diesem Projekt nie geteilt. Wer etwas
+zwischen Seiten und Routen teilen will, legt es an `globalThis` (mit `Symbol.for`) oder
+liest es aus der Datenbank.
+
 ## Offen und ungeprüft
 
 - **Der OAuth-Durchlauf selbst.** Ohne gültige Zugangsdaten nicht nachstellbar. Das

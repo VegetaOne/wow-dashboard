@@ -144,6 +144,10 @@ ihre Daten selbst und erst wenn sie sichtbar ist.
   Der Index braucht den Schrägstrich am Ende (`/auctions/`), sonst 404.
 - **Prisma auf Alpine** braucht `apk add openssl` und den Binary-Target
   `linux-musl-openssl-3.0.x`.
+- **Zustand auf Modulebene ist nicht geteilt.** Next bündelt `src/lib/*` in jede Seite
+  und jede Route einzeln; eine `let cache` gibt es dann einmal pro Bündel. Das hat den
+  Setup in eine Endlosschleife geschickt. Geteilter Zustand gehört an `globalThis`
+  (`Symbol.for(...)`), siehe `config-cache.ts`.
 - **`config.key` gehört zur Datenbank.** Beides zusammen ins Backup, sonst ist das
   verschlüsselte Secret verloren.
 

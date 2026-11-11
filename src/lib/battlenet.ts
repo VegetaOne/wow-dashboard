@@ -45,7 +45,14 @@ export type NamespaceKind = "profile" | "static" | "dynamic"
  * Bewusst je Region: ein Wechsel der Region darf keinen Namespace der alten
  * Region weiterverwenden.
  */
-const learnedStatic = new Map<string, string>()
+const learnedStatic: Map<string, string> = (() => {
+  // Über globalThis, damit jede Seite und Route dieselbe gelernte Version
+  // sieht – Next bündelt dieses Modul je Einstiegspunkt einzeln (siehe
+  // `config-cache.ts`).
+  const key = Symbol.for("wow-dashboard.learned-static")
+  const g = globalThis as unknown as Record<symbol, Map<string, string> | undefined>
+  return (g[key] ??= new Map<string, string>())
+})()
 
 /**
  * Namespace für eine Datenart. Als Funktion, nicht als Konstante: die Region
