@@ -27,6 +27,10 @@
 
   --faction-horde: #ff563c;
   --faction-alliance: #6aa0e0;
+
+  /* Gewinn und Verlust – nie allein: das Vorzeichen bleibt dabei */
+  --color-gain: #5ccf7a;
+  --color-loss: #ff6b6b;
 }
 
 [data-theme="light"] {
@@ -49,6 +53,9 @@
 
   --faction-horde: #c0270f;
   --faction-alliance: #22497e;
+
+  --color-gain: #1d7a3a;
+  --color-loss: #c4221f;
 }
 
 :root {
