@@ -94,6 +94,13 @@ und die Auth-Route lasen weiter ihren alten Stand ohne Zugangsdaten. Der Zwische
 hängt jetzt an `globalThis` und gilt damit einmal pro Prozess. Dasselbe für den
 Prisma-Client und den gelernten Static-Namespace.
 
+**Die eigentliche Ursache lag noch eine Ebene tiefer:** `next build` hielt `/`, `/login`,
+`/setup` und `/setup/schritt-2` für statisch und rechnete sie vor – ohne Datenbank, also
+ohne Zugangsdaten. Im Image stand damit fest `redirect("/setup")`, und die Setup-Seite
+zeigte immer leere Felder. Das Root-Layout erzwingt jetzt `dynamic = "force-dynamic"`;
+der Build zeigt alle Seiten als `ƒ`, keine als `○`. Im Entwicklungsmodus (`npm run dev`)
+rechnet Next nichts vor – darum fiel es dort nie auf.
+
 **Falle für später:** Zustand auf Modulebene ist in diesem Projekt nie geteilt. Wer etwas
 zwischen Seiten und Routen teilen will, legt es an `globalThis` (mit `Symbol.for`) oder
 liest es aus der Datenbank.
