@@ -125,7 +125,12 @@ Community-Tests, 2026-11-11.
 
 - **Häuser je Ruleset statt je Realm:** `/data/wow/ruleset/index`, dann
   `/data/wow/ruleset/{id}/auctions/` mit Schrägstrich am Ende, dann je Haus
-  (`dynamic-forever-{region}`). Der Pfad je Haus ist abgeleitet und ungeprüft.
+  (`dynamic-forever-{region}`). Der Pfad je Haus ist mit echten Daten bestätigt
+  (2026-11-11, rund 110'000 Angebote).
+- **Waren (Commodities) stehen nicht in `auctions`**, sondern im Feld `commodities` der
+  Hausantwort bzw. unter `…/auctions/{houseId}/commodities`. Bis 2026-11-11 las die App
+  nur `auctions` – kein Leder, kein Stoff, kein Faden im Index, und jede Kostensumme
+  blieb „unbekannt". Seitdem werden beide gelesen.
 - **Jedes Ruleset liefert dieselben 15 Häuser** und Angebote — nicht aufsummieren.
   Gespeichert wird darum je Region und Haus. Siehe [Roadmap](./roadmap.md), Abschnitt 2.
 - Die Rohantwort ist **mehrere Megabyte**. Sie wird sofort verdichtet und nie

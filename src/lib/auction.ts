@@ -19,17 +19,22 @@
  * - **Häuser je Ruleset statt je Realm:** `/data/wow/ruleset/index`, dann
  *   `/data/wow/ruleset/{id}/auctions/` (mit Schrägstrich am Ende – ohne ihn
  *   kommt 404), dann je Haus `/data/wow/ruleset/{id}/auctions/{houseId}`.
- *   Der Pfad je Haus ist aus dem Index-Muster abgeleitet und **ungeprüft**.
+ *   Mit echten Daten bestätigt (2026-11-11): rund 110'000 Angebote je Haus.
  * - **Jedes Ruleset liefert dieselben 15 Häuser** mit denselben Angeboten.
  *   Gespeichert wird darum je Region und Haus, nicht je Ruleset – sonst
  *   stünde derselbe Preis mehrfach in der Tabelle.
- * - Commodities laufen pro Haus; der alte Commodities-Endpunkt liefert 404.
+ * - **Waren (Commodities) stehen nicht in `auctions`.** Leder, Stoff, Erz,
+ *   Faden – alles Stapelbare – kommt über das Feld `commodities` der
+ *   Hausantwort bzw. `/data/wow/ruleset/{id}/auctions/{houseId}/commodities`.
+ *   Bis 2026-11-11 las die App nur `auctions`: 4'254 Gegenstände mit Preis,
+ *   aber kein einziges Reagenz – jede Kostensumme war darum „unbekannt".
+ *   Der alte regionsweite Commodities-Endpunkt liefert 404.
  * - Einige Häuser (112, 115, 118) hatten kein `auctions`-Feld: das ergibt
  *   null Angebote, keinen Fehler.
  */
 
 import { prisma } from "./db"
-import { bnetGet } from "./battlenet"
+import { bnetGet, isNotFound } from "./battlenet"
 import { region as currentRegion } from "./runtime"
 
 /** Wie viele Zeilen auf einmal in die Datenbank gehen. */
@@ -83,6 +88,12 @@ interface RawAuction {
 
 export interface RawAuctions {
   auctions?: RawAuction[]
+  /**
+   * Warenangebote. Laut Community-Tests in der Hausantwort enthalten; ob als
+   * Liste oder als Verweis, ist nicht belegt – darum `unknown` und tolerant
+   * gelesen, siehe `loadCommodities`.
+   */
+  commodities?: unknown
 }
 
 interface RawAuctionHouseIndex {
@@ -218,6 +229,40 @@ export function fetchAuctions(
   )
 }
 
+/**
+ * Die Warenangebote eines Hauses. Stehen sie als Liste in der Hausantwort,
+ * werden sie genommen; sonst kommt der eigene Endpunkt dran. Beides
+ * zusammen ginge nicht – dieselben Angebote stünden doppelt in der Menge.
+ *
+ * Ein 404 heisst „keine Waren in diesem Haus", wie bei den Häusern ohne
+ * `auctions`-Feld. Jeder andere Fehler bricht den Lauf ab: ohne Waren fehlen
+ * fast alle Reagenzpreise, und ein Index ohne sie sähe vollständig aus.
+ */
+async function loadCommodities(
+  rulesetId: number,
+  houseId: number,
+  raw: RawAuctions,
+  token: string
+): Promise<RawAuction[]> {
+  if (Array.isArray(raw.commodities)) return raw.commodities as RawAuction[]
+
+  try {
+    const data = await bnetGet<{ auctions?: RawAuction[] }>(
+      `/data/wow/ruleset/${rulesetId}/auctions/${houseId}/commodities`,
+      token,
+      "dynamic",
+      0
+    )
+    return Array.isArray(data.auctions) ? data.auctions : []
+  } catch (error) {
+    if (isNotFound(error)) {
+      console.warn(`[auktionshaus] Haus ${houseId}: keine Waren (404)`)
+      return []
+    }
+    throw error
+  }
+}
+
 // ─── Speichern ────────────────────────────────────────────────────────────────
 
 /**
@@ -269,7 +314,12 @@ export async function refreshHouse(
 ): Promise<HouseStatus> {
   try {
     const raw = await fetchAuctions(rulesetId, house.id, token)
-    const condensed = condenseAuctions(raw)
+    const commodities = await loadCommodities(rulesetId, house.id, raw, token)
+    // Einzelstücke und Waren in einem Durchgang: Preis je Einheit liefern
+    // beide (`buyout` / Menge bzw. `unit_price`), siehe unitPrice()
+    const condensed = condenseAuctions({
+      auctions: [...(raw.auctions ?? []), ...commodities],
+    })
 
     await storePrices(house.id, condensed.entries)
     await writeRun(house.id, {
