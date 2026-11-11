@@ -7,6 +7,8 @@
  * Diese Trennung hält beides auseinander und macht die Rechnerei prüfbar.
  */
 
+import type { TranslationKey } from "./i18n"
+
 export interface TrendPoint {
   day: string
   value: number
@@ -14,9 +16,10 @@ export interface TrendPoint {
 
 export interface TrendSeries {
   key: string
-  label: string
+  /** Wörterbuchschlüssel der Überschrift – übersetzt wird erst in der Anzeige */
+  labelKey: TranslationKey
   /** Kurzer Zusatz für die Kopfzeile, z.B. „Punkte" */
-  unit?: string
+  unitKey?: TranslationKey
   points: TrendPoint[]
 }
 

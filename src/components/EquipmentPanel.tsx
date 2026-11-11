@@ -4,7 +4,7 @@ import { useMemo, useState } from "react"
 import type { CharacterEquipment, EquipmentSlot } from "@/lib/battlenet"
 import {
   SLOT_ORDER,
-  SLOT_NAMES,
+  slotLabelKey,
   QUALITY_COLORS,
   qualityLabelKey,
   ENCHANTABLE_SLOTS,
@@ -70,7 +70,7 @@ export function EquipmentPanel({
   function showTooltip(item: EquipmentSlot, slotType: string, e: React.MouseEvent) {
     setTooltip({
       item,
-      slotName: SLOT_NAMES[slotType] ?? slotType,
+      slotName: slotLabel(slotType, t),
       x: e.clientX,
       y: e.clientY,
     })
@@ -229,6 +229,12 @@ export function EquipmentPanel({
   )
 }
 
+/** Slot-Name in der eingestellten Sprache; unbekannte Slots als Rohwert. */
+function slotLabel(slotType: string, t: Translate): string {
+  const key = slotLabelKey(slotType)
+  return key ? t(key) : slotType
+}
+
 // ─── Upgrade-Erkennung ────────────────────────────────────────────────────────
 
 function findUpgrades(
@@ -265,7 +271,7 @@ function findUpgrades(
         kind: "ENCHANT",
         slotType,
         itemName: itemDisplayName(item, t),
-        detail: SLOT_NAMES[slotType] ?? slotType,
+        detail: slotLabel(slotType, t),
       })
     }
   }
@@ -313,7 +319,7 @@ function PaperdollSlot({
   onLeave: () => void
 }) {
   const t = useT()
-  const slotName = SLOT_NAMES[slotType] ?? slotType
+  const slotName = slotLabel(slotType, t)
 
   if (!item) {
     return (
@@ -423,7 +429,7 @@ function SlotRow({
   onLeave: () => void
 }) {
   const t = useT()
-  const slotName = SLOT_NAMES[slotType] ?? slotType
+  const slotName = slotLabel(slotType, t)
 
   if (!item) {
     return (

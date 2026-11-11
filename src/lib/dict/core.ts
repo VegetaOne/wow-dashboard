@@ -58,6 +58,9 @@ export const en = {
   "core.characterSlugInvalid": "Not a WoW Forever character (expected first name and surname)",
   "core.noDataYet": "No data yet",
   "core.noDataYetText": "Battle.net has nothing for this yet. WoW Forever characters only appear from level 10 and after their first logout; pictures follow a while later. This is not an error.",
+  "core.sessionExpired": "Session expired – please sign in again",
+  "core.charactersLoadFailed": "Characters could not be loaded",
+  "core.missingParameters": "Missing parameters",
 
   // ─── Spielmodi ───────────────────────────────────────────────────────────
 
@@ -117,6 +120,8 @@ export const en = {
   "weekly.statusDone": "done",
   "weekly.statusStarted": "started",
   "weekly.lockoutAssumed": "lockout assumed",
+  "weekly.lockoutNote.onyxia": "Five days as in the original. Later expansions made it a week – if your version already does that, a 7 belongs here.",
+  "weekly.lockoutNote.aq20": "Three days, anchored to the weekly reset – so the last period of the week is shorter.",
   "weekly.allBossesKilled": "All bosses killed",
   "weekly.partiallyKilled": "Partially killed",
   "weekly.days": "{days}d",
@@ -211,6 +216,9 @@ export const de: Record<keyof typeof en, string> = {
   "core.characterSlugInvalid": "Kein Charakter aus WoW Forever (erwartet: Vor- und Nachname)",
   "core.noDataYet": "Noch keine Daten",
   "core.noDataYetText": "Battle.net führt hierzu noch nichts. Charaktere aus WoW Forever erscheinen erst ab Stufe 10 und nach dem ersten Ausloggen; Bilder folgen etwas später. Das ist kein Fehler.",
+  "core.sessionExpired": "Session abgelaufen – bitte neu einloggen",
+  "core.charactersLoadFailed": "Charaktere konnten nicht geladen werden",
+  "core.missingParameters": "Fehlende Parameter",
 
 
   "tab.equipment": "Ausrüstung",
@@ -265,6 +273,8 @@ export const de: Record<keyof typeof en, string> = {
   "weekly.statusDone": "erledigt",
   "weekly.statusStarted": "angefangen",
   "weekly.lockoutAssumed": "Lockout angenommen",
+  "weekly.lockoutNote.onyxia": "Fünf Tage wie im Original. In späteren Erweiterungen wurde daraus eine Woche – sollte deine Version das schon so handhaben, gehört hier eine 7 hin.",
+  "weekly.lockoutNote.aq20": "Drei Tage, verankert am Wochenreset – der letzte Abschnitt der Woche ist darum kürzer.",
   "weekly.allBossesKilled": "Alle Bosse gelegt",
   "weekly.partiallyKilled": "Teilweise gelegt",
   "weekly.days": "{days} T",

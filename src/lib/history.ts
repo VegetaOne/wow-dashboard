@@ -54,10 +54,10 @@ export async function characterTrends(
     }
 
     if (equipped.length > 0) {
-      series.push({ key: "ilvl", label: "Gegenstandsstufe angelegt", points: equipped })
+      series.push({ key: "ilvl", labelKey: "history.series.ilvl", points: equipped })
     }
     if (average.length > 0) {
-      series.push({ key: "ilvl-avg", label: "Gegenstandsstufe Ø inkl. Tasche", points: average })
+      series.push({ key: "ilvl-avg", labelKey: "history.series.ilvlAvg", points: average })
     }
   } catch {
     // Datensatz fehlt – kein Grund, die Seite scheitern zu lassen
@@ -82,10 +82,10 @@ export async function characterTrends(
     }
 
     if (points.length > 0) {
-      series.push({ key: "ach-points", label: "Erfolgspunkte", unit: "Punkte", points })
+      series.push({ key: "ach-points", labelKey: "history.series.achPoints", unitKey: "history.unit.points", points })
     }
     if (counts.length > 0) {
-      series.push({ key: "ach-count", label: "Erfolge", unit: "Erfolge", points: counts })
+      series.push({ key: "ach-count", labelKey: "history.series.achCount", unitKey: "history.unit.achievements", points: counts })
     }
   } catch {
     /* übersprungen */
@@ -109,7 +109,7 @@ export async function characterTrends(
       points.push({ day: row.day, value: total })
     }
     if (points.length > 0) {
-      series.push({ key: "recipes", label: "Bekannte Rezepte", unit: "Rezepte", points })
+      series.push({ key: "recipes", labelKey: "history.series.recipes", unitKey: "history.unit.recipes", points })
     }
   } catch {
     /* übersprungen */
@@ -138,7 +138,7 @@ export async function characterTrends(
       points.push({ day: row.day, value: total })
     }
     if (points.length > 0) {
-      series.push({ key: "raid-kills", label: "Bosskills insgesamt", points })
+      series.push({ key: "raid-kills", labelKey: "history.series.raidKills", points })
     }
   } catch {
     /* übersprungen */

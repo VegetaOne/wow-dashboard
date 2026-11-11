@@ -1,6 +1,7 @@
 import { getServerSession } from "next-auth"
 import { NextRequest, NextResponse } from "next/server"
 import { getAuthOptions } from "@/lib/auth"
+import { getT } from "@/lib/t"
 import { getItemDetails, getItemIcons } from "@/lib/battlenet"
 
 /** Obergrenze, damit ein Client nicht den halben Index durchfragt. */
@@ -12,8 +13,9 @@ const MAX_IDS = 12
  */
 export async function GET(req: NextRequest) {
   const session = await getServerSession(await getAuthOptions())
+  const t = await getT()
   if (!session?.accessToken) {
-    return NextResponse.json({ error: "Nicht eingeloggt" }, { status: 401 })
+    return NextResponse.json({ error: t("core.notLoggedIn") }, { status: 401 })
   }
 
   const params = req.nextUrl.searchParams
@@ -36,7 +38,7 @@ export async function GET(req: NextRequest) {
   } catch (error) {
     console.error("Item-Stammdaten fehlgeschlagen:", error)
     return NextResponse.json(
-      { error: "Gegenstandsdaten konnten nicht geladen werden" },
+      { error: t("equipment.itemDataLoadFailed") },
       { status: 500 }
     )
   }

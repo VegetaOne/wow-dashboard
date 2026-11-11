@@ -16,6 +16,7 @@ import type { WoWCharacter } from "./battlenet"
 import { attempt, raids, type CharacterRef } from "./character"
 import { parseProgress, type ExpansionProgress } from "./progress"
 import { lockoutFor } from "./lockouts"
+import type { TranslationKey } from "./i18n"
 import {
   lockoutWindow,
   nextDailyReset,
@@ -41,7 +42,7 @@ export interface InstanceStatus {
   lockoutDays: number
   /** false = Länge nicht belegt, sieben Tage sind nur die Annahme */
   lockoutKnown: boolean
-  lockoutNote?: string
+  lockoutNoteKey?: TranslationKey
   window: LockoutWindow
   /** Nur Schwierigkeiten mit mindestens einem Kill im Zeitraum */
   cleared: DifficultyStatus[]
@@ -154,7 +155,7 @@ function relevantInstances(
         expansionName: expansion.name,
         lockoutDays: lockout.days,
         lockoutKnown: lockout.known,
-        lockoutNote: lockout.note,
+        lockoutNoteKey: lockout.noteKey,
         window,
         cleared,
         open: cleared.length === 0,

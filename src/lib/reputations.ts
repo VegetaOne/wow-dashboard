@@ -52,7 +52,7 @@ export function parseReputations(raw: RawReputations | null): ReputationView[] {
 
       return {
         factionId: id,
-        factionName: r.faction?.name ?? `Fraktion ${id}`,
+        factionName: r.faction?.name ?? `#${id}`,
         standingName: r.standing?.name ?? null,
         tier: typeof r.standing?.tier === "number" ? r.standing.tier : null,
         value: typeof r.standing?.value === "number" ? r.standing.value : null,

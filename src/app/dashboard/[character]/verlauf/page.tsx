@@ -4,6 +4,7 @@ import { redirect } from "next/navigation"
 import { TrendChart } from "@/components/TrendChart"
 import { characterTrends } from "@/lib/history"
 import { characterFromParam } from "@/lib/character"
+import { getT } from "@/lib/t"
 
 export default async function HistoryPage({
   params,
@@ -14,6 +15,7 @@ export default async function HistoryPage({
   if (!session?.accessToken) redirect("/login")
 
   const ref = characterFromParam(params.character)
+  const t = await getT()
 
   const series = await characterTrends(ref.slug)
 
@@ -23,32 +25,24 @@ export default async function HistoryPage({
   return (
     <div className="px-6 py-6">
       <div className="mb-6">
-        <h3>Verlauf</h3>
-        <p className="mt-1 text-[13px] opacity-60">
-          Entwicklung über Zeit, aus den täglich gespeicherten Ständen. Ein
-          Diagramm je Messgrösse — zwei Maßstäbe in einem Bild wären
-          irreführend.
-        </p>
+        <h3>{t("history.heading")}</h3>
+        <p className="mt-1 text-[13px] opacity-60">{t("history.intro")}</p>
       </div>
 
       {series.length === 0 ? (
         <div className="border-2 border-line px-4 py-4">
-          <span className="eyebrow block">Noch keine Historie</span>
+          <span className="eyebrow block">{t("history.noHistory")}</span>
           <p className="mt-1 max-w-[60ch] text-[13px] opacity-75">
-            Der Verlauf beginnt mit dem ersten Abruf. Öffne die anderen Reiter
-            dieses Charakters — Ausrüstung, Berufe, Fortschritt, Erfolge — dann
-            wird je Tag ein Stand festgehalten, und ab dem zweiten Tag entstehen
-            hier Linien.
+            {t("history.noHistoryText")}
           </p>
         </div>
       ) : (
         <div className="space-y-6">
           {withTrend.length === 0 && (
             <div className="border-2 border-line px-4 py-3">
-              <span className="eyebrow block">Erst ein Stand je Messgrösse</span>
+              <span className="eyebrow block">{t("history.onePointEach")}</span>
               <span className="text-[13px] opacity-75">
-                Die Aufzeichnung läuft. Ab dem zweiten Tag erscheinen hier
-                Verlaufslinien.
+                {t("history.onePointEachText")}
               </span>
             </div>
           )}
@@ -60,9 +54,11 @@ export default async function HistoryPage({
           {/* Messgrössen mit nur einem Stand nicht verschweigen */}
           {tooFew.length > 0 && withTrend.length > 0 && (
             <div className="border-2 border-line px-4 py-3">
-              <span className="eyebrow block">Noch ohne Verlauf</span>
+              <span className="eyebrow block">{t("history.noTrendYet")}</span>
               <span className="text-[13px] opacity-75">
-                {`${tooFew.map((s) => s.label).join(", ")} — bisher nur ein Stand.`}
+                {t("history.onlyOneSnapshot", {
+                  labels: tooFew.map((s) => t(s.labelKey)).join(", "),
+                })}
               </span>
             </div>
           )}

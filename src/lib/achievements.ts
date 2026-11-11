@@ -87,7 +87,7 @@ export function condenseAchievements(raw: unknown): AchievementSummary {
     if (typeof entry.completed_timestamp === "number") {
       withTimestamp.push({
         id,
-        name: entry.achievement?.name ?? `Erfolg ${id}`,
+        name: entry.achievement?.name ?? `#${id}`,
         at: entry.completed_timestamp,
       })
     }
@@ -101,7 +101,7 @@ export function condenseAchievements(raw: unknown): AchievementSummary {
       if (typeof id !== "number") return null
       return {
         id,
-        name: e.achievement?.name ?? `Erfolg ${id}`,
+        name: e.achievement?.name ?? `#${id}`,
         at: typeof e.timestamp === "number" ? e.timestamp : null,
       }
     })
@@ -117,7 +117,7 @@ export function condenseAchievements(raw: unknown): AchievementSummary {
       if (typeof id !== "number") return null
       return {
         id,
-        name: c.category?.name ?? `Kategorie ${id}`,
+        name: c.category?.name ?? `#${id}`,
         quantity: typeof c.quantity === "number" ? c.quantity : 0,
         points: typeof c.points === "number" ? c.points : 0,
       }
@@ -181,7 +181,7 @@ export async function getCategoryCatalog(
         if (typeof a.id !== "number") return null
         return {
           id: a.id,
-          name: a.name ?? `Erfolg ${a.id}`,
+          name: a.name ?? `#${a.id}`,
           points: typeof a.points === "number" ? a.points : null,
         }
       })
@@ -191,14 +191,14 @@ export async function getCategoryCatalog(
     const subcategories = (data.subcategories ?? [])
       .map((s) =>
         typeof s.id === "number"
-          ? { id: s.id, name: s.name ?? `Kategorie ${s.id}` }
+          ? { id: s.id, name: s.name ?? `#${s.id}` }
           : null
       )
       .filter((s): s is { id: number; name: string } => s !== null)
 
     return {
       categoryId,
-      name: data.name ?? `Kategorie ${categoryId}`,
+      name: data.name ?? `#${categoryId}`,
       achievements,
       subcategories,
     }

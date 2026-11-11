@@ -37,6 +37,9 @@ export const en = {
   "collections.accountOverviewLink": "to the account overview",
   "collections.titlesLoadFailed": "Titles could not be loaded.",
   "collections.toysLoadFailed": "Toys could not be loaded.",
+  "collections.mounts": "Mounts",
+  "collections.pets": "Battle pets",
+  "collections.toys": "Toys",
 } as const
 
 export const de: Record<keyof typeof en, string> = {
@@ -66,4 +69,7 @@ export const de: Record<keyof typeof en, string> = {
   "collections.accountOverviewLink": "zur Account-Übersicht",
   "collections.titlesLoadFailed": "Titel konnten nicht geladen werden.",
   "collections.toysLoadFailed": "Spielzeug konnte nicht geladen werden.",
+  "collections.mounts": "Reittiere",
+  "collections.pets": "Begleiter",
+  "collections.toys": "Spielzeug",
 }

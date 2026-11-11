@@ -1,6 +1,7 @@
 import { getServerSession } from "next-auth"
 import { NextResponse } from "next/server"
 import { getAuthOptions } from "@/lib/auth"
+import { getT } from "@/lib/t"
 import { getCharacters, isNotFound } from "@/lib/battlenet"
 import { getOrCreateUser, getFavorites } from "@/lib/db"
 import { region } from "@/lib/runtime"
@@ -8,14 +9,15 @@ import { region } from "@/lib/runtime"
 /** Alle Forever-Charaktere des Accounts. */
 export async function GET() {
   const session = await getServerSession(await getAuthOptions())
+  const t = await getT()
 
   if (!session?.accessToken) {
-    return NextResponse.json({ error: "Nicht eingeloggt" }, { status: 401 })
+    return NextResponse.json({ error: t("core.notLoggedIn") }, { status: 401 })
   }
 
   if (session.error === "RefreshAccessTokenError") {
     return NextResponse.json(
-      { error: "Session abgelaufen – bitte neu einloggen" },
+      { error: t("core.sessionExpired") },
       { status: 401 }
     )
   }
@@ -36,7 +38,7 @@ export async function GET() {
     }
     console.error("Fehler beim Laden der Charaktere:", error)
     return NextResponse.json(
-      { error: "Charaktere konnten nicht geladen werden" },
+      { error: t("core.charactersLoadFailed") },
       { status: 500 }
     )
   }

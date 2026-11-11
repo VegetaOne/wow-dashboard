@@ -279,13 +279,13 @@ function TierCatalogView({
       </div>
 
       <div className="space-y-4">
-        {catalog.categories.map((cat) => {
+        {catalog.categories.map((cat, i) => {
           const missing = cat.recipes.filter((r) => !knownIds.has(r.id))
           return (
-            <div key={cat.name}>
+            <div key={cat.name ?? `ohne-${i}`}>
               <div className="mb-1 flex flex-wrap items-baseline justify-between gap-2">
                 <span className="font-heading text-[12px] font-extrabold uppercase tracking-[0.06em]">
-                  {cat.name}
+                  {cat.name ?? t("professions.uncategorized")}
                 </span>
                 <span className="eyebrow">
                   {`${cat.recipes.length - missing.length} / ${cat.recipes.length}`}

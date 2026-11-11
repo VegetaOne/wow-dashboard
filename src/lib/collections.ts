@@ -10,6 +10,7 @@
  */
 
 import { bnetGet, characterPath } from "./battlenet"
+import type { TranslationKey } from "./i18n"
 
 const STATIC_REVALIDATE = 60 * 60 * 24 * 7
 
@@ -23,7 +24,7 @@ export interface CollectibleEntry {
 }
 
 export interface CollectionView {
-  label: string
+  labelKey: TranslationKey
   collected: CollectibleEntry[]
   /** Alle bekannten Objekte – leer, wenn die Stammdaten fehlen */
   all: CollectibleEntry[]
@@ -34,7 +35,7 @@ export interface CollectionView {
 }
 
 function buildView(
-  label: string,
+  labelKey: TranslationKey,
   collected: CollectibleEntry[],
   all: CollectibleEntry[]
 ): CollectionView {
@@ -42,7 +43,7 @@ function buildView(
   const missing = all.filter((a) => !owned.has(a.id))
 
   return {
-    label,
+    labelKey,
     collected: [...collected].sort((a, b) => a.name.localeCompare(b.name)),
     all,
     missing: missing.sort((a, b) => a.name.localeCompare(b.name)),
@@ -77,9 +78,13 @@ interface RawIndex {
 
 // ─── Auswertung ───────────────────────────────────────────────────────────────
 
-function entry(id: unknown, name: unknown, fallback: string): CollectibleEntry | null {
+/**
+ * Fehlt der Name, steht die ID mit `#` – sprachneutral. Früher „Reittier 123",
+ * das blieb nach dem Umschalten auf Englisch deutsch.
+ */
+function entry(id: unknown, name: unknown): CollectibleEntry | null {
   if (typeof id !== "number") return null
-  return { id, name: typeof name === "string" ? name : `${fallback} ${id}` }
+  return { id, name: typeof name === "string" ? name : `#${id}` }
 }
 
 export function parseMounts(
@@ -88,16 +93,16 @@ export function parseMounts(
 ): CollectionView {
   const collected = (raw?.mounts ?? [])
     .map((m): CollectibleEntry | null => {
-      const e = entry(m.mount?.id, m.mount?.name, "Reittier")
+      const e = entry(m.mount?.id, m.mount?.name)
       return e ? { ...e, usable: m.is_useable !== false } : null
     })
     .filter((e): e is CollectibleEntry => e !== null)
 
   const all = (index?.mounts ?? [])
-    .map((m) => entry(m.id, m.name, "Reittier"))
+    .map((m) => entry(m.id, m.name))
     .filter((e): e is CollectibleEntry => e !== null)
 
-  return buildView("Reittiere", collected, all)
+  return buildView("collections.mounts", collected, all)
 }
 
 export function parsePets(
@@ -109,7 +114,7 @@ export function parsePets(
   const collected: CollectibleEntry[] = []
 
   for (const p of raw?.pets ?? []) {
-    const e = entry(p.species?.id, p.species?.name, "Begleiter")
+    const e = entry(p.species?.id, p.species?.name)
     if (e && !seen.has(e.id)) {
       seen.add(e.id)
       collected.push(e)
@@ -117,10 +122,10 @@ export function parsePets(
   }
 
   const all = (index?.pets ?? [])
-    .map((p) => entry(p.id, p.name, "Begleiter"))
+    .map((p) => entry(p.id, p.name))
     .filter((e): e is CollectibleEntry => e !== null)
 
-  return buildView("Begleiter", collected, all)
+  return buildView("collections.pets", collected, all)
 }
 
 export function parseToys(
@@ -128,14 +133,14 @@ export function parseToys(
   index: RawIndex | null
 ): CollectionView {
   const collected = (raw?.toys ?? [])
-    .map((t) => entry(t.toy?.id, t.toy?.name, "Spielzeug"))
+    .map((t) => entry(t.toy?.id, t.toy?.name))
     .filter((e): e is CollectibleEntry => e !== null)
 
   const all = (index?.toys ?? [])
-    .map((t) => entry(t.id, t.name, "Spielzeug"))
+    .map((t) => entry(t.id, t.name))
     .filter((e): e is CollectibleEntry => e !== null)
 
-  return buildView("Spielzeug", collected, all)
+  return buildView("collections.toys", collected, all)
 }
 
 export interface TitleView {
@@ -152,7 +157,7 @@ export function parseTitles(
   characterName: string
 ): TitleView {
   const titles = (raw?.titles ?? [])
-    .map((t) => entry(t.id, t.name, "Titel"))
+    .map((t) => entry(t.id, t.name))
     .filter((e): e is CollectibleEntry => e !== null)
     .map((t) => ({ ...t, name: formatTitle(t.name, characterName) }))
     .sort((a, b) => a.name.localeCompare(b.name))

@@ -78,7 +78,7 @@ export interface RawProfessions {
 function parseRecipes(raw: RawRecipe[] | undefined): KnownRecipe[] {
   return (raw ?? [])
     .filter((r): r is { id: number; name?: string } => typeof r?.id === "number")
-    .map((r) => ({ id: r.id, name: r.name ?? `Rezept ${r.id}` }))
+    .map((r) => ({ id: r.id, name: r.name ?? `#${r.id}` }))
 }
 
 function parseEntry(
@@ -88,7 +88,7 @@ function parseEntry(
   const professionId = entry.profession?.id
   if (typeof professionId !== "number") return null
 
-  const professionName = entry.profession?.name ?? `Beruf ${professionId}`
+  const professionName = entry.profession?.name ?? `#${professionId}`
 
   // Retail: echte Fertigkeitsstufen
   if (Array.isArray(entry.tiers) && entry.tiers.length > 0) {
@@ -98,7 +98,7 @@ function parseEntry(
         if (typeof tierId !== "number") return null
         return {
           tierId,
-          tierName: t.tier?.name ?? `Stufe ${tierId}`,
+          tierName: t.tier?.name ?? `#${tierId}`,
           skillPoints: typeof t.skill_points === "number" ? t.skill_points : null,
           maxSkillPoints:
             typeof t.max_skill_points === "number" ? t.max_skill_points : null,
@@ -171,7 +171,8 @@ export interface TierCatalog {
   tierId: number
   tierName: string
   /** Alle Rezepte der Stufe, nach Kategorie gruppiert */
-  categories: { name: string; recipes: KnownRecipe[] }[]
+  /** `name` null = die API liefert keinen Namen; die Anzeige übersetzt */
+  categories: { name: string | null; recipes: KnownRecipe[] }[]
   totalRecipes: number
 }
 
@@ -200,14 +201,15 @@ export async function getTierCatalog(
 
     const categories = (data.categories ?? [])
       .map((c) => ({
-        name: c.name ?? "Ohne Kategorie",
+        // Ohne Namen bleibt null; die Anzeige setzt „Ohne Kategorie" in der Sprache ein
+        name: c.name ?? null,
         recipes: parseRecipes(c.recipes),
       }))
       .filter((c) => c.recipes.length > 0)
 
     return {
       tierId,
-      tierName: data.name ?? `Stufe ${tierId}`,
+      tierName: data.name ?? `#${tierId}`,
       categories,
       totalRecipes: categories.reduce((sum, c) => sum + c.recipes.length, 0),
     }

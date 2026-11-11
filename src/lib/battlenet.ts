@@ -747,10 +747,22 @@ export const SLOT_ORDER = [
   "MAIN_HAND", "OFF_HAND",
 ]
 
-export const SLOT_NAMES: Record<string, string> = {
-  HEAD: "Kopf", NECK: "Hals", SHOULDER: "Schultern", BACK: "Umhang",
-  CHEST: "Brust", WRIST: "Handgelenke", HANDS: "Hände", WAIST: "Taille",
-  LEGS: "Beine", FEET: "Füße", FINGER_1: "Ring 1", FINGER_2: "Ring 2",
-  TRINKET_1: "Schmuckstück 1", TRINKET_2: "Schmuckstück 2",
-  MAIN_HAND: "Haupthand", OFF_HAND: "Nebenhand",
+/**
+ * Wörterbuchschlüssel je Slot. Früher eine Tabelle fester deutscher Namen
+ * (`SLOT_NAMES`) – die blieb auch nach dem Umschalten auf Englisch deutsch.
+ */
+const SLOT_LABEL_KEYS: Record<string, TranslationKey> = {
+  HEAD: "equipment.slot.head", NECK: "equipment.slot.neck",
+  SHOULDER: "equipment.slot.shoulder", BACK: "equipment.slot.back",
+  CHEST: "equipment.slot.chest", WRIST: "equipment.slot.wrist",
+  HANDS: "equipment.slot.hands", WAIST: "equipment.slot.waist",
+  LEGS: "equipment.slot.legs", FEET: "equipment.slot.feet",
+  FINGER_1: "equipment.slot.finger1", FINGER_2: "equipment.slot.finger2",
+  TRINKET_1: "equipment.slot.trinket1", TRINKET_2: "equipment.slot.trinket2",
+  MAIN_HAND: "equipment.slot.mainHand", OFF_HAND: "equipment.slot.offHand",
+}
+
+/** Schlüssel zum Slot-Typ der API; `null` für unbekannte Slots (dann Rohwert zeigen). */
+export function slotLabelKey(slotType: string): TranslationKey | null {
+  return SLOT_LABEL_KEYS[slotType] ?? null
 }

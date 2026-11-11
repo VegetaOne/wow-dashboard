@@ -36,6 +36,9 @@ export const en = {
   "pvp.unavailable": "PvP not available",
   "pvp.unavailableText":
     "The PvP endpoints did not answer, and no earlier state is on file. Whether WoW Forever carries rated brackets is not confirmed.",
+  "pvp.bracket.2v2": "Arena 2v2",
+  "pvp.bracket.3v3": "Arena 3v3",
+  "pvp.bracket.rbg": "Rated battlegrounds",
 } as const
 
 export const de: Record<keyof typeof en, string> = {
@@ -64,4 +67,7 @@ export const de: Record<keyof typeof en, string> = {
   "pvp.unavailable": "PvP nicht abrufbar",
   "pvp.unavailableText":
     "Die PvP-Endpunkte haben nicht geantwortet, und es liegt kein früherer Stand vor. Ob WoW Forever gewertete Klassen führt, ist nicht belegt.",
+  "pvp.bracket.2v2": "Arena 2v2",
+  "pvp.bracket.3v3": "Arena 3v3",
+  "pvp.bracket.rbg": "Gewertete Schlachtfelder",
 }

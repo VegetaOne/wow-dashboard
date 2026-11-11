@@ -41,7 +41,7 @@ export function CollectionPanel({
     <div className="border-2 border-line">
       <div className="flex flex-wrap items-baseline justify-between gap-3 border-b border-line px-4 py-2">
         <span className="font-heading text-[14px] font-extrabold uppercase tracking-[0.06em]">
-          {view.label}
+          {t(view.labelKey)}
         </span>
         <span className="font-heading text-[13px] font-extrabold">
           {view.hasTotal
