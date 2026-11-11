@@ -44,6 +44,12 @@ export type Dataset =
   | "toys"
   /** Account-weit, nicht je Charakter */
   | "account-mounts"
+  /**
+   * Charakterliste des Besitzers – Grundlage der Hintergrund-Auffrischung.
+   * Die Liste selbst braucht ein Nutzertoken; der Auffrischer hat keins und
+   * nimmt darum den Stand vom letzten Besuch des Besitzers.
+   */
+  | "owner-characters"
   | "account-pets"
 
 /**
@@ -226,6 +232,27 @@ export async function withSnapshot<T>(
       }
     }
     throw fetchError
+  }
+}
+
+/**
+ * Einen Stand ohne Abruf ablegen – für Daten, die schon vorliegen (etwa die
+ * Charakterliste, die die Startseite ohnehin geholt hat).
+ */
+export async function storeSnapshot(key: SnapshotKey, payload: unknown): Promise<void> {
+  await write(key, payload)
+}
+
+/** Neuester Stand eines Datensatzes oder `null`, ohne Abruf. */
+export async function latestSnapshot<T>(
+  key: SnapshotKey
+): Promise<{ data: T; fetchedAt: Date } | null> {
+  const row = await readLatest(key)
+  if (!row) return null
+  try {
+    return { data: JSON.parse(row.payload) as T, fetchedAt: row.fetchedAt }
+  } catch {
+    return null
   }
 }
 

@@ -1,5 +1,10 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Für src/instrumentation.ts (Hintergrund-Auffrischung). In Next 14 noch
+  // hinter diesem Schalter; ab 15 fällt er weg.
+  experimental: {
+    instrumentationHook: true,
+  },
   images: {
     remotePatterns: [
       {

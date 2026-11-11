@@ -114,6 +114,17 @@ export const en = {
 
   // ─── API-Fehlermeldungen (Settings-Route) ────────────────────────────────
   "settings.ownerOnly": "Only the owner of this instance may change the settings.",
+  "settings.refresh.heading": "Background refresh",
+  "settings.refresh.intro": "Once a day, shortly after the daily reset, the app fetches fresh data for the characters of the owner, so the history has no gaps. It uses an app token from Client ID and Secret, not your login.",
+  "settings.refresh.never": "Not run yet.",
+  "settings.refresh.last": "Last run {date}: {refreshed} of {total} characters refreshed.",
+  "settings.refresh.failed": "{failed} with errors – for those the last known state remains.",
+  "settings.refresh.next": "Next run: {date}.",
+  "settings.refresh.off": "Switched off (WOW_REFRESH=off).",
+  "settings.refresh.reason.setupIncomplete": "Skipped: the setup is not complete.",
+  "settings.refresh.reason.noOwnerList": "Skipped: no character list yet. Open the dashboard once as the owner.",
+  "settings.refresh.reason.noToken": "Skipped: Battle.net refused the app token. Check Client ID and Secret.",
+  "settings.refresh.reason.unauthorized": "Stopped: WoW Forever does not hand out character data to an app token. The history only grows on days you open the dashboard.",
   "settings.clientIdRequired": "Without a client ID, sign-in is no longer possible.",
 
   // ─── Account-Sammlungen ──────────────────────────────────────────────────
@@ -228,6 +239,17 @@ export const de: Record<keyof typeof en, string> = {
   "settings.saved": "Gespeichert.",
 
   "settings.ownerOnly": "Nur der Besitzer dieser Instanz darf die Einstellungen ändern.",
+  "settings.refresh.heading": "Hintergrund-Auffrischung",
+  "settings.refresh.intro": "Einmal täglich, kurz nach dem Tagesreset, holt die App frische Stände für die Charaktere des Besitzers – damit der Verlauf keine Lücken hat. Dafür nimmt sie ein App-Token aus Client ID und Secret, nicht deine Anmeldung.",
+  "settings.refresh.never": "Noch nicht gelaufen.",
+  "settings.refresh.last": "Letzter Lauf {date}: {refreshed} von {total} Charakteren aufgefrischt.",
+  "settings.refresh.failed": "{failed} mit Fehlern – dort bleibt der letzte bekannte Stand.",
+  "settings.refresh.next": "Nächster Lauf: {date}.",
+  "settings.refresh.off": "Abgeschaltet (WOW_REFRESH=off).",
+  "settings.refresh.reason.setupIncomplete": "Ausgelassen: der Setup ist nicht abgeschlossen.",
+  "settings.refresh.reason.noOwnerList": "Ausgelassen: noch keine Charakterliste. Öffne das Dashboard einmal als Besitzer.",
+  "settings.refresh.reason.noToken": "Ausgelassen: Battle.net hat das App-Token verweigert. Client ID und Secret prüfen.",
+  "settings.refresh.reason.unauthorized": "Abgebrochen: WoW Forever gibt Charakterdaten nicht an ein App-Token heraus. Der Verlauf wächst nur an Tagen, an denen du das Dashboard öffnest.",
   "settings.clientIdRequired": "Ohne Client ID ist keine Anmeldung mehr möglich.",
 
   "account.eyebrow": "Account",
