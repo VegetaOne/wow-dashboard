@@ -18,7 +18,7 @@ import { getT } from "@/lib/t"
  * Aufruf: /api/wow/probe/talents?character={name}-{surname}
  */
 
-const SAMPLE_CHARS = 1500
+const SAMPLE_CHARS = 4000
 
 interface ProbeResult {
   name: string
@@ -94,6 +94,31 @@ export async function GET(req: NextRequest) {
   if (firstTree) {
     results.push(
       await probe("first talent tree", firstTree, () => bnetGet(firstTree, token, "static", 0))
+    )
+    // Die Knoten ohne Ränge: Position und Voraussetzungen stehen in der
+    // vollen Antwort hinter den langen Tooltips und fielen im Ausschnitt weg
+    results.push(
+      await probe("first tree: node structure", firstTree, async () => {
+        const tree = await bnetGet<{ spec_talent_nodes?: Record<string, unknown>[] }>(
+          firstTree,
+          token,
+          "static",
+          0
+        )
+        const nodes = tree.spec_talent_nodes ?? []
+        return {
+          nodeCount: nodes.length,
+          nodeKeys: [...new Set(nodes.flatMap((n) => Object.keys(n)))],
+          nodes: nodes.slice(0, 8).map(({ ranks, ...rest }) => ({
+            ...rest,
+            rankCount: Array.isArray(ranks) ? ranks.length : null,
+            firstRankKeys:
+              Array.isArray(ranks) && ranks[0] && typeof ranks[0] === "object"
+                ? Object.keys(ranks[0] as object)
+                : null,
+          })),
+        }
+      })
     )
   }
 
