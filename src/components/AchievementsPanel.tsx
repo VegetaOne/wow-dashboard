@@ -1,7 +1,6 @@
 "use client"
 
 import { useCallback, useRef, useState } from "react"
-import type { GameMode } from "@/lib/battlenet"
 import type {
   AchievementSummary,
   CategoryProgress,
@@ -9,13 +8,7 @@ import type {
 } from "@/lib/achievements"
 import { useT, useFormat } from "./I18nProvider"
 
-export function AchievementsPanel({
-  summary,
-  mode,
-}: {
-  summary: AchievementSummary
-  mode: GameMode
-}) {
+export function AchievementsPanel({ summary }: { summary: AchievementSummary }) {
   const t = useT()
   const f = useFormat()
   const [catalogs, setCatalogs] = useState<Record<number, CategoryCatalog | null>>({})
@@ -33,7 +26,7 @@ export function AchievementsPanel({
 
       try {
         const res = await fetch(
-          `/api/wow/achievement-category?categoryId=${categoryId}&mode=${mode}`
+          `/api/wow/achievement-category?categoryId=${categoryId}`
         )
         const data = await res.json()
         setCatalogs((prev) => ({ ...prev, [categoryId]: data.catalog ?? null }))
@@ -44,7 +37,7 @@ export function AchievementsPanel({
         setLoading(null)
       }
     },
-    [mode]
+    []
   )
 
   function toggle(categoryId: number) {

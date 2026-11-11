@@ -1,7 +1,6 @@
 import { getServerSession } from "next-auth"
 import { NextRequest, NextResponse } from "next/server"
 import { getAuthOptions } from "@/lib/auth"
-import { GAME_MODES, type GameMode } from "@/lib/battlenet"
 import { getTierCatalog } from "@/lib/professions"
 import { getT } from "@/lib/t"
 
@@ -19,8 +18,6 @@ export async function GET(req: NextRequest) {
   const params = req.nextUrl.searchParams
   const professionId = Number.parseInt(params.get("professionId") ?? "", 10)
   const tierId = Number.parseInt(params.get("tierId") ?? "", 10)
-  const mode = (GAME_MODES.find((m) => m.id === params.get("mode"))?.id ??
-    "retail") as GameMode
 
   if (!Number.isFinite(professionId) || !Number.isFinite(tierId)) {
     return NextResponse.json(
@@ -32,11 +29,10 @@ export async function GET(req: NextRequest) {
   const catalog = await getTierCatalog(
     professionId,
     tierId,
-    session.accessToken,
-    mode
+    session.accessToken
   )
 
-  // Kein Katalog ist kein Fehler: die Classic-Namespaces führen
-  // Rezept-Stammdaten nicht durchgängig.
+  // Kein Katalog ist kein Fehler: ob Forever Rezept-Stammdaten führt, ist
+  // nicht belegt (siehe docs/roadmap.md, „Gestrichen bis bestätigt").
   return NextResponse.json({ catalog })
 }

@@ -52,6 +52,8 @@ export const en = {
 
   // ─── API-Route ────────────────────────────────────────────────────────────
   "equipment.loadFailed": "Equipment could not be loaded",
+  "equipment.noData": "No equipment data",
+  "equipment.loadFailedText": "The equipment could not be loaded, and no earlier state is on file.",
 } as const
 
 export const de: Record<keyof typeof en, string> = {
@@ -93,4 +95,6 @@ export const de: Record<keyof typeof en, string> = {
   "equipment.candidateLevel": "Stufe {level}",
 
   "equipment.loadFailed": "Ausrüstung konnte nicht geladen werden",
+  "equipment.noData": "Keine Ausrüstungsdaten",
+  "equipment.loadFailedText": "Die Ausrüstung konnte nicht geladen werden, und es liegt kein früherer Stand vor.",
 }

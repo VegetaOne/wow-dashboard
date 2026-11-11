@@ -10,9 +10,14 @@
  * liegen in der Antwort ohnehin bei. Weil die App mit `de_DE` abfragt,
  * stehen deutsche und englische Schreibweisen nebeneinander – der spätere
  * Sprachumschalter kostet hier dann nichts mehr.
+ *
+ * **WoW Forever (seit 2026-11-11 der einzige Modus):** Forever baut auf dem
+ * ersten Jahr des Originals auf, mit neuen 10er- und 20er-Schlachtzügen.
+ * Welche Bindungsdauern dort gelten, ist **nicht belegt**. Die Tabelle unten
+ * ist darum die Vanilla-Tabelle als beste Annahme, und jede Länge gilt als
+ * angenommen (`known: false`) – die Wochenübersicht schreibt das dazu.
+ * Bestätigte Längen hier eintragen und `known` für sie freigeben.
  */
-
-import type { GameMode } from "./battlenet"
 
 export interface LockoutRule {
   /** Nennlänge in Tagen */
@@ -23,29 +28,20 @@ export interface LockoutRule {
   note?: string
 }
 
-/**
- * Standard je Spielmodus, wenn die Instanz unten nicht steht.
- *
- * Retail und das laufende Classic (derzeit Mists of Pandaria) binden
- * Schlachtzüge wöchentlich – dort ist sieben Tage die Regel und kein
- * geratener Wert. Nur das alte Vanilla-System kennt kürzere Lockouts.
- */
-const MODE_DEFAULT_DAYS: Record<GameMode, number> = {
-  retail: 7,
-  classic: 7,
-  "classic-era": 7,
-}
+/** Standard, wenn die Instanz unten nicht steht: eine Woche, angenommen. */
+const DEFAULT_DAYS = 7
 
 /**
  * Vanilla-Schlachtzüge mit abweichender Bindung.
  *
  * Quelle: Wowhead „Classic WoW Raid Reset Days and Schedule". Die
  * 7-Tage-Instanzen stehen der Vollständigkeit halber mit dabei, damit die
- * Wochenübersicht weiss, welche Instanzen in Classic Era überhaupt
- * Schlachtzüge sind, und sie auch dann zeigt, wenn diese Woche noch kein
- * Boss gefallen ist.
+ * Wochenübersicht weiss, welche Instanzen überhaupt Schlachtzüge sind, und
+ * sie auch dann zeigt, wenn diese Woche noch kein Boss gefallen ist.
+ *
+ * Für Forever übernommen, aber ungeprüft – siehe oben.
  */
-const CLASSIC_ERA_RULES: LockoutRule[] = [
+const RULES: LockoutRule[] = [
   { days: 7, names: ["Geschmolzener Kern", "Molten Core"] },
   { days: 7, names: ["Pechschwingenhort", "Blackwing Lair"] },
   { days: 7, names: ["Tempel von Ahn'Qiraj", "Temple of Ahn'Qiraj", "Ahn'Qiraj"] },
@@ -63,9 +59,11 @@ const CLASSIC_ERA_RULES: LockoutRule[] = [
   },
 ]
 
-const RULES: Partial<Record<GameMode, LockoutRule[]>> = {
-  "classic-era": CLASSIC_ERA_RULES,
-}
+/**
+ * Bestätigte Bindungsdauern für Forever. Leer, solange keine geprüft ist:
+ * dann gilt jede Länge als angenommen.
+ */
+const CONFIRMED: string[] = []
 
 /** Vergleich ohne Gross-/Kleinschreibung, Akzente und Sonderzeichen. */
 function normalize(name: string): string {
@@ -80,24 +78,20 @@ export interface Lockout {
   days: number
   note?: string
   /**
-   * false = die Länge steht nicht in der Tabelle, es gilt der Standard des
-   * Spielmodus. Für Retail und Classic ist das richtig; für Classic Era
-   * heisst es, dass die Instanz unbekannt ist und sieben Tage nur die
-   * wahrscheinlichste Annahme sind.
+   * false = die Länge ist eine Annahme. Für Forever derzeit immer: die
+   * Bindungsdauern sind nicht belegt (siehe Dateikopf).
    */
   known: boolean
 }
 
-export function lockoutFor(mode: GameMode, instanceName: string): Lockout {
-  const rules = RULES[mode]
-  if (rules) {
-    const needle = normalize(instanceName)
-    for (const rule of rules) {
-      if (rule.names.some((n) => normalize(n) === needle)) {
-        return { days: rule.days, note: rule.note, known: true }
-      }
+export function lockoutFor(instanceName: string): Lockout {
+  const needle = normalize(instanceName)
+  for (const rule of RULES) {
+    if (rule.names.some((n) => normalize(n) === needle)) {
+      const known = rule.names.some((n) => CONFIRMED.includes(normalize(n)))
+      return { days: rule.days, note: rule.note, known }
     }
   }
 
-  return { days: MODE_DEFAULT_DAYS[mode] ?? 7, known: mode !== "classic-era" }
+  return { days: DEFAULT_DAYS, known: false }
 }

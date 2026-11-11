@@ -3,7 +3,7 @@
 # ⚔️ WoW Dashboard
 
 **A self-hosted companion for your own World of Warcraft account.**
-Every character across every game mode, gear the way the character sheet shows it,
+Every WoW Forever character, gear the way the character sheet shows it,
 the upgrades you are actually missing, and a history that builds itself.
 
 [![Next.js 14](https://img.shields.io/badge/Next.js-14-000000?style=flat-square&logo=nextdotjs&logoColor=white)](https://nextjs.org)
@@ -39,7 +39,7 @@ Everyone signs in with their own Battle.net account and sees only their own char
 - [🏠 Sharing on your home network](#-sharing-on-your-home-network)
 - [🧑‍💻 Development without Docker](#-development-without-docker)
 - [🧠 How it works](#-how-it-works)
-- [🌍 Game modes and WoW Forever](#-game-modes-and-wow-forever)
+- [🌍 WoW Forever only](#-wow-forever-only)
 - [📁 Project structure](#-project-structure)
 - [⚠ What the API cannot do](#-what-the-api-cannot-do)
 - [🗺 Roadmap](#-roadmap)
@@ -53,11 +53,10 @@ Everyone signs in with their own Battle.net account and sees only their own char
 
 ### Overview
 
-- **Every character** on the account, grouped by game mode (Retail, Classic, Classic Era)
-  and by realm within each mode
+- **Every WoW Forever character** on the account, grouped by faction
 - **Faction-aware**: crest and colour per Horde/Alliance, class colour on the name
 - **Favourites** pin the characters you actually play to the top
-- **Loads on demand** — a realm is fetched when it scrolls into view, not all at once.
+- **Loads on demand** — a section is fetched when it scrolls into view, not all at once.
   With 40 characters that is the difference between usable and unusable
 
 ### Gear
@@ -171,8 +170,8 @@ setup in two stages:
    setup behind. The page shows the exact redirect URI to paste into the Developer
    Console and checks the credentials against Battle.net before saving. It is reachable
    only while the setup is unfinished; afterwards it is closed.
-2. **After signing in** — which game modes you care about, which one the roster starts
-   on, how often it refreshes, and optionally Warcraft Logs credentials.
+2. **After signing in** — how often the roster refreshes, and optionally Warcraft Logs
+   credentials.
 
 The account that finishes the setup becomes the owner of the instance and is the only
 one who can change these values afterwards, under **Settings**. Changes take effect
@@ -246,29 +245,28 @@ as part of the unique key. Three things follow: a second call on the same day co
 request, the history builds itself, and when the API does not answer the app serves the
 last known state with a timestamp instead of an error.
 
-**On-demand loading.** Realms load via `IntersectionObserver` as you scroll, and detail
+**On-demand loading.** Sections load via `IntersectionObserver` as you scroll, and detail
 requests run with limited concurrency. That keeps the landing page fast and the rate
 limit intact.
 
 ---
 
-## 🌍 Game modes and WoW Forever
+## 🌍 WoW Forever only
 
-In the API the game modes differ only by namespace:
+Since 2026-11-11 the app covers **WoW Forever only**; Retail, Classic and Classic Era
+were removed (see `docs/reihenfolge.md`).
 
-| Mode | Profile namespace |
+| Data | Namespace |
 | --- | --- |
-| Retail | `profile-<region>` |
-| Classic (current) | `profile-classic-<region>` |
-| Classic Era | `profile-classic1x-<region>` |
+| Profile (account, characters, guilds) | `profile-forever-<region>` |
+| Game data | `static-forever-<region>` |
+| Rulesets, auction houses | `dynamic-forever-<region>` |
 
-The responses diverge in the details — Classic Era omits `level` on equipped items, has
-no enchants at all, and Mythic+ exists only in Retail. The app reads responses
-tolerantly and hides whatever a mode does not know about.
-
-For **WoW Forever** there is a documented placeholder at
-`src/lib/adapters/wow-forever.ts`. Once Blizzard publishes the namespace, the mode gets
-added there — the interface needs no changes.
+**Blizzard has not documented the Forever API.** The namespaces were found by the
+community and may change without notice. Characters have **no realm**: they are
+addressed as `{name}-{surname}`; guilds likewise, and rulesets replace realms. A 404 is
+often "no data yet" (characters below level 10 or never logged out) and is shown as such.
+The region defaults to EU and can be changed in setup and settings.
 
 ---
 
@@ -282,8 +280,7 @@ src/
   app/                       Next.js App Router
     api/auth/                NextAuth route
     api/wow/                 internal endpoints for on-demand loading
-    dashboard/[mode]/[realm]/[name]/
-                             character pages (tabs as subfolders)
+    dashboard/[character]/   character pages, `{name}-{surname}` (tabs as subfolders)
   components/                UI — paperdoll, tooltips, panels, charts
   lib/
     auth.ts                  Battle.net as an OAuth2 provider
@@ -293,7 +290,6 @@ src/
     journal.ts / loot.ts     loot tables and candidates
     reputations.ts / pvp.ts  reputation and PvP
     trend.ts / history.ts    sparkline geometry (pure) / data access
-    adapters/                game modes, incl. the WoW Forever placeholder
     format.ts                numbers and dates without toLocaleString
 prisma/
   schema.prisma
@@ -385,7 +381,7 @@ reuse something, just ask.
 <br>
 
 **WoW Dashboard** — ein selbst gehosteter Companion für den eigenen World-of-Warcraft-Account:
-alle Charaktere über alle Spielmodi, Ausrüstung wie im Charakterfenster, die Upgrades, die
+alle Charaktere in WoW Forever, Ausrüstung wie im Charakterfenster, die Upgrades, die
 wirklich fehlen, und ein Verlauf, der von selbst entsteht.
 
 Läuft als einzelner Docker-Container im Heimnetz. Jede Person meldet sich mit ihrem eigenen
@@ -398,9 +394,9 @@ Battle.net-Account an und sieht ausschliesslich ihre eigenen Charaktere.
 
 ### Funktionen
 
-**Übersicht** — Alle Charaktere des Accounts, gruppiert nach Spielmodus (Retail, Classic,
-Classic Era) und darin nach Realm. Fraktionswappen und -farbe, Klassenfarbe am Namen,
-Favoriten. **Nachladen auf Abruf:** ein Realm lädt erst, wenn er ins Bild scrollt — bei
+**Übersicht** — Alle Charaktere des Accounts in WoW Forever, gruppiert nach Fraktion.
+Fraktionswappen und -farbe, Klassenfarbe am Namen, Favoriten. **Nachladen auf Abruf:** ein
+Abschnitt lädt erst, wenn er ins Bild scrollt — bei
 40 Charakteren der Unterschied zwischen benutzbar und unbenutzbar.
 
 **Ausrüstung** — Paperdoll wie im Spiel: links, rechts, Waffen unten, Charaktermodell in
@@ -465,8 +461,8 @@ Die Konfiguration liegt in der Datenbank, nicht in einer Datei. Beim ersten Aufr
    dem der Setup liegen könnte. Die Seite zeigt die exakte Redirect-URI zum Kopieren und
    prüft die Zugangsdaten vor dem Speichern gegen Battle.net. Erreichbar ist sie nur,
    solange der Setup offen ist; danach wird sie gesperrt.
-2. **Nach der Anmeldung** — welche Spielmodi dich interessieren, womit die Kaderliste
-   startet, wie oft sie nachzieht, optional Warcraft-Logs-Zugangsdaten.
+2. **Nach der Anmeldung** — wie oft die Kaderliste nachzieht, optional
+   Warcraft-Logs-Zugangsdaten.
 
 Der Account, der den Setup abschliesst, wird Besitzer der Instanz und darf diese Werte
 danach als Einziger ändern, unter **Einstellungen**. Änderungen greifen sofort, ohne
@@ -518,19 +514,24 @@ es schreibt eine eigene Nonce ins ID-Token, woran die OIDC-Prüfung von NextAuth
 des eindeutigen Schlüssels. Folge: zweiter Aufruf am selben Tag kostet keine API-Anfrage,
 der Verlauf entsteht von selbst, und bei Ausfall gibt es den letzten Stand mit Zeitstempel.
 
-**Nachladen:** Realms per `IntersectionObserver`, Detailabrufe mit begrenzter Parallelität.
+**Nachladen:** Abschnitte per `IntersectionObserver`, Detailabrufe mit begrenzter Parallelität.
 
-### Spielmodi und WoW Forever
+### Nur WoW Forever
 
-| Modus | Profil-Namespace |
+Seit 2026-11-11 kennt die App nur noch **WoW Forever**; Retail, Classic und Classic Era sind
+entfernt (siehe `docs/reihenfolge.md`).
+
+| Daten | Namespace |
 | --- | --- |
-| Retail | `profile-<region>` |
-| Classic (aktuell) | `profile-classic-<region>` |
-| Classic Era | `profile-classic1x-<region>` |
+| Profil (Account, Charaktere, Gilden) | `profile-forever-<region>` |
+| Spieldaten | `static-forever-<region>` |
+| Rulesets, Auktionshäuser | `dynamic-forever-<region>` |
 
-Die Antworten weichen im Detail ab: Classic Era liefert kein `level` an Ausrüstungsteilen
-und keine Verzauberungen, Mythisch+ gibt es nur in Retail. Für **WoW Forever** liegt unter
-`src/lib/adapters/wow-forever.ts` ein dokumentierter Platzhalter.
+**Blizzard hat die Forever-API nicht dokumentiert.** Die Namespaces stammen aus
+Community-Tests und können sich ohne Ankündigung ändern. Charaktere haben **keinen Realm**,
+sondern heissen `{name}-{surname}`; Gilden ebenso, und statt Realms gibt es Rulesets. Ein
+404 heisst oft „noch keine Daten" (Charakter unter Stufe 10 oder nie ausgeloggt) und wird so
+angezeigt. Die Region ist standardmässig EU und im Setup wie in den Einstellungen umstellbar.
 
 ### Grenzen der API
 

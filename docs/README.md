@@ -11,11 +11,11 @@ Entscheide, Reihenfolge, offene Fragen.
 | Datei | Inhalt |
 | --- | --- |
 | [stand.md](./stand.md) | Rahmenbedingungen, was steht, gelernte Fallen, Haltung bei Datenlücken, Sicherheit |
-| [roadmap.md](./roadmap.md) | Was die APIs hergeben und was nicht, Architekturentscheide, Phasen 0–6 |
+| [roadmap.md](./roadmap.md) | Was die Forever-API hergibt und was nicht, Architekturentscheide, Phasen 0–4 |
 | [reihenfolge.md](./reihenfolge.md) | **Verbindliche Reihenfolge**, gefallene Entscheide, Talentbuilds, Auktionshaus, Korrekturen aus dem Code |
 | [i18n.md](./i18n.md) | Sprachumschalter: Aufbau, Regeln, Restliste |
 | [setup-modus.md](./setup-modus.md) | Zweistufiger Setup, Konfiguration in der Datenbank, Verschlüsselung |
-| [wochenuebersicht.md](./wochenuebersicht.md) | Reset-Tracker, Lockout-Längen in Classic Era |
+| [wochenuebersicht.md](./wochenuebersicht.md) | Reset-Tracker, Lockout-Längen (für Forever angenommen) |
 | [auftraege/i18n-abschluss.md](./auftraege/i18n-abschluss.md) | **Nächster Auftrag**: Sprachumschalter fertigstellen, mit Schlüsseltabellen und Abnahme |
 
 ## Stand auf einen Blick
@@ -39,9 +39,9 @@ Setup-Modus abschliessen → Warcraft Logs → WoW Forever.
 
 - **Hintergrund-Auffrischer** — braucht verschlüsselt persistierte Refresh-Tokens
 - **Warcraft Logs** — eigene App-Registrierung bei warcraftlogs.com nötig
-- **Talentbuilds** — liefert die Classic-Spieldaten-API überhaupt Talentbäume?
+- **Talentbuilds** — zurückgestellt: liefert die Forever-Spieldaten-API überhaupt Talentbäume?
 - **Battle.net Client Secret** — einmal offengelegt, muss neu generiert werden
-- **`src/lib/adapters/`** — löschen oder auf den aktuellen Modusbegriff ziehen
+- **`prisma/config.key` und `dev.log`** — sind eingecheckt, siehe [reihenfolge.md](./reihenfolge.md), „Korrekturen aus dem Code"
 
 ## Verhältnis zum Obsidian-Vault
 

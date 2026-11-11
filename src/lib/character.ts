@@ -8,21 +8,24 @@
  * Neue Datensätze gehören hierhin, nicht direkt in die Seiten.
  */
 
+import { notFound } from "next/navigation"
 import {
+  isCharacterSlug,
+  isNotFound,
   getCharacterEquipment,
   getCharacterProfile,
   getCharacterMedia,
   getCharacterProfessions,
   getCharacterRaids,
   getCharacterDungeons,
-  getCharacterMythicKeystone,
   type CharacterEquipment,
   type CharacterMedia,
-  type GameMode,
+  type CharacterProfileData,
 } from "./battlenet"
 import {
   withSnapshot,
   accountKey,
+  characterKey,
   guildKey,
   type SnapshotResult,
 } from "./snapshot"
@@ -39,7 +42,7 @@ import {
   type RawGuildAchievements,
 } from "./guild"
 import type { RawProfessions } from "./professions"
-import type { RawEncounters, RawMythicProfile } from "./progress"
+import type { RawEncounters } from "./progress"
 import { fetchReputations, type RawReputations } from "./reputations"
 import {
   fetchPvpSummary,
@@ -63,15 +66,34 @@ import {
   type RawTitleCollection,
 } from "./collections"
 
+/**
+ * Ein Forever-Charakter. Nur der Slug `{name}-{surname}` – es gibt keinen
+ * Realm und keinen Spielmodus mehr. Die Region kommt aus der Konfiguration.
+ */
 export interface CharacterRef {
-  realm: string
-  name: string
-  mode: GameMode
+  slug: string
 }
 
-export interface CharacterProfileData {
-  averageItemLevel?: number
-  equippedItemLevel?: number
+export type { CharacterProfileData }
+
+/**
+ * Slug aus dem Pfadsegment `[character]` lesen.
+ *
+ * Next reicht das Segment URL-kodiert durch; Umlaute im Namen kämen sonst
+ * als `%C3%B6` an. Ein Segment ohne Bindestrich ist kein Forever-Charakter
+ * (etwa ein alter Lesezeichen-Link aus Retail-Zeiten) – dann 404 statt eines
+ * Abrufs, der ohnehin scheitert.
+ */
+export function characterFromParam(raw: string): CharacterRef {
+  let slug = raw
+  try {
+    slug = decodeURIComponent(raw)
+  } catch {
+    // Kaputte Kodierung: so lassen, die Prüfung unten fängt es ab
+  }
+  slug = slug.toLowerCase()
+  if (!isCharacterSlug(slug)) notFound()
+  return { slug }
 }
 
 export function equipment(
@@ -79,8 +101,8 @@ export function equipment(
   token: string
 ): Promise<SnapshotResult<CharacterEquipment>> {
   return withSnapshot(
-    { gameMode: ref.mode, realmSlug: ref.realm, charName: ref.name, dataset: "equipment" },
-    () => getCharacterEquipment(ref.realm, ref.name, token, ref.mode)
+    characterKey(ref.slug, "equipment"),
+    () => getCharacterEquipment(ref.slug, token)
   )
 }
 
@@ -89,8 +111,8 @@ export function profile(
   token: string
 ): Promise<SnapshotResult<CharacterProfileData>> {
   return withSnapshot(
-    { gameMode: ref.mode, realmSlug: ref.realm, charName: ref.name, dataset: "profile" },
-    () => getCharacterProfile(ref.realm, ref.name, token, ref.mode)
+    characterKey(ref.slug, "profile"),
+    () => getCharacterProfile(ref.slug, token)
   )
 }
 
@@ -99,9 +121,9 @@ export function media(
   token: string
 ): Promise<SnapshotResult<CharacterMedia>> {
   return withSnapshot(
-    { gameMode: ref.mode, realmSlug: ref.realm, charName: ref.name, dataset: "media" },
+    characterKey(ref.slug, "media"),
     // Bilder ändern sich nur bei Ausrüstungswechsel – eine Stunde genügt
-    () => getCharacterMedia(ref.realm, ref.name, token, ref.mode),
+    () => getCharacterMedia(ref.slug, token),
     60 * 60
   )
 }
@@ -111,14 +133,9 @@ export function professions(
   token: string
 ): Promise<SnapshotResult<RawProfessions>> {
   return withSnapshot(
-    { gameMode: ref.mode, realmSlug: ref.realm, charName: ref.name, dataset: "professions" },
+    characterKey(ref.slug, "professions"),
     async () =>
-      (await getCharacterProfessions(
-        ref.realm,
-        ref.name,
-        token,
-        ref.mode
-      )) as RawProfessions
+      (await getCharacterProfessions(ref.slug, token)) as RawProfessions
   )
 }
 
@@ -127,9 +144,9 @@ export function raids(
   token: string
 ): Promise<SnapshotResult<RawEncounters>> {
   return withSnapshot(
-    { gameMode: ref.mode, realmSlug: ref.realm, charName: ref.name, dataset: "raids" },
+    characterKey(ref.slug, "raids"),
     async () =>
-      (await getCharacterRaids(ref.realm, ref.name, token, ref.mode)) as RawEncounters
+      (await getCharacterRaids(ref.slug, token)) as RawEncounters
   )
 }
 
@@ -138,25 +155,9 @@ export function dungeons(
   token: string
 ): Promise<SnapshotResult<RawEncounters>> {
   return withSnapshot(
-    { gameMode: ref.mode, realmSlug: ref.realm, charName: ref.name, dataset: "dungeons" },
+    characterKey(ref.slug, "dungeons"),
     async () =>
-      (await getCharacterDungeons(ref.realm, ref.name, token, ref.mode)) as RawEncounters
-  )
-}
-
-/** Mythisch+ gibt es nur in Retail – in Classic wirft der Abruf. */
-export function mythicKeystone(
-  ref: CharacterRef,
-  token: string
-): Promise<SnapshotResult<RawMythicProfile>> {
-  return withSnapshot(
-    { gameMode: ref.mode, realmSlug: ref.realm, charName: ref.name, dataset: "mythic-keystone" },
-    async () =>
-      (await getCharacterMythicKeystone(
-        ref.realm, ref.name, token, ref.mode
-      )) as RawMythicProfile,
-    // Wöchentlicher Reset – häufiger als eine Stunde lohnt nicht
-    60 * 60
+      (await getCharacterDungeons(ref.slug, token)) as RawEncounters
   )
 }
 
@@ -169,8 +170,8 @@ export function achievements(
   token: string
 ): Promise<SnapshotResult<AchievementSummary>> {
   return withSnapshot(
-    { gameMode: ref.mode, realmSlug: ref.realm, charName: ref.name, dataset: "achievements" },
-    () => fetchCharacterAchievements(ref.realm, ref.name, token, ref.mode)
+    characterKey(ref.slug, "achievements"),
+    () => fetchCharacterAchievements(ref.slug, token)
   )
 }
 
@@ -179,8 +180,8 @@ export function reputations(
   token: string
 ): Promise<SnapshotResult<RawReputations>> {
   return withSnapshot(
-    { gameMode: ref.mode, realmSlug: ref.realm, charName: ref.name, dataset: "reputations" },
-    () => fetchReputations(ref.realm, ref.name, token, ref.mode)
+    characterKey(ref.slug, "reputations"),
+    () => fetchReputations(ref.slug, token)
   )
 }
 
@@ -189,8 +190,8 @@ export function pvpSummary(
   token: string
 ): Promise<SnapshotResult<RawPvpSummary>> {
   return withSnapshot(
-    { gameMode: ref.mode, realmSlug: ref.realm, charName: ref.name, dataset: "pvp" },
-    () => fetchPvpSummary(ref.realm, ref.name, token, ref.mode)
+    characterKey(ref.slug, "pvp"),
+    () => fetchPvpSummary(ref.slug, token)
   )
 }
 
@@ -203,12 +204,12 @@ export function pvpBrackets(
   token: string
 ): Promise<SnapshotResult<Record<string, RawBracket | null>>> {
   return withSnapshot(
-    { gameMode: ref.mode, realmSlug: ref.realm, charName: ref.name, dataset: "pvp-brackets" },
+    characterKey(ref.slug, "pvp-brackets"),
     async () => {
       const results = await Promise.all(
         PVP_BRACKETS.map(async (b) => [
           b.slug,
-          await fetchBracket(ref.realm, ref.name, b.slug, token, ref.mode),
+          await fetchBracket(ref.slug, b.slug, token),
         ] as const)
       )
       return Object.fromEntries(results)
@@ -236,8 +237,8 @@ export function toys(
   token: string
 ): Promise<SnapshotResult<RawToyCollection>> {
   return withSnapshot(
-    { gameMode: ref.mode, realmSlug: ref.realm, charName: ref.name, dataset: "toys" },
-    () => fetchCharacterToys(ref.realm, ref.name, token, ref.mode)
+    characterKey(ref.slug, "toys"),
+    () => fetchCharacterToys(ref.slug, token)
   )
 }
 
@@ -246,8 +247,8 @@ export function titles(
   token: string
 ): Promise<SnapshotResult<RawTitleCollection>> {
   return withSnapshot(
-    { gameMode: ref.mode, realmSlug: ref.realm, charName: ref.name, dataset: "titles" },
-    () => fetchCharacterTitles(ref.realm, ref.name, token, ref.mode)
+    characterKey(ref.slug, "titles"),
+    () => fetchCharacterTitles(ref.slug, token)
   )
 }
 
@@ -262,23 +263,17 @@ export function characterGuild(
   token: string
 ): Promise<SnapshotResult<GuildRef | null>> {
   return withSnapshot(
-    {
-      gameMode: ref.mode,
-      realmSlug: ref.realm,
-      charName: ref.name,
-      dataset: "character-guild",
-    },
-    () => fetchCharacterGuild(ref.realm, ref.name, token, ref.mode)
+    characterKey(ref.slug, "character-guild"),
+    () => fetchCharacterGuild(ref.slug, token)
   )
 }
 
 export function guildProfile(
   guild: GuildRef,
-  mode: GameMode,
   token: string
 ): Promise<SnapshotResult<RawGuild>> {
-  return withSnapshot(guildKey(mode, guild.realmSlug, guild.slug, "guild"), () =>
-    fetchGuild(guild, token, mode)
+  return withSnapshot(guildKey(guild.slug, "guild"), () =>
+    fetchGuild(guild, token)
   )
 }
 
@@ -289,36 +284,33 @@ export function guildProfile(
  */
 export function guildRoster(
   guild: GuildRef,
-  mode: GameMode,
   token: string
 ): Promise<SnapshotResult<GuildRosterView>> {
   return withSnapshot(
-    guildKey(mode, guild.realmSlug, guild.slug, "guild-roster"),
-    () => fetchRoster(guild, token, mode),
+    guildKey(guild.slug, "guild-roster"),
+    () => fetchRoster(guild, token),
     6 * 60 * 60
   )
 }
 
 export function guildActivity(
   guild: GuildRef,
-  mode: GameMode,
   token: string
 ): Promise<SnapshotResult<RawGuildActivity>> {
   return withSnapshot(
-    guildKey(mode, guild.realmSlug, guild.slug, "guild-activity"),
-    () => fetchGuildActivity(guild, token, mode),
+    guildKey(guild.slug, "guild-activity"),
+    () => fetchGuildActivity(guild, token),
     60 * 60
   )
 }
 
 export function guildAchievements(
   guild: GuildRef,
-  mode: GameMode,
   token: string
 ): Promise<SnapshotResult<RawGuildAchievements>> {
   return withSnapshot(
-    guildKey(mode, guild.realmSlug, guild.slug, "guild-achievements"),
-    () => fetchGuildAchievements(guild, token, mode),
+    guildKey(guild.slug, "guild-achievements"),
+    () => fetchGuildAchievements(guild, token),
     6 * 60 * 60
   )
 }
@@ -332,6 +324,13 @@ export interface Attempt<T> {
   fetchedAt: Date | null
   stale: boolean
   failed: boolean
+  /**
+   * true = die API hat mit 404 geantwortet. Bei WoW Forever heisst das meist
+   * „noch keine Daten" (Charakter unter Stufe 10 oder noch nie ausgeloggt,
+   * Bild noch nicht gerendert) – die Oberfläche sagt das, statt einen
+   * Fehler zu melden. `failed` ist dann ebenfalls true.
+   */
+  notFound: boolean
 }
 
 export async function attempt<T>(
@@ -344,8 +343,15 @@ export async function attempt<T>(
       fetchedAt: result.fetchedAt,
       stale: result.stale,
       failed: false,
+      notFound: false,
     }
-  } catch {
-    return { value: null, fetchedAt: null, stale: false, failed: true }
+  } catch (error) {
+    return {
+      value: null,
+      fetchedAt: null,
+      stale: false,
+      failed: true,
+      notFound: isNotFound(error),
+    }
   }
 }

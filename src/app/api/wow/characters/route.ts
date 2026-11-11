@@ -1,10 +1,12 @@
 import { getServerSession } from "next-auth"
-import { NextRequest, NextResponse } from "next/server"
+import { NextResponse } from "next/server"
 import { getAuthOptions } from "@/lib/auth"
-import { getCharacters, GAME_MODES, type GameMode } from "@/lib/battlenet"
+import { getCharacters, isNotFound } from "@/lib/battlenet"
 import { getOrCreateUser, getFavorites } from "@/lib/db"
+import { region } from "@/lib/runtime"
 
-export async function GET(req: NextRequest) {
+/** Alle Forever-Charaktere des Accounts. */
+export async function GET() {
   const session = await getServerSession(await getAuthOptions())
 
   if (!session?.accessToken) {
@@ -18,23 +20,20 @@ export async function GET(req: NextRequest) {
     )
   }
 
-  const requested = req.nextUrl.searchParams.get("mode")
-  const mode = (GAME_MODES.find((m) => m.id === requested)?.id ??
-    "retail") as GameMode
-
   try {
     const user = await getOrCreateUser(session.battleTag ?? "unknown")
-    const favorites = await getFavorites(user.id)
+    const favorites = await getFavorites(user.id, region())
+    const favoriteSlugs = new Set(favorites.map((f) => f.charSlug))
 
-    // Favoriten-Key: gameMode:realmSlug:characterName
-    const favoriteKeys = new Set(
-      favorites.map((f) => `${f.gameMode}:${f.realmSlug}:${f.characterName}`)
-    )
+    const characters = await getCharacters(session.accessToken, favoriteSlugs)
 
-    const characters = await getCharacters(session.accessToken, mode, favoriteKeys)
-
-    return NextResponse.json({ characters, mode, userId: user.id })
+    return NextResponse.json({ characters, userId: user.id })
   } catch (error) {
+    // Ein Account ohne Forever-Charakter antwortet mit 404 – das ist eine
+    // leere Liste, kein Fehler.
+    if (isNotFound(error)) {
+      return NextResponse.json({ characters: [] })
+    }
     console.error("Fehler beim Laden der Charaktere:", error)
     return NextResponse.json(
       { error: "Charaktere konnten nicht geladen werden" },

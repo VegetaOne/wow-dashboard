@@ -13,7 +13,7 @@
 | Teilen | Per URL. Der Kollege meldet sich mit **seinem eigenen** Battle.net-Account an und sieht nur seine Charaktere |
 | Kein Claude Artifact | Artifacts dürfen keine externen API-Aufrufe machen (CSP), und eine `claude.ai`-Subdomain lässt sich nicht als Battle.net-Redirect-URI registrieren |
 | Sprache | Deutsche Oberfläche, API-Locale `de_DE` |
-| Spielmodi | Retail, Classic, Classic Era – Retail ist derzeit **nicht** der Fokus |
+| Spielmodi | **Nur WoW Forever** (seit 2026-11-11); Retail, Classic und Classic Era entfernt |
 | Warcraft Logs | Bewusst als **Letztes**; alles andere zuerst |
 | Code | GitHub, privates Repo `wow-dashboard` |
 
@@ -63,9 +63,10 @@ Spielzeug, Reittiere, Haustiere) · Erfolge · **Ansehen** · **PvP** · Verlauf
   ID-Token → `nonce mismatch`. Lösung: reiner OAuth2-Provider, Scope nur `wow.profile`,
   BattleTag über `userinfo`
 - **Der Anzeigename eines angelegten Items steht auf oberster Ebene** des Eintrags,
-  nicht unter `item.name`. Falsch gelesen bleiben Namen still leer – auch in Retail
-- **Classic Era liefert kein `level`** an Ausrüstungsteilen und keine Verzauberungen;
-  Mythisch+ gibt es nur in Retail. Antworten tolerant lesen
+  nicht unter `item.name`. Falsch gelesen bleiben Namen still leer
+- **Die Forever-API ist nicht dokumentiert**, Charaktere und Gilden haben keinen Realm
+  (`{name}-{surname}`), und ein 404 heisst meist „noch keine Daten". Antworten tolerant
+  lesen; Details in [roadmap.md](./roadmap.md), Abschnitt 2
 - **`skipDuplicates` gibt es in SQLite nicht** – Dedup auf Anwendungsebene
 - **Prisma auf Alpine braucht `apk add openssl`** und den Binary-Target
   `linux-musl-openssl-3.0.x`
@@ -111,9 +112,8 @@ Ohne Warcraft Logs:
 Danach:
 - **Warcraft Logs** – braucht eine eigene Anwendung bei warcraftlogs.com (Client ID und
   Secret in die `.env`)
-- **WoW Forever** – `src/lib/adapters/wow-forever.ts` ist ein dokumentierter Platzhalter.
-  Sobald Blizzard den Namespace veröffentlicht, wird er dort eingetragen; die Oberfläche
-  bleibt unverändert
+- **WoW Forever** – seit 2026-11-11 der einzige Spielmodus; Umstellung umgesetzt, mit
+  echten Daten noch ungeprüft. Siehe [reihenfolge.md](./reihenfolge.md)
 
 ---
 

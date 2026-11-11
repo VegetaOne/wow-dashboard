@@ -1,7 +1,7 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import type { CharacterEquipment, EquipmentSlot, GameMode } from "@/lib/battlenet"
+import type { CharacterEquipment, EquipmentSlot } from "@/lib/battlenet"
 import {
   SLOT_ORDER,
   SLOT_NAMES,
@@ -22,7 +22,6 @@ interface EquipmentPanelProps {
   icons?: Record<number, string>
   /** Freigestelltes Charaktermodell (main-raw), wenn die API eines liefert */
   renderUrl?: string | null
-  mode?: GameMode
 }
 
 type Upgrade = {
@@ -42,7 +41,6 @@ export function EquipmentPanel({
   equipment,
   icons = {},
   renderUrl = null,
-  mode = "retail",
 }: EquipmentPanelProps) {
   const t = useT()
   const [tooltip, setTooltip] = useState<TooltipTarget | null>(null)
@@ -65,8 +63,8 @@ export function EquipmentPanel({
   const maxLevel = Math.max(1, ...levels)
 
   const upgrades = useMemo(
-    () => findUpgrades(items, slotMap, mode, levels, t),
-    [items, slotMap, mode, levels.join(","), t]
+    () => findUpgrades(items, slotMap, levels, t),
+    [items, slotMap, levels.join(","), t]
   )
 
   function showTooltip(item: EquipmentSlot, slotType: string, e: React.MouseEvent) {
@@ -158,7 +156,6 @@ export function EquipmentPanel({
                 slotType={slotType}
                 item={slotMap[slotType]}
                 icon={slotMap[slotType] ? icons[slotMap[slotType].item.id] : undefined}
-                mode={mode}
                 align="left"
                 onEnter={showTooltip}
                 onLeave={() => setTooltip(null)}
@@ -187,7 +184,6 @@ export function EquipmentPanel({
                 slotType={slotType}
                 item={slotMap[slotType]}
                 icon={slotMap[slotType] ? icons[slotMap[slotType].item.id] : undefined}
-                mode={mode}
                 align="right"
                 onEnter={showTooltip}
                 onLeave={() => setTooltip(null)}
@@ -204,7 +200,6 @@ export function EquipmentPanel({
               slotType={slotType}
               item={slotMap[slotType]}
               icon={slotMap[slotType] ? icons[slotMap[slotType].item.id] : undefined}
-              mode={mode}
               align="left"
               onEnter={showTooltip}
               onLeave={() => setTooltip(null)}
@@ -239,7 +234,6 @@ export function EquipmentPanel({
 function findUpgrades(
   items: EquipmentSlot[],
   slotMap: Record<string, EquipmentSlot>,
-  mode: GameMode,
   levels: number[],
   t: Translate
 ): Upgrade[] {
@@ -261,8 +255,9 @@ function findUpgrades(
     }
   }
 
-  // Fehlende Verzauberungen – nur dort, wo wir die Regeln kennen
-  for (const slotType of ENCHANTABLE_SLOTS[mode] ?? []) {
+  // Fehlende Verzauberungen – nur dort, wo wir die Regeln kennen. Für
+  // Forever ist die Liste noch leer (nicht belegt), also keine Warnung.
+  for (const slotType of ENCHANTABLE_SLOTS) {
     const item = slotMap[slotType]
     if (!item) continue
     if ((item.enchantments?.length ?? 0) === 0) {
@@ -306,7 +301,6 @@ function PaperdollSlot({
   slotType,
   item,
   icon,
-  mode,
   align,
   onEnter,
   onLeave,
@@ -314,7 +308,6 @@ function PaperdollSlot({
   slotType: string
   item?: EquipmentSlot
   icon?: string
-  mode: GameMode
   align: "left" | "right"
   onEnter: (item: EquipmentSlot, slotType: string, e: React.MouseEvent) => void
   onLeave: () => void
@@ -339,7 +332,7 @@ function PaperdollSlot({
   const color = QUALITY_COLORS[quality] ?? "#FFFFFF"
   const level = item.level?.value ?? null
   const emptySocket = item.sockets?.some((s) => !s.item) ?? false
-  const enchantable = (ENCHANTABLE_SLOTS[mode] ?? []).includes(slotType)
+  const enchantable = ENCHANTABLE_SLOTS.includes(slotType)
   const missingEnchant = enchantable && (item.enchantments?.length ?? 0) === 0
 
   return (

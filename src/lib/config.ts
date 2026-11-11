@@ -16,9 +16,7 @@
 
 import { prisma } from "./db"
 import { decryptSecret, encryptSecret, generateAuthSecret } from "./secrets"
-import type { GameMode } from "./battlenet"
 import {
-  ALL_GAME_MODES,
   CONFIG_DEFAULTS,
   configSnapshot,
   setConfigCache,
@@ -28,26 +26,12 @@ import {
 } from "./config-cache"
 
 export {
-  ALL_GAME_MODES,
   LANGUAGES,
   REGIONS,
   configSnapshot,
   type AppConfigView,
   type Language,
 } from "./config-cache"
-
-function parseModes(raw: string): GameMode[] {
-  try {
-    const parsed = JSON.parse(raw)
-    if (!Array.isArray(parsed)) return ALL_GAME_MODES
-    const modes = parsed.filter((m): m is GameMode =>
-      ALL_GAME_MODES.includes(m as GameMode)
-    )
-    return modes.length > 0 ? modes : ALL_GAME_MODES
-  } catch {
-    return ALL_GAME_MODES
-  }
-}
 
 /**
  * Konfiguration aus der Datenbank lesen.
@@ -74,8 +58,6 @@ export async function loadConfig(force = false): Promise<LoadedConfig> {
       region: row.region || "eu",
       bnetClientId: row.bnetClientId || null,
       hasClientSecret: !!row.bnetClientSecret,
-      gameModes: parseModes(row.gameModes),
-      defaultMode: (row.defaultMode as GameMode) || "retail",
       pollSeconds: row.pollSeconds || 60,
       warcraftLogsClientId: row.warcraftLogsClientId || null,
       hasWarcraftLogsSecret: !!row.warcraftLogsSecret,
@@ -110,8 +92,6 @@ export interface ConfigUpdate {
   bnetClientId?: string
   /** Klartext; wird verschlüsselt abgelegt. Leerer String = unverändert. */
   bnetClientSecret?: string
-  gameModes?: GameMode[]
-  defaultMode?: GameMode
   pollSeconds?: number
   warcraftLogsClientId?: string
   warcraftLogsSecret?: string
@@ -135,8 +115,6 @@ export async function saveConfig(update: ConfigUpdate): Promise<LoadedConfig> {
   if (update.bnetClientSecret) {
     data.bnetClientSecret = encryptSecret(update.bnetClientSecret.trim())
   }
-  if (update.gameModes) data.gameModes = JSON.stringify(update.gameModes)
-  if (update.defaultMode) data.defaultMode = update.defaultMode
   if (typeof update.pollSeconds === "number") {
     // Unter 15 Sekunden bringt nichts: die Profil-API aktualisiert ohnehin
     // erst beim Ausloggen des Charakters.

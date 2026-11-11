@@ -8,8 +8,6 @@
  * Zustand und reine Daten; gefüllt wird er von `config.ts` auf dem Server.
  */
 
-import type { GameMode } from "./battlenet"
-
 export type Language = "en" | "de"
 
 export const LANGUAGES: { id: Language; label: string; locale: string }[] = [
@@ -19,16 +17,12 @@ export const LANGUAGES: { id: Language; label: string; locale: string }[] = [
 
 export const REGIONS = ["eu", "us", "kr", "tw"] as const
 
-export const ALL_GAME_MODES: GameMode[] = ["retail", "classic", "classic-era"]
-
 /** Was die Oberfläche sehen darf – ohne die Geheimnisse selbst. */
 export interface AppConfigView {
   language: Language
   region: string
   bnetClientId: string | null
   hasClientSecret: boolean
-  gameModes: GameMode[]
-  defaultMode: GameMode
   pollSeconds: number
   warcraftLogsClientId: string | null
   hasWarcraftLogsSecret: boolean
@@ -50,8 +44,6 @@ export const CONFIG_DEFAULTS: LoadedConfig = {
   region: "eu",
   bnetClientId: null,
   hasClientSecret: false,
-  gameModes: ALL_GAME_MODES,
-  defaultMode: "retail",
   pollSeconds: 60,
   warcraftLogsClientId: null,
   hasWarcraftLogsSecret: false,

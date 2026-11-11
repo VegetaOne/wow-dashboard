@@ -18,15 +18,17 @@ model User {
   preferences UserPreference?
 }
 
+/// Favorit eines Nutzers. Forever-Charaktere sind `{name}-{surname}` ohne
+/// Realm und nur je Region eindeutig – darum Region und Slug.
 model Favorite {
-  id            String @id @default(cuid())
-  userId        String
-  characterName String
-  realmSlug     String
-  gameMode      String @default("retail")
-  user          User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id       String @id @default(cuid())
+  userId   String
+  region   String
+  /// `{name}-{surname}`, klein
+  charSlug String
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([userId, characterName, realmSlug, gameMode])
+  @@unique([userId, region, charSlug])
 }
 
 model UserPreference {
@@ -44,7 +46,8 @@ model UserPreference {
 /// indexieren und lokal abfragen, statt bei jedem Seitenaufruf zu laufen.
 model LootItem {
   id            String @id @default(cuid())
-  gameMode      String
+  /// Die Stammdaten hängen an der Region (eigener Namespace je Region)
+  region        String
   itemId        Int
   name          String
   /// Rohwert der API (HEAD, CLOAK, ROBE, TRINKET, …)
@@ -54,14 +57,14 @@ model LootItem {
   instanceName  String
   encounterName String
 
-  @@unique([gameMode, itemId, encounterName])
-  @@index([gameMode, inventoryType])
+  @@unique([region, itemId, encounterName])
+  @@index([region, inventoryType])
 }
 
-/// Fortschritt des Index-Durchlaufs je Spielmodus.
+/// Fortschritt des Index-Durchlaufs je Region.
 model LootIndexRun {
   id                String    @id @default(cuid())
-  gameMode          String    @unique
+  region            String    @unique
   status            String    @default("PENDING")
   totalInstances    Int       @default(0)
   indexedInstances  Int       @default(0)
@@ -75,7 +78,7 @@ model LootIndexRun {
 
 /// Verdichteter Preisstand eines Auktionshauses.
 ///
-/// Die Rohantwort des Auktionsendpunkts ist je verbundenem Realm mehrere
+/// Die Rohantwort des Auktionsendpunkts ist je Haus mehrere
 /// Megabyte gross (bei vollen Servern über zehn) und enthält jedes einzelne
 /// Gebot. Aufbewahrt wird darum nur, was eine Preisfrage beantwortet:
 /// günstigster Sofortkaufpreis je Einheit, angebotene Menge, Zahl der Angebote.
@@ -84,10 +87,10 @@ model LootIndexRun {
 /// Zahlen.
 model AuctionPrice {
   id               String   @id @default(cuid())
-  gameMode         String
-  connectedRealmId Int
-  /// Classic führt mehrere Häuser je Realm (Allianz, Horde, neutral).
-  /// Retail hat genau eines; dort steht 0.
+  region           String
+  /// Forever führt Häuser je Ruleset – aber jedes Ruleset liefert dieselben
+  /// Häuser mit denselben Angeboten. Darum ist das Haus der Schlüssel, nicht
+  /// das Ruleset; sonst stünde derselbe Preis mehrfach in der Tabelle.
   houseId          Int
   itemId           Int
   /// Günstigster Sofortkaufpreis je Einheit, in Kupfer
@@ -98,15 +101,16 @@ model AuctionPrice {
   listings         Int
   fetchedAt        DateTime @default(now())
 
-  @@unique([gameMode, connectedRealmId, houseId, itemId])
-  @@index([gameMode, connectedRealmId, houseId])
+  @@unique([region, houseId, itemId])
+  @@index([region, houseId])
 }
 
 /// Stand des letzten Auktions-Durchlaufs je Haus.
 model AuctionRun {
   id               String   @id @default(cuid())
-  gameMode         String
-  connectedRealmId Int
+  region           String
+  /// Über welches Ruleset das Haus zuletzt abgerufen wurde – nur Auskunft
+  rulesetId        Int?
   houseId          Int
   houseName        String?
   status           String   @default("PENDING")
@@ -120,7 +124,7 @@ model AuctionRun {
   startedAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
-  @@unique([gameMode, connectedRealmId, houseId])
+  @@unique([region, houseId])
 }
 
 /// Zwischengespeicherte Antworten der Profil-API, ein Stand pro Tag.
@@ -128,11 +132,15 @@ model AuctionRun {
 /// Der Tag steckt im Unique-Key: dadurch entsteht die Historie von selbst
 /// (ein Abruf am selben Tag überschreibt, ein Abruf am nächsten legt an),
 /// ohne dass jemand alte Zeilen ausdünnen muss.
+///
+/// Seit WoW Forever: ein Charakter ist `{name}-{surname}` ohne Realm, nur je
+/// Region eindeutig. Account- und Gildendaten liegen in derselben Tabelle mit
+/// `@account` bzw. `@guild:<slug>` als Slug.
 model CharacterSnapshot {
   id        String   @id @default(cuid())
-  gameMode  String
-  realmSlug String
-  charName  String
+  region    String
+  /// `{name}-{surname}`, `@account` oder `@guild:<slug>`
+  charSlug  String
   /// "professions" | "collections" | "achievements" | "raids" | …
   dataset   String
   /// Tag als YYYY-MM-DD
@@ -141,8 +149,8 @@ model CharacterSnapshot {
   payload   String
   fetchedAt DateTime @default(now())
 
-  @@unique([gameMode, realmSlug, charName, dataset, day])
-  @@index([gameMode, realmSlug, charName, dataset])
+  @@unique([region, charSlug, dataset, day])
+  @@index([region, charSlug, dataset])
   @@index([dataset, day])
 }
 
@@ -172,10 +180,6 @@ model AppConfig {
   /// Sitzungsschlüssel für NextAuth, beim Setup selbst erzeugt
   authSecret            String?
 
-  /// Welche Spielmodi angezeigt werden, als JSON-Array
-  gameModes             String    @default("[\"retail\",\"classic\",\"classic-era\"]")
-  /// Modus, mit dem die Kaderliste startet
-  defaultMode           String    @default("retail")
   /// Abrufintervall der Kaderliste in Sekunden
   pollSeconds           Int       @default(60)
 

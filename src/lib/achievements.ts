@@ -16,8 +16,7 @@
  * einen, und den erst auf Anforderung.
  */
 
-import { GAME_MODES, type GameMode } from "./battlenet"
-import { apiBase, locale } from "./runtime"
+import { bnetGet, characterPath } from "./battlenet"
 
 const STATIC_REVALIDATE = 60 * 60 * 24 * 7
 
@@ -162,27 +161,20 @@ export interface CategoryCatalog {
  */
 export async function getCategoryCatalog(
   categoryId: number,
-  token: string,
-  mode: GameMode
+  token: string
 ): Promise<CategoryCatalog | null> {
-  const config = GAME_MODES.find((m) => m.id === mode) ?? GAME_MODES[0]
-  const url = new URL(`${apiBase()}/data/wow/achievement-category/${categoryId}`)
-  url.searchParams.set("namespace", config.staticNamespace)
-  url.searchParams.set("locale", locale())
-
   try {
-    const res = await fetch(url.toString(), {
-      headers: { Authorization: `Bearer ${token}` },
-      next: { revalidate: STATIC_REVALIDATE },
-    })
-    if (!res.ok) return null
-
-    const data = (await res.json()) as {
+    const data = await bnetGet<{
       id?: number
       name?: string
       achievements?: { id?: number; name?: string; points?: number }[]
       subcategories?: { id?: number; name?: string }[]
-    }
+    }>(
+      `/data/wow/achievement-category/${categoryId}`,
+      token,
+      "static",
+      STATIC_REVALIDATE
+    )
 
     const achievements = (data.achievements ?? [])
       .map((a): CategoryCatalogEntry | null => {
@@ -217,24 +209,10 @@ export async function getCategoryCatalog(
 
 /** Rohabruf der Charakter-Erfolge – wird sofort verdichtet. */
 export async function fetchCharacterAchievements(
-  realm: string,
-  name: string,
-  token: string,
-  mode: GameMode
+  slug: string,
+  token: string
 ): Promise<AchievementSummary> {
-  const config = GAME_MODES.find((m) => m.id === mode) ?? GAME_MODES[0]
-  const url = new URL(
-    `${apiBase()}/profile/wow/character/${realm}/${name.toLowerCase()}/achievements`
-  )
-  url.searchParams.set("namespace", config.namespace)
-  url.searchParams.set("locale", locale())
-
-  const res = await fetch(url.toString(), {
-    headers: { Authorization: `Bearer ${token}` },
-    next: { revalidate: 900 },
-  })
-  if (!res.ok) throw new Error(`Erfolge ${res.status}`)
-
+  const raw = await bnetGet<unknown>(characterPath(slug, "achievements"), token, "profile", 900)
   // Direkt verdichten: die volle Antwort soll nie in den Snapshot
-  return condenseAchievements(await res.json())
+  return condenseAchievements(raw)
 }

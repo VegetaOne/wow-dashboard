@@ -1,10 +1,8 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
-import { useSearchParams } from "next/navigation"
 import { CharacterCard } from "./CharacterCard"
-import type { WoWCharacter, GameMode, CharacterDetails } from "@/lib/battlenet"
-import { detailKey } from "@/lib/battlenet"
+import type { WoWCharacter, CharacterDetails } from "@/lib/battlenet"
 import type { TranslationKey } from "@/lib/i18n"
 import { useT } from "./I18nProvider"
 
@@ -18,56 +16,40 @@ type DetailMap = Record<string, CharacterDetails>
 /** Vorgabe, falls die Konfiguration nichts sagt. */
 export const POLL_MS = 60_000
 
-/** Nur Retail liefert Gegenstandsstufen — Classic-Modi zeigen die Stufe. */
-function hasItemLevel(mode: GameMode) {
-  return mode === "retail"
-}
-
-interface RealmGroup {
-  slug: string
-  name: string
+/**
+ * Gruppe der Liste. Früher je Realm – WoW Forever hat keine Realms, und die
+ * Account-Liste nennt auch kein Ruleset. Gruppiert wird darum nach Fraktion;
+ * die Abschnitte bleiben nötig, weil sie das Nachladen der Werte steuern.
+ */
+interface CharacterGroup {
+  faction: "ALLIANCE" | "HORDE"
   characters: CharacterWithMeta[]
 }
 
-/** Realms alphabetisch, Charaktere darin nach Stufe absteigend. */
-function groupByRealm(characters: CharacterWithMeta[]): RealmGroup[] {
-  const map = new Map<string, RealmGroup>()
-
+/** Allianz vor Horde, Charaktere darin nach Stufe absteigend. */
+function groupByFaction(characters: CharacterWithMeta[]): CharacterGroup[] {
+  const groups: CharacterGroup[] = [
+    { faction: "ALLIANCE", characters: [] },
+    { faction: "HORDE", characters: [] },
+  ]
   for (const char of characters) {
-    const group = map.get(char.realm.slug)
-    if (group) {
-      group.characters.push(char)
-    } else {
-      map.set(char.realm.slug, {
-        slug: char.realm.slug,
-        name: char.realm.name,
-        characters: [char],
-      })
-    }
+    groups[char.faction.type === "HORDE" ? 1 : 0].characters.push(char)
   }
-
-  const groups = Array.from(map.values())
   for (const group of groups) {
     group.characters.sort((a, b) => b.level - a.level || a.name.localeCompare(b.name))
   }
-  groups.sort((a, b) => a.name.localeCompare(b.name))
-  return groups
+  return groups.filter((g) => g.characters.length > 0)
 }
 
 export function CharacterGrid({
   onSync,
   pollMs = POLL_MS,
-  defaultMode = "retail",
 }: {
   onSync?: (at: Date, count: number) => void
   /** Abrufintervall aus der Konfiguration */
   pollMs?: number
-  /** Modus, wenn die Adresse keinen nennt */
-  defaultMode?: GameMode
 }) {
   const t = useT()
-  const params = useSearchParams()
-  const mode = (params.get("mode") as GameMode) || defaultMode
 
   const [characters, setCharacters] = useState<CharacterWithMeta[]>([])
   const [loading, setLoading] = useState(true)
@@ -85,29 +67,22 @@ export function CharacterGrid({
   }, [onSync])
 
   // Gegenstandsstufe und Avatar kommen nicht mit der Liste, sondern erst
-  // wenn ein Realm-Abschnitt sichtbar wird. Einmal geholt, bleibt es da.
+  // wenn ein Abschnitt sichtbar wird. Einmal geholt, bleibt es da.
   const [details, setDetails] = useState<DetailMap>({})
   const requestedRef = useRef<Set<string>>(new Set())
 
   const loadDetails = useCallback(
     async (chars: CharacterWithMeta[]) => {
-      const missing = chars.filter(
-        (c) => !requestedRef.current.has(detailKey(c.realm.slug, c.name))
-      )
+      const missing = chars.filter((c) => !requestedRef.current.has(c.slug))
       if (missing.length === 0) return
 
-      for (const c of missing) {
-        requestedRef.current.add(detailKey(c.realm.slug, c.name))
-      }
+      for (const c of missing) requestedRef.current.add(c.slug)
 
       try {
         const res = await fetch("/api/wow/character-details", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            mode,
-            characters: missing.map((c) => ({ realm: c.realm.slug, name: c.name })),
-          }),
+          body: JSON.stringify({ slugs: missing.map((c) => c.slug) }),
         })
         const data = await res.json()
         if (data.details) {
@@ -115,23 +90,15 @@ export function CharacterGrid({
         }
       } catch {
         // Bei Fehlschlag wieder freigeben, damit ein späterer Versuch greift
-        for (const c of missing) {
-          requestedRef.current.delete(detailKey(c.realm.slug, c.name))
-        }
+        for (const c of missing) requestedRef.current.delete(c.slug)
       }
     },
-    [mode]
+    []
   )
-
-  // Moduswechsel: Geladenes verwerfen, die Werte gelten pro Modus
-  useEffect(() => {
-    setDetails({})
-    requestedRef.current = new Set()
-  }, [mode])
 
   const load = useCallback(async () => {
     try {
-      const res = await fetch(`/api/wow/characters?mode=${mode}`)
+      const res = await fetch("/api/wow/characters")
       const data = await res.json()
       if (data.error) throw new Error(data.error)
       setCharacters(data.characters)
@@ -142,7 +109,7 @@ export function CharacterGrid({
     } finally {
       setLoading(false)
     }
-  }, [mode])
+  }, [])
 
   // Die App zieht selbst — kein manueller Refresh-Button.
   useEffect(() => {
@@ -157,30 +124,23 @@ export function CharacterGrid({
       const res = await fetch("/api/wow/favorites", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        // gameMode mitgeben: derselbe Name kann in mehreren Modi existieren
-        body: JSON.stringify({
-          characterName: char.name,
-          realmSlug: char.realm.slug,
-          gameMode: mode,
-        }),
+        body: JSON.stringify({ slug: char.slug }),
       })
       const data = await res.json()
       if (data.error) return
 
       setCharacters((prev) =>
         prev.map((c) =>
-          c.name === char.name && c.realm.slug === char.realm.slug
-            ? { ...c, isFavorite: data.isFavorite }
-            : c
+          c.slug === char.slug ? { ...c, isFavorite: data.isFavorite } : c
         )
       )
     },
-    [mode]
+    []
   )
 
   const stats = useMemo(() => {
     const loadedLevels = characters
-      .map((c) => details[detailKey(c.realm.slug, c.name)]?.equippedItemLevel)
+      .map((c) => details[c.slug]?.equippedItemLevel)
       .filter((v): v is number => typeof v === "number")
 
     const avg = loadedLevels.length
@@ -203,38 +163,34 @@ export function CharacterGrid({
           alliance: characters.filter((c) => c.faction.type === "ALLIANCE").length,
         })
       ),
-      hasItemLevel(mode)
-        ? stat(
-            "grid.statAvgItemLevel",
-            avg ?? "—",
-            // Ehrlich bleiben: der Schnitt gilt nur für das bisher Geladene
-            loadedLevels.length
-              ? t("grid.avgNote", {
-                  loaded: loadedLevels.length,
-                  total: characters.length,
-                  max: Math.max(...loadedLevels),
-                })
-              : t("grid.avgPending")
-          )
-        : stat(
-            "grid.statHighestLevel",
-            maxLevel,
-            t("grid.atMaxLevel", {
-              count: characters.filter((c) => c.level >= maxLevel).length,
+      stat(
+        "grid.statHighestLevel",
+        maxLevel,
+        t("grid.atMaxLevel", {
+          count: characters.filter((c) => c.level >= maxLevel).length,
+        })
+      ),
+      // Ob Forever eine Gegenstandsstufe führt, ist nicht belegt. Ohne einen
+      // einzigen geladenen Wert steht „—", nie 0.
+      stat(
+        "grid.statAvgItemLevel",
+        avg ?? "—",
+        // Ehrlich bleiben: der Schnitt gilt nur für das bisher Geladene
+        loadedLevels.length
+          ? t("grid.avgNote", {
+              loaded: loadedLevels.length,
+              total: characters.length,
+              max: Math.max(...loadedLevels),
             })
-          ),
+          : t("grid.avgPending")
+      ),
       stat(
         "grid.statFavorites",
         characters.filter((c) => c.isFavorite).length,
         t("grid.favoritesNote")
       ),
-      stat(
-        "grid.statRealms",
-        new Set(characters.map((c) => c.realm.slug)).size,
-        t("grid.realmsNote")
-      ),
     ]
-  }, [characters, mode, details, t])
+  }, [characters, details, t])
 
   const displayed = characters
     .filter((c) => (faction === "all" ? true : c.faction.type === faction))
@@ -242,12 +198,12 @@ export function CharacterGrid({
     .filter((c) =>
       !query.trim()
         ? true
-        : (c.name + c.playable_class.name + c.realm.name)
+        : (c.name + " " + (c.surname ?? "") + c.playable_class.name)
             .toLowerCase()
             .includes(query.trim().toLowerCase())
     )
 
-  const realmGroups = groupByRealm(displayed)
+  const groups = groupByFaction(displayed)
 
   if (error) {
     return (
@@ -328,8 +284,6 @@ export function CharacterGrid({
             shown: displayed.length,
             total: characters.length,
           })}
-          {realmGroups.length > 0 &&
-            ` · ${t("grid.realmCount", { count: realmGroups.length })}`}
         </span>
       </div>
 
@@ -341,10 +295,10 @@ export function CharacterGrid({
         <span className="min-w-0 flex-1 basis-[150px] py-2">
           {t("grid.colCharacter")}
         </span>
-        <span className="w-14 flex-none text-right">
-          {hasItemLevel(mode) ? t("card.itemLevel") : t("card.level")}
+        <span className="w-14 flex-none text-right">{t("card.level")}</span>
+        <span className="hidden w-14 flex-none text-right sm:block">
+          {t("card.itemLevel")}
         </span>
-        <span className="hidden w-14 flex-none text-right sm:block">Ø</span>
         <span className="hidden w-24 flex-none sm:block">{t("card.faction")}</span>
         <span className="w-9 flex-none">★</span>
         <span className="hidden w-[104px] flex-none lg:block" />
@@ -356,16 +310,15 @@ export function CharacterGrid({
             <div key={i} className="h-[54px] animate-pulse bg-surface" />
           ))}
         </div>
-      ) : realmGroups.length === 0 ? (
+      ) : groups.length === 0 ? (
         <div className="px-6 py-12 text-[13px] opacity-55">
           {favoritesOnly ? t("grid.noFavorites") : t("grid.noCharacters")}
         </div>
       ) : (
-        realmGroups.map((group) => (
-          <RealmSection
-            key={group.slug}
+        groups.map((group) => (
+          <CharacterSection
+            key={group.faction}
             group={group}
-            mode={mode}
             details={details}
             onVisible={loadDetails}
             onToggleFavorite={toggleFavorite}
@@ -377,18 +330,16 @@ export function CharacterGrid({
 }
 
 /**
- * Ein Realm-Abschnitt. Meldet sich, sobald er in Sichtweite kommt,
+ * Ein Abschnitt der Liste. Meldet sich, sobald er in Sichtweite kommt,
  * damit erst dann Gegenstandsstufen und Avatare geladen werden.
  */
-function RealmSection({
+function CharacterSection({
   group,
-  mode,
   details,
   onVisible,
   onToggleFavorite,
 }: {
-  group: RealmGroup
-  mode: GameMode
+  group: CharacterGroup
   details: DetailMap
   onVisible: (chars: CharacterWithMeta[]) => void
   onToggleFavorite: (char: CharacterWithMeta) => void
@@ -422,19 +373,17 @@ function RealmSection({
     )
     observer.observe(el)
     return () => observer.disconnect()
-  }, [group.slug, onVisible])
+  }, [group.faction, onVisible])
 
-  const loadedCount = group.characters.filter(
-    (c) => details[detailKey(c.realm.slug, c.name)]
-  ).length
-  const pendingDetails = hasItemLevel(mode) && loadedCount < group.characters.length
+  const loadedCount = group.characters.filter((c) => details[c.slug]).length
+  const pendingDetails = loadedCount < group.characters.length
 
   return (
     <section ref={sectionRef}>
-      {/* Realm-Zwischenüberschrift */}
+      {/* Zwischenüberschrift je Fraktion */}
       <div className="flex items-baseline gap-3 border-b border-line bg-surface px-6 py-2">
         <span className="font-heading text-[13px] font-extrabold uppercase tracking-[0.06em]">
-          {group.name}
+          {group.faction === "HORDE" ? t("card.horde") : t("card.alliance")}
         </span>
         <span className="eyebrow">
           {group.characters.length}{" "}
@@ -451,11 +400,10 @@ function RealmSection({
 
       {group.characters.map((char) => (
         <CharacterCard
-          key={`${char.realm.slug}-${char.name}`}
+          key={char.slug}
           character={char}
-          mode={mode}
-          details={details[detailKey(char.realm.slug, char.name)]}
-          detailsPending={hasItemLevel(mode) && !details[detailKey(char.realm.slug, char.name)]}
+          details={details[char.slug]}
+          detailsPending={!details[char.slug]}
           onToggleFavorite={() => onToggleFavorite(char)}
         />
       ))}

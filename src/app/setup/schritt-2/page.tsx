@@ -50,8 +50,6 @@ export default async function SetupStepTwoPage() {
           <hr className="rule my-8" />
 
           <SetupStep2Form
-            initialModes={config.gameModes}
-            initialDefaultMode={config.defaultMode}
             initialPollSeconds={config.pollSeconds}
           />
         </div>

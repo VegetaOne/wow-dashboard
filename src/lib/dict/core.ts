@@ -41,7 +41,7 @@ export const en = {
   "core.days.one": "{count} day",
   "core.days.other": "{count} days",
 
-  // „Diese Woche" stand doppelt (PvpPanel, MythicPanel) unter progress.thisWeek –
+  // „Diese Woche" stand doppelt (PvpPanel, früher MythicPanel) unter progress.thisWeek –
   // jetzt ein Schlüssel für beide (V4 aus i18n-abschluss.md).
   "core.thisWeek": "This week",
 
@@ -55,14 +55,11 @@ export const en = {
   // eingeloggt" in verschiedenen Routen – ein Schlüssel für beide.
   "core.notLoggedIn": "Not logged in",
   "core.invalidRequestBody": "Invalid request body",
+  "core.characterSlugInvalid": "Not a WoW Forever character (expected first name and surname)",
+  "core.noDataYet": "No data yet",
+  "core.noDataYetText": "Battle.net has nothing for this yet. WoW Forever characters only appear from level 10 and after their first logout; pictures follow a while later. This is not an error.",
 
   // ─── Spielmodi ───────────────────────────────────────────────────────────
-  "mode.retail": "Retail",
-  "mode.retail.note": "The War Within · level 80",
-  "mode.classic": "Classic",
-  "mode.classic.note": "Anniversary · level 60",
-  "mode.classicEra": "Classic Era",
-  "mode.classicEra.note": "Hardcore · level 60",
 
   // ─── Charakter-Tabs ──────────────────────────────────────────────────────
   "tab.equipment": "Gear",
@@ -70,7 +67,7 @@ export const en = {
   "tab.professions": "Professions",
   "tab.professions.note": "Skill levels and recipes",
   "tab.progress": "Progress",
-  "tab.progress.note": "Raids, dungeons, Mythic+",
+  "tab.progress.note": "Raids and dungeons",
   "tab.collections": "Collections",
   "tab.collections.note": "Titles and toys",
   "tab.achievements": "Achievements",
@@ -91,7 +88,6 @@ export const en = {
   // ─── Charakterzeile ──────────────────────────────────────────────────────
   "card.itemLevel": "ILVL",
   "card.level": "Level",
-  "card.averageItemLevel": "Ø ilvl",
   "card.faction": "Faction",
   "card.alliance": "Alliance",
   "card.horde": "Horde",
@@ -126,7 +122,7 @@ export const en = {
   "weekly.days": "{days}d",
   "weekly.shortened": " · shortened",
   "weekly.noCharacters": "No characters",
-  "weekly.noCharactersHint": "The account has no characters for this game mode.",
+  "weekly.noCharactersHint": "The account has no WoW Forever characters yet. Characters appear from level 10, after their first logout.",
   "weekly.characterFailed": "Not available",
   "weekly.noRaids": "No raids",
   "weekly.openOfTotal": "{open} of {total} open",
@@ -141,6 +137,9 @@ export const en = {
   "weekly.colStatus": "Status",
   "weekly.colResetIn": "Reset in",
   "character.levelClass": "Level {level}",
+  "character.itemLevel": "Item level",
+  "character.averageItemLevel": "Ø incl. bags",
+  "character.staleNotice": "Battle.net is not reachable right now — showing the last known state",
 
   // ─── Charakterliste ──────────────────────────────────────────────────────
   "grid.apiError": "API error",
@@ -153,13 +152,10 @@ export const en = {
   "grid.atMaxLevel": "{count} at max level",
   "grid.statFavorites": "Favourites",
   "grid.favoritesNote": "marked with ★",
-  "grid.statRealms": "Realms",
-  "grid.realmsNote": "spread across",
   "grid.filterAll": "All",
   "grid.favorites": "Favourites",
   "grid.searchPlaceholder": "Search character…",
   "grid.shownOf": "{shown} of {total} characters",
-  "grid.realmCount": "{count} realms",
   "grid.colClass": "Cl.",
   "grid.colCharacter": "Character",
   "grid.noFavorites": "No favourites yet — click the ★ on a character.",
@@ -212,20 +208,17 @@ export const de: Record<keyof typeof en, string> = {
 
   "core.notLoggedIn": "Nicht angemeldet",
   "core.invalidRequestBody": "Ungültiger Request-Body",
+  "core.characterSlugInvalid": "Kein Charakter aus WoW Forever (erwartet: Vor- und Nachname)",
+  "core.noDataYet": "Noch keine Daten",
+  "core.noDataYetText": "Battle.net führt hierzu noch nichts. Charaktere aus WoW Forever erscheinen erst ab Stufe 10 und nach dem ersten Ausloggen; Bilder folgen etwas später. Das ist kein Fehler.",
 
-  "mode.retail": "Retail",
-  "mode.retail.note": "The War Within · Stufe 80",
-  "mode.classic": "Classic",
-  "mode.classic.note": "Anniversary · Stufe 60",
-  "mode.classicEra": "Classic Era",
-  "mode.classicEra.note": "Hardcore · Stufe 60",
 
   "tab.equipment": "Ausrüstung",
   "tab.equipment.note": "Angelegte Gegenstände und Loot-Kandidaten",
   "tab.professions": "Berufe",
   "tab.professions.note": "Fertigkeitsstufen und Rezepte",
   "tab.progress": "Fortschritt",
-  "tab.progress.note": "Raids, Dungeons, Mythisch+",
+  "tab.progress.note": "Raids und Dungeons",
   "tab.collections": "Sammlungen",
   "tab.collections.note": "Titel und Spielzeug",
   "tab.achievements": "Erfolge",
@@ -245,7 +238,6 @@ export const de: Record<keyof typeof en, string> = {
 
   "card.itemLevel": "GS",
   "card.level": "Stufe",
-  "card.averageItemLevel": "Ø ilvl",
   "card.faction": "Fraktion",
   "card.alliance": "Allianz",
   "card.horde": "Horde",
@@ -278,8 +270,7 @@ export const de: Record<keyof typeof en, string> = {
   "weekly.days": "{days} T",
   "weekly.shortened": " · verkürzt",
   "weekly.noCharacters": "Keine Charaktere",
-  "weekly.noCharactersHint":
-    "Für diesen Spielmodus liefert der Account keine Charaktere.",
+  "weekly.noCharactersHint": "Der Account hat noch keine Charaktere in WoW Forever. Charaktere erscheinen ab Stufe 10, nach dem ersten Ausloggen.",
   "weekly.characterFailed": "Nicht abrufbar",
   "weekly.noRaids": "Keine Schlachtzüge",
   "weekly.openOfTotal": "{open} offen von {total}",
@@ -294,6 +285,9 @@ export const de: Record<keyof typeof en, string> = {
   "weekly.colStatus": "Status",
   "weekly.colResetIn": "Reset in",
   "character.levelClass": "Stufe {level}",
+  "character.itemLevel": "Gegenstandsstufe",
+  "character.averageItemLevel": "Ø inkl. Tasche",
+  "character.staleNotice": "Battle.net ist gerade nicht erreichbar — angezeigt wird der letzte bekannte Stand",
   "grid.apiError": "API-Fehler",
   "grid.statCharacters": "Charaktere",
   "grid.factionSplit": "{horde} Horde · {alliance} Allianz",
@@ -304,13 +298,10 @@ export const de: Record<keyof typeof en, string> = {
   "grid.atMaxLevel": "{count} auf Höchststufe",
   "grid.statFavorites": "Favoriten",
   "grid.favoritesNote": "mit ★ markiert",
-  "grid.statRealms": "Realms",
-  "grid.realmsNote": "verteilt auf",
   "grid.filterAll": "Alle",
   "grid.favorites": "Favoriten",
   "grid.searchPlaceholder": "Charakter suchen…",
   "grid.shownOf": "{shown} von {total} Charakteren",
-  "grid.realmCount": "{count} Realms",
   "grid.colClass": "Kl.",
   "grid.colCharacter": "Charakter",
   "grid.noFavorites": "Noch keine Favoriten gesetzt — ★ bei einem Charakter klicken.",

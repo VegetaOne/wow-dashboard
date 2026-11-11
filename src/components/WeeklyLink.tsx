@@ -1,24 +1,16 @@
 "use client"
 
 import Link from "next/link"
-import { useSearchParams } from "next/navigation"
-import type { GameMode } from "@/lib/battlenet"
 import { useT } from "./I18nProvider"
 
 /**
- * Verweis auf die Wochenübersicht des gerade gewählten Spielmodus.
- *
- * Eigene Komponente, weil `useSearchParams` die Seite sonst aus dem
- * statischen Rendern nehmen würde – so bleibt die Grenze klein und liegt
- * in einer eigenen Suspense-Hülle.
+ * Verweis auf die Wochenübersicht. Seit WoW Forever gibt es nur noch einen
+ * Spielmodus – der Verweis braucht keinen mehr.
  */
 export function WeeklyLink() {
   const t = useT()
-  const params = useSearchParams()
-  const mode = ((params.get("mode") as GameMode) || "retail") as GameMode
-
   return (
-    <Link href={`/dashboard/${mode}/woche`} className="btn btn-secondary no-underline">
+    <Link href="/dashboard/woche" className="btn btn-secondary no-underline">
       {t("weekly.link")}
     </Link>
   )

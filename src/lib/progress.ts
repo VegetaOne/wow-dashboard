@@ -1,10 +1,10 @@
 /**
- * Fortschritt: Raids, Dungeons und Mythisch+.
+ * Fortschritt: Raids und Dungeons.
  *
- * Alle drei Endpunkte sind tief geschachtelt (Erweiterung → Instanz →
- * Schwierigkeit → Boss) und liefern je nach Modus unterschiedlich viel.
- * Mythisch+ gibt es nur in Retail; in den Classic-Namespaces antwortet
- * der Endpunkt mit 404, was hier kein Fehler ist.
+ * Beide Endpunkte sind tief geschachtelt (Erweiterung → Instanz →
+ * Schwierigkeit → Boss) und werden tolerant gelesen. Mythisch+ ist mit der
+ * Umstellung auf WoW Forever entfallen: der Endpunkt antwortet dort zwar,
+ * hat aber keinen erkennbaren Inhalt.
  *
  * Zeitstempel bleiben Zahlen, keine Date-Objekte: die Rohantwort wandert
  * durch die Snapshot-Schicht als JSON, und daraus käme ein String zurück.
@@ -179,97 +179,6 @@ export function parseProgress(raw: RawEncounters | null): ExpansionProgress[] {
     })
     .filter((e): e is ExpansionProgress => e !== null)
     .sort((a, b) => b.expansionId - a.expansionId)
-}
-
-// ─── Mythisch+ ────────────────────────────────────────────────────────────────
-
-export interface MythicRun {
-  dungeonId: number
-  dungeonName: string
-  keystoneLevel: number
-  inTime: boolean
-  durationMs: number | null
-  completedAt: number | null
-  rating: number | null
-  affixes: string[]
-}
-
-export interface MythicProfileView {
-  currentRating: number | null
-  /** Läufe der laufenden Woche */
-  currentWeek: MythicRun[]
-  /** Beste Läufe der Saison */
-  bestRuns: MythicRun[]
-}
-
-interface RawRun {
-  dungeon?: { id?: number; name?: string }
-  keystone_level?: number
-  is_completed_within_time?: boolean
-  duration?: number
-  completed_timestamp?: number
-  mythic_rating?: { rating?: number }
-  keystone_affixes?: { name?: string }[]
-}
-
-export interface RawMythicProfile {
-  current_mythic_rating?: { rating?: number }
-  current_period?: { best_runs?: RawRun[] }
-  seasons?: unknown[]
-  best_runs?: RawRun[]
-}
-
-function parseRun(raw: RawRun): MythicRun | null {
-  const id = raw.dungeon?.id
-  const level = raw.keystone_level
-  if (typeof id !== "number" || typeof level !== "number") return null
-
-  return {
-    dungeonId: id,
-    dungeonName: raw.dungeon?.name ?? `Dungeon ${id}`,
-    keystoneLevel: level,
-    inTime: raw.is_completed_within_time === true,
-    durationMs: typeof raw.duration === "number" ? raw.duration : null,
-    completedAt:
-      typeof raw.completed_timestamp === "number"
-        ? raw.completed_timestamp
-        : null,
-    rating:
-      typeof raw.mythic_rating?.rating === "number"
-        ? raw.mythic_rating.rating
-        : null,
-    affixes: (raw.keystone_affixes ?? [])
-      .map((a) => a.name)
-      .filter((n): n is string => !!n),
-  }
-}
-
-export function parseMythicProfile(
-  raw: RawMythicProfile | null
-): MythicProfileView | null {
-  if (!raw) return null
-
-  const currentWeek = (raw.current_period?.best_runs ?? [])
-    .map(parseRun)
-    .filter((r): r is MythicRun => r !== null)
-    .sort((a, b) => b.keystoneLevel - a.keystoneLevel)
-
-  const bestRuns = (raw.best_runs ?? [])
-    .map(parseRun)
-    .filter((r): r is MythicRun => r !== null)
-    .sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0))
-
-  const currentRating =
-    typeof raw.current_mythic_rating?.rating === "number"
-      ? raw.current_mythic_rating.rating
-      : null
-
-  // Nichts Verwertbares: null statt eines leeren Kastens
-  if (currentRating === null && currentWeek.length === 0 && bestRuns.length === 0) {
-    return null
-  }
-
-  return { currentRating, currentWeek, bestRuns }
 }
 
 // ─── Darstellungs-Helfer ──────────────────────────────────────────────────────

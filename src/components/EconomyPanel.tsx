@@ -1,7 +1,6 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
-import type { GameMode } from "@/lib/battlenet"
 import type { AuctionHouse, HouseStatus } from "@/lib/auction"
 import type { MarginRow } from "@/lib/economy"
 import type { ProfessionView } from "@/lib/professions"
@@ -11,19 +10,16 @@ import { useT, useFormat } from "./I18nProvider"
 const BATCH = 30
 
 interface IndexResponse {
-  connectedRealmId: number
+  /** Ruleset, über das die Häuser gelesen werden – alle liefern dieselben */
+  rulesetId: number | null
   houses: AuctionHouse[]
   housesError: string | null
   statuses: HouseStatus[]
 }
 
 export function EconomyPanel({
-  mode,
-  realm,
   professions,
 }: {
-  mode: GameMode
-  realm: string
   professions: ProfessionView[]
 }) {
   const t = useT()
@@ -51,9 +47,7 @@ export function EconomyPanel({
 
     async function load() {
       try {
-        const res = await fetch(
-          `/api/wow/auction-index?mode=${encodeURIComponent(mode)}&realm=${encodeURIComponent(realm)}`
-        )
+        const res = await fetch("/api/wow/auction-index")
         if (!res.ok) throw new Error(`Status ${res.status}`)
         const data = (await res.json()) as IndexResponse
         if (cancelled) return
@@ -71,7 +65,9 @@ export function EconomyPanel({
     return () => {
       cancelled = true
     }
-  }, [mode, realm])
+    // t ist absichtlich nicht in der Liste: geladen wird genau einmal
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   /** Alle Stufen mit bekannten Rezepten, flach für die Auswahl. */
   const tiers = useMemo(
@@ -101,7 +97,7 @@ export function EconomyPanel({
   }, [])
 
   async function refreshPrices() {
-    if (!index || houseId === null) return
+    if (!index || houseId === null || index.rulesetId === null) return
 
     setRefreshing(true)
     setComputeError(null)
@@ -111,8 +107,7 @@ export function EconomyPanel({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          mode,
-          connectedRealmId: index.connectedRealmId,
+          rulesetId: index.rulesetId,
           houseId,
           houseName: house?.name,
         }),
@@ -160,8 +155,6 @@ export function EconomyPanel({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          mode,
-          connectedRealmId: index.connectedRealmId,
           houseId,
           recipeIds: next,
         }),
@@ -208,12 +201,12 @@ export function EconomyPanel({
   if (index.houses.length === 0) {
     return (
       <div className="border-2 border-accent px-4 py-3 text-[13px]">
-        <span className="eyebrow block">{t("economy.noDataForMode")}</span>
-        {t("economy.noHouseForRealm")}
+        <span className="eyebrow block">{t("economy.noHouses")}</span>
+        {t("economy.noHousesText")}
         {index.housesError && (
           <span className="mt-1 block opacity-60">{index.housesError}</span>
         )}
-        <span className="mt-2 block opacity-75">{t("economy.classicEraNote")}</span>
+        <span className="mt-2 block opacity-75">{t("economy.foreverNote")}</span>
       </div>
     )
   }

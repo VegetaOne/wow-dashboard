@@ -8,15 +8,13 @@
 export const en = {
   // ─── SlotCandidates ───────────────────────────────────────────────────────
   "loot.candidatesEyebrow": "Loot candidates",
-  "loot.noIndexYet":
-    "No loot index for this game mode yet. Build it in the panel above, then the items per slot with their source appear here.",
+  "loot.noIndexYet": "No loot index yet. Build it in the panel above, then the items per slot with their source appear here. Whether the Journal API delivers for WoW Forever is not confirmed yet.",
   "loot.noMatchingItems":
     "The index contains no items that fit this character's slots.",
   "loot.candidatesTitle": "Loot candidates per slot",
   "loot.candidatesHint":
     "What drops for the slot at all, highest item level first.",
-  "loot.classicLevelCaveat":
-    "In Classic, level is a weak signal — a lot of strong gear there has a low level with the right stats.",
+  "loot.levelCaveat": "In WoW Forever, item level is a weak signal — a lot of strong gear has a low level with the right stats.",
   "loot.noDpsRating": "No DPS rating: that needs stat weights.",
   "loot.noItemEquipped": "No item equipped",
   "loot.knownCount": "{count} known",
@@ -37,7 +35,7 @@ export const en = {
   "loot.index.done": "Done",
   "loot.index.failed": "Failed",
   "loot.index.empty": "No data",
-  "loot.index.noInstances": "The Journal API returns no instances for this game mode.",
+  "loot.index.noInstances": "The Journal API returns no instances for WoW Forever.",
   "loot.index.itemCount": "{count} items",
   "loot.index.instancesProgress": "{indexed} of {total} instances",
   "loot.index.resume": "Resume ({count} open)",
@@ -46,21 +44,18 @@ export const en = {
   "loot.index.cancel": "Cancel",
 
   // ─── API-Route (SlotCandidates) ───────────────────────────────────────────
-  "loot.realmAndNameRequired": "realm and name required",
   "loot.candidatesFailed": "Candidates could not be determined",
 } as const
 
 export const de: Record<keyof typeof en, string> = {
   "loot.candidatesEyebrow": "Loot-Kandidaten",
-  "loot.noIndexYet":
-    "Noch kein Loot-Index für diesen Spielmodus. Im Panel darüber aufbauen, dann erscheinen hier die Gegenstände je Slot mit ihrer Quelle.",
+  "loot.noIndexYet": "Noch kein Loot-Index. Im Panel darüber aufbauen, dann erscheinen hier die Gegenstände je Slot mit ihrer Quelle. Ob die Journal-API für WoW Forever liefert, ist noch nicht belegt.",
   "loot.noMatchingItems":
     "Der Index enthält keine Gegenstände, die auf die Slots dieses Charakters passen.",
   "loot.candidatesTitle": "Loot-Kandidaten je Slot",
   "loot.candidatesHint":
     "Was für den Slot überhaupt droppt, höchste Gegenstandsstufe zuerst.",
-  "loot.classicLevelCaveat":
-    "In Classic ist die Stufe ein schwaches Signal — viel starkes Gear hat dort niedrige Stufe mit den passenden Werten.",
+  "loot.levelCaveat": "In WoW Forever ist die Gegenstandsstufe ein schwaches Signal — viel starkes Gear hat eine niedrige Stufe mit den passenden Werten.",
   "loot.noDpsRating": "Keine DPS-Bewertung: dafür fehlen Statgewichte.",
   "loot.noItemEquipped": "Kein Gegenstand angelegt",
   "loot.knownCount": "{count} bekannt",
@@ -79,7 +74,7 @@ export const de: Record<keyof typeof en, string> = {
   "loot.index.done": "Fertig",
   "loot.index.failed": "Fehlgeschlagen",
   "loot.index.empty": "Keine Daten",
-  "loot.index.noInstances": "Die Journal-API liefert für diesen Spielmodus keine Instanzen.",
+  "loot.index.noInstances": "Die Journal-API liefert für WoW Forever keine Instanzen.",
   "loot.index.itemCount": "{count} Gegenstände",
   "loot.index.instancesProgress": "{indexed} von {total} Instanzen",
   "loot.index.resume": "Fortsetzen ({count} offen)",
@@ -87,6 +82,5 @@ export const de: Record<keyof typeof en, string> = {
   "loot.index.build": "Index aufbauen",
   "loot.index.cancel": "Abbrechen",
 
-  "loot.realmAndNameRequired": "realm und name nötig",
   "loot.candidatesFailed": "Kandidaten konnten nicht ermittelt werden",
 }

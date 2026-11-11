@@ -8,13 +8,15 @@
  * - Die Classic-Namespaces liefern die Punkte oft direkt am Beruf, ohne
  *   `tiers`-Ebene.
  *
+ * Welche der beiden Formen WoW Forever liefert, ist nicht belegt – darum
+ * bleiben beide Lesarten erhalten, auch nach dem Entfernen der alten Modi.
+ *
  * Beides wird hier auf eine gemeinsame Form gebracht. Fehlende Felder
  * führen zu `null`, nicht zu einem Absturz – bei dieser API habe ich
  * gelernt, keine Struktur vorauszusetzen.
  */
 
-import { GAME_MODES, type GameMode } from "./battlenet"
-import { apiBase, locale } from "./runtime"
+import { bnetGet } from "./battlenet"
 
 const STATIC_REVALIDATE = 60 * 60 * 24 * 7
 
@@ -182,28 +184,19 @@ export interface TierCatalog {
 export async function getTierCatalog(
   professionId: number,
   tierId: number,
-  token: string,
-  mode: GameMode
+  token: string
 ): Promise<TierCatalog | null> {
-  const config = GAME_MODES.find((m) => m.id === mode) ?? GAME_MODES[0]
-  const url = new URL(
-    `${apiBase()}/data/wow/profession/${professionId}/skill-tier/${tierId}`
-  )
-  url.searchParams.set("namespace", config.staticNamespace)
-  url.searchParams.set("locale", locale())
-
   try {
-    const res = await fetch(url.toString(), {
-      headers: { Authorization: `Bearer ${token}` },
-      next: { revalidate: STATIC_REVALIDATE },
-    })
-    if (!res.ok) return null
-
-    const data = (await res.json()) as {
+    const data = await bnetGet<{
       id?: number
       name?: string
       categories?: { name?: string; recipes?: RawRecipe[] }[]
-    }
+    }>(
+      `/data/wow/profession/${professionId}/skill-tier/${tierId}`,
+      token,
+      "static",
+      STATIC_REVALIDATE
+    )
 
     const categories = (data.categories ?? [])
       .map((c) => ({

@@ -1,8 +1,8 @@
 /**
  * Auktionshaus: Preisindex.
  *
- * Der Auktionsendpunkt ist der grösste der ganzen API. Ein voller verbundener
- * Realm liefert mehrere Megabyte, gelegentlich über zehn, und darin jedes
+ * Der Auktionsendpunkt ist der grösste der ganzen API. Ein volles Haus
+ * liefert mehrere Megabyte, gelegentlich über zehn, und darin jedes
  * einzelne Angebot mit Gebot und Verkäufer-Stack. Das darf weder in einen
  * Snapshot noch durch den Browser – deshalb:
  *
@@ -15,22 +15,22 @@
  * 3. Aufgerufen wird der Index bewusst von Hand oder zeitgesteuert, nicht bei
  *    jedem Seitenaufruf.
  *
- * Modusunterschiede, nachgeprüft und nicht geraten:
- * - **Retail:** ein Haus je verbundenem Realm, Pfad ohne Haus-ID.
- * - **Classic:** mehrere Häuser je Realm (Allianz, Horde, neutral), erst über
- *   `/auctions/index` auflisten, dann je Haus abrufen.
- * - **Classic Era:** dieselben Pfade wie Classic, antworten laut Blizzards
- *   eigenem Forum seit Dezember 2024 aber mit 404. Ob das wieder läuft, sagt
- *   nur der Versuch – die Oberfläche muss den Fall darum benennen können.
+ * WoW Forever (laut Community-Tests, Stand 2026-11-11 – nicht dokumentiert):
+ * - **Häuser je Ruleset statt je Realm:** `/data/wow/ruleset/index`, dann
+ *   `/data/wow/ruleset/{id}/auctions/` (mit Schrägstrich am Ende – ohne ihn
+ *   kommt 404), dann je Haus `/data/wow/ruleset/{id}/auctions/{houseId}`.
+ *   Der Pfad je Haus ist aus dem Index-Muster abgeleitet und **ungeprüft**.
+ * - **Jedes Ruleset liefert dieselben 15 Häuser** mit denselben Angeboten.
+ *   Gespeichert wird darum je Region und Haus, nicht je Ruleset – sonst
+ *   stünde derselbe Preis mehrfach in der Tabelle.
+ * - Commodities laufen pro Haus; der alte Commodities-Endpunkt liefert 404.
+ * - Einige Häuser (112, 115, 118) hatten kein `auctions`-Feld: das ergibt
+ *   null Angebote, keinen Fehler.
  */
 
 import { prisma } from "./db"
-import { GAME_MODES, type GameMode } from "./battlenet"
-import { apiBase, locale } from "./runtime"
-
-
-/** Retail hat genau ein Haus; die ID 0 steht für „das eine". */
-export const RETAIL_HOUSE_ID = 0
+import { bnetGet } from "./battlenet"
+import { region as currentRegion } from "./runtime"
 
 /** Wie viele Zeilen auf einmal in die Datenbank gehen. */
 const INSERT_CHUNK = 500
@@ -59,7 +59,6 @@ export interface CondensedAuctions {
 }
 
 export interface HouseStatus {
-  connectedRealmId: number
   houseId: number
   houseName: string | null
   status: string
@@ -76,7 +75,7 @@ interface RawAuction {
   item?: { id?: number }
   /** Sofortkauf für den ganzen Stapel, in Kupfer */
   buyout?: number
-  /** Retail-Warenangebote: Preis je Einheit */
+  /** Warenangebote: Preis je Einheit */
   unit_price?: number
   bid?: number
   quantity?: number
@@ -161,96 +160,62 @@ export function condenseAuctions(raw: RawAuctions | null): CondensedAuctions {
 
 // ─── Abrufe ───────────────────────────────────────────────────────────────────
 
-async function dataFetch<T>(
-  path: string,
-  token: string,
-  namespace: string,
-  revalidate: number
-): Promise<T> {
-  const url = new URL(`${apiBase()}${path}`)
-  url.searchParams.set("namespace", namespace)
-  url.searchParams.set("locale", locale())
-
-  const res = await fetch(url.toString(), {
-    headers: { Authorization: `Bearer ${token}` },
-    next: { revalidate },
-  })
-  if (!res.ok) throw new Error(`Auktionen ${res.status}: ${path}`)
-  return res.json() as Promise<T>
+export interface Ruleset {
+  id: number
+  name: string
 }
 
-function modeConfig(mode: GameMode) {
-  return GAME_MODES.find((m) => m.id === mode) ?? GAME_MODES[0]
-}
+/** Die Rulesets der Region (PvP, Normal, Rollenspiel …). */
+export async function listRulesets(token: string): Promise<Ruleset[]> {
+  const data = await bnetGet<{
+    rulesets?: { id?: number; name?: string; type?: { name?: string } }[]
+  }>("/data/wow/ruleset/index", token, "dynamic", 60 * 60 * 24)
 
-/**
- * Verbundener Realm eines Realms. Steht im Realm-Datensatz als Verweis –
- * die ID muss aus der URL gelesen werden, die API nennt sie nicht einzeln.
- */
-export async function resolveConnectedRealm(
-  realmSlug: string,
-  token: string,
-  mode: GameMode
-): Promise<number> {
-  const config = modeConfig(mode)
-  const data = await dataFetch<{ connected_realm?: { href?: string } }>(
-    `/data/wow/realm/${realmSlug}`,
-    token,
-    config.staticNamespace,
-    60 * 60 * 24
-  )
-
-  const href = data.connected_realm?.href
-  const match = href?.match(/connected-realm\/(\d+)/)
-  if (!match) {
-    throw new Error(`Kein verbundener Realm für "${realmSlug}" ermittelbar`)
-  }
-
-  return Number(match[1])
+  return (data.rulesets ?? [])
+    .map((r): Ruleset | null =>
+      typeof r.id === "number"
+        ? { id: r.id, name: r.name ?? r.type?.name ?? `#${r.id}` }
+        : null
+    )
+    .filter((r): r is Ruleset => r !== null)
+    .sort((a, b) => a.id - b.id)
 }
 
 /**
- * Häuser eines verbundenen Realms. Retail hat genau eines und keinen
- * Index-Endpunkt – das wird hier abgebildet, nicht angefragt.
+ * Häuser eines Rulesets. Da alle Rulesets dieselben Häuser liefern, reicht
+ * eines; welches, ist gleich.
  */
 export async function listAuctionHouses(
-  connectedRealmId: number,
-  token: string,
-  mode: GameMode
+  rulesetId: number,
+  token: string
 ): Promise<AuctionHouse[]> {
-  if (mode === "retail") {
-    return [{ id: RETAIL_HOUSE_ID, name: "Auktionshaus" }]
-  }
-
-  const config = modeConfig(mode)
-  const data = await dataFetch<RawAuctionHouseIndex>(
-    `/data/wow/connected-realm/${connectedRealmId}/auctions/index`,
+  // Der Schrägstrich am Ende ist Pflicht – ohne ihn antwortet die API mit 404
+  const data = await bnetGet<RawAuctionHouseIndex>(
+    `/data/wow/ruleset/${rulesetId}/auctions/`,
     token,
-    config.dynamicNamespace,
+    "dynamic",
     60 * 60
   )
 
   return (data.auctions ?? [])
     .map((h): AuctionHouse | null =>
-      typeof h.id === "number" ? { id: h.id, name: h.name ?? `Haus ${h.id}` } : null
+      typeof h.id === "number" ? { id: h.id, name: h.name ?? `#${h.id}` } : null
     )
     .filter((h): h is AuctionHouse => h !== null)
 }
 
 /** Die grosse Antwort. Ohne Zwischenspeicher – sie soll nicht zweimal kommen. */
-export async function fetchAuctions(
-  connectedRealmId: number,
+export function fetchAuctions(
+  rulesetId: number,
   houseId: number,
-  token: string,
-  mode: GameMode
+  token: string
 ): Promise<RawAuctions> {
-  const config = modeConfig(mode)
-  const path =
-    mode === "retail"
-      ? `/data/wow/connected-realm/${connectedRealmId}/auctions`
-      : `/data/wow/connected-realm/${connectedRealmId}/auctions/${houseId}`
-
-  return dataFetch<RawAuctions>(path, token, config.dynamicNamespace, 0)
+  return bnetGet<RawAuctions>(
+    `/data/wow/ruleset/${rulesetId}/auctions/${houseId}`,
+    token,
+    "dynamic",
+    0
+  )
 }
 
 // ─── Speichern ────────────────────────────────────────────────────────────────
@@ -264,12 +229,10 @@ export async function fetchAuctions(
  * ohnehin unnötig.
  */
 export async function storePrices(
-  mode: GameMode,
-  connectedRealmId: number,
   houseId: number,
   entries: PriceEntry[]
 ): Promise<void> {
-  const scope = { gameMode: mode, connectedRealmId, houseId }
+  const scope = { region: currentRegion(), houseId }
   const fetchedAt = new Date()
 
   await prisma.auctionPrice.deleteMany({ where: scope })
@@ -283,19 +246,14 @@ export async function storePrices(
 }
 
 async function writeRun(
-  mode: GameMode,
-  connectedRealmId: number,
   houseId: number,
   data: Record<string, unknown>
 ): Promise<void> {
-  const key = {
-    gameMode_connectedRealmId_houseId: { gameMode: mode, connectedRealmId, houseId },
-  }
-
+  const region = currentRegion()
   await prisma.auctionRun.upsert({
-    where: key,
+    where: { region_houseId: { region, houseId } },
     update: data,
-    create: { gameMode: mode, connectedRealmId, houseId, ...data },
+    create: { region, houseId, ...data },
   })
 }
 
@@ -305,17 +263,17 @@ async function writeRun(
  * bleiben stehen, sind aber über `updatedAt` als alt erkennbar.
  */
 export async function refreshHouse(
-  mode: GameMode,
-  connectedRealmId: number,
+  rulesetId: number,
   house: AuctionHouse,
   token: string
 ): Promise<HouseStatus> {
   try {
-    const raw = await fetchAuctions(connectedRealmId, house.id, token, mode)
+    const raw = await fetchAuctions(rulesetId, house.id, token)
     const condensed = condenseAuctions(raw)
 
-    await storePrices(mode, connectedRealmId, house.id, condensed.entries)
-    await writeRun(mode, connectedRealmId, house.id, {
+    await storePrices(house.id, condensed.entries)
+    await writeRun(house.id, {
+      rulesetId,
       houseName: house.name,
       status: "READY",
       auctionCount: condensed.auctionCount,
@@ -325,7 +283,6 @@ export async function refreshHouse(
     })
 
     return {
-      connectedRealmId,
       houseId: house.id,
       houseName: house.name,
       status: "READY",
@@ -337,7 +294,8 @@ export async function refreshHouse(
     }
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unbekannter Fehler"
-    await writeRun(mode, connectedRealmId, house.id, {
+    await writeRun(house.id, {
+      rulesetId,
       houseName: house.name,
       status: "FAILED",
       error: message,
@@ -348,15 +306,11 @@ export async function refreshHouse(
 
 // ─── Lesen ────────────────────────────────────────────────────────────────────
 
-export async function getHouseStatuses(
-  mode: GameMode,
-  connectedRealmId: number
-): Promise<HouseStatus[]> {
+export async function getHouseStatuses(): Promise<HouseStatus[]> {
   const rows = (await prisma.auctionRun.findMany({
-    where: { gameMode: mode, connectedRealmId },
+    where: { region: currentRegion() },
     orderBy: { houseId: "asc" },
   })) as {
-    connectedRealmId: number
     houseId: number
     houseName: string | null
     status: string
@@ -368,7 +322,6 @@ export async function getHouseStatuses(
   }[]
 
   return rows.map((r) => ({
-    connectedRealmId: r.connectedRealmId,
     houseId: r.houseId,
     houseName: r.houseName,
     status: r.status,
@@ -385,8 +338,6 @@ export async function getHouseStatuses(
  * in der Antwort – das ist kein Preis von 0, sondern kein Preis.
  */
 export async function getPrices(
-  mode: GameMode,
-  connectedRealmId: number,
   houseId: number,
   itemIds: number[]
 ): Promise<Map<number, PriceEntry>> {
@@ -394,8 +345,7 @@ export async function getPrices(
 
   const rows = (await prisma.auctionPrice.findMany({
     where: {
-      gameMode: mode,
-      connectedRealmId,
+      region: currentRegion(),
       houseId,
       itemId: { in: [...new Set(itemIds)] },
     },

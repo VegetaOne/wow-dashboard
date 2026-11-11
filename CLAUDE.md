@@ -1,6 +1,7 @@
 # WoW Dashboard — Arbeitsanweisung
 
-Self-hosted WoW-Companion. Next.js 14 (App Router), React 18, TypeScript strict,
+Self-hosted Companion für **WoW Forever** (seit 2026-11-11 der einzige Spielmodus;
+Retail, Classic und Classic Era sind entfernt). Next.js 14 (App Router), React 18, TypeScript strict,
 Tailwind, NextAuth (Battle.net als **OAuth2**, nicht OIDC), Prisma + SQLite, ein
 Docker-Container im Heimnetz. Sprache des Codes und der Kommentare: **Deutsch**.
 Oberflächentexte: über das Wörterbuch, Leitsprache Englisch.
@@ -34,11 +35,11 @@ die nicht im Repo liegen.
 src/app/                    App Router
   api/wow/                  interne Endpunkte fürs Nachladen auf Abruf
   api/setup/, api/settings/  Konfiguration
-  dashboard/[mode]/[realm]/[name]/<tab>/   Charakterseiten, ein Ordner je Tab
-  dashboard/[mode]/woche/   Wochenübersicht (Account-Ebene, kein Charakter-Tab)
+  dashboard/[character]/<tab>/   Charakterseiten (`{name}-{surname}`), ein Ordner je Tab
+  dashboard/woche/          Wochenübersicht (Account-Ebene, kein Charakter-Tab)
 src/components/             UI
 src/lib/                    alles Fachliche
-  battlenet.ts              API-Zugriff, GAME_MODES, Slots, Farben
+  battlenet.ts              API-Zugriff (bnetGet), Namespaces, Slugs, Slots, Farben
   character.ts              Abrufe je Datensatz
   snapshot.ts               Tagesschnappschüsse, Fallback auf alten Stand, Verlauf
   config.ts / config-cache.ts / secrets.ts / runtime.ts   Konfiguration
@@ -49,7 +50,7 @@ prisma/schema.prisma        + migrations/
 docs/                       Konzept und Reihenfolge
 ```
 
-Ein neuer Charakter-Tab: Ordner unter `dashboard/[mode]/[realm]/[name]/`, Eintrag in
+Ein neuer Charakter-Tab: Ordner unter `dashboard/[character]/`, Eintrag in
 `src/lib/characterTabs.ts` (`enabled` erst auf `true`, wenn die Seite etwas zeigt —
 so gibt es nie einen Tab ins Leere), Beschriftung als Wörterbuchschlüssel.
 
@@ -77,7 +78,7 @@ Erweitern auf der richtigen Seite bleiben.
 **Keine laufzeitabhängigen Konstanten auf Modulebene.** Region und Sprache stehen in der
 Datenbank und ändern sich zur Laufzeit. `const API_BASE = ...` friert sie beim Laden des
 Moduls ein. Immer `region()`, `locale()`, `apiBase()`, `oauthBase()` aus
-`src/lib/runtime.ts` aufrufen, und in `GAME_MODES` Namespaces als Getter schreiben.
+`src/lib/runtime.ts` aufrufen, und Namespaces über `namespace()` aus `battlenet.ts`.
 
 **Keine festen Oberflächentexte.** Immer über `t()` — `await getT()` in Server-, `useT()`
 in Client-Komponenten. Schlüssel mit Bereichspräfix in `src/lib/dict/<bereich>.ts`,
@@ -87,13 +88,24 @@ Englisch definiert, Deutsch vollständig. Siehe `docs/i18n.md`.
 still auf `en-US` zurück, und `12’345` wird zu `12,345` — auf Deutsch eine Dezimalzahl.
 `src/lib/format.ts` benutzen.
 
-**Antworten tolerant lesen.** Classic Era liefert kein `level` an Ausrüstungsteilen und
-keine Verzauberungen, Mythisch+ gibt es nur in Retail, Classic Era hat mehrere
-Auktionshäuser je Realm und liefert dort seit Dezember 2024 durchgehend 404. Nie
-annehmen, dass ein Feld da ist.
+**Die Forever-API ist nicht dokumentiert.** Namespaces `profile-`, `static-`,
+`dynamic-forever-{region}`, gefunden von der Community (Quellen in `docs/roadmap.md`).
+Alle Abrufe gehen über `bnetGet()` in `battlenet.ts`, damit Namespace und Fehlerform an
+einer Stelle stehen; neue Module bauen keinen eigenen `fetch`.
+
+**Charaktere und Gilden haben keinen Realm.** Ein Charakter ist `{name}-{surname}`
+(klein), nur **je Region** eindeutig – darum steht die Region in jedem Datenbankschlüssel.
+Pfade über `characterPath(slug, sub)`, Slug aus dem Pfadsegment über `characterFromParam`.
+
+**404 heisst bei Forever meist „noch keine Daten"**, nicht „Fehler": Charaktere erscheinen
+erst ab Stufe 10 und nach dem ersten Ausloggen, Bilder später, vielen älteren Gegenständen
+fehlen die Stammdaten. `attempt()` setzt `notFound`, die Oberfläche zeigt `<NoDataYet />`.
+
+**Antworten tolerant lesen.** Nie annehmen, dass ein Feld da ist – bei einer
+undokumentierten API erst recht nicht.
 
 **Der Anzeigename eines angelegten Items steht auf oberster Ebene** des Eintrags, nicht
-unter `item.name`. Falsch gelesen bleiben Namen still leer — auch in Retail.
+unter `item.name`. Falsch gelesen bleiben Namen still leer.
 
 **SQLite kennt `skipDuplicates` nicht.** Dedup auf Anwendungsebene.
 
@@ -118,18 +130,17 @@ ihre Daten selbst und erst wenn sie sichtbar ist.
 - Scope über `wow.profile` hinaus erweitern. Die App schreibt nichts nach Battle.net.
 - Eine Datei löschen oder eine Migration umschreiben, die schon ausgeliefert ist.
   Neue Migration statt Änderung an einer alten.
-- `src/lib/adapters/` als Erweiterungspunkt benutzen — siehe unten.
+- Datenquellen einplanen, die für Forever nicht belegt sind. Die Liste „Gestrichen bis
+  bestätigt" in `docs/roadmap.md` gilt, bis ein Test mit echten Daten sie auflöst.
 
 ## Fallen, die im Code stehen
 
-- **`src/lib/adapters/` ist toter Code.** Nichts importiert es, und es führt einen
-  veralteten Modusbegriff (`"retail" | "wow-forever"` aus `process.env.WOW_GAME_MODE`).
-  Der echte Erweiterungspunkt ist `GAME_MODES` in `src/lib/battlenet.ts`
-  (`retail | classic | classic-era`). **WoW Forever kommt dort hinein.** Der Ordner
-  gehört gelöscht oder auf denselben Modusbegriff gezogen; vorher nicht darauf aufbauen.
-- **`src/app/api/wow/character/[realm]/[name]/equipment/route.ts`** benutzt noch
-  `authOptions` statt `await getAuthOptions()` — der Pfad war beim Umbau zu tief
-  verschachtelt und wurde übersehen.
+- **Der Static-Namespace kann versioniert sein.** Vor dem Start lieferte nur
+  `static-1.60.1_70399-forever-eu`, nicht `static-forever-eu`. `bnetGet` lernt die
+  Version aus dem Account-Profil und weicht bei 403 darauf aus – nie hart verdrahten.
+- **Auktionshäuser hängen am Ruleset, aber alle Rulesets liefern dieselben.** Gespeichert
+  wird je Region und Haus; über Rulesets summiert stünde jeder Preis mehrfach da.
+  Der Index braucht den Schrägstrich am Ende (`/auctions/`), sonst 404.
 - **Prisma auf Alpine** braucht `apk add openssl` und den Binary-Target
   `linux-musl-openssl-3.0.x`.
 - **`config.key` gehört zur Datenbank.** Beides zusammen ins Backup, sonst ist das

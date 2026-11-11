@@ -9,8 +9,7 @@
  * Reittiere in *einer* Antwort. Kein Durchlauf wie beim Loot-Index nötig.
  */
 
-import { GAME_MODES, type GameMode } from "./battlenet"
-import { apiBase, locale } from "./runtime"
+import { bnetGet, characterPath } from "./battlenet"
 
 const STATIC_REVALIDATE = 60 * 60 * 24 * 7
 
@@ -172,101 +171,52 @@ export function formatTitle(template: string, characterName: string): string {
 
 // ─── Stammdaten-Indizes ───────────────────────────────────────────────────────
 
-async function staticIndex(
-  path: string,
-  token: string,
-  mode: GameMode
-): Promise<RawIndex | null> {
-  const config = GAME_MODES.find((m) => m.id === mode) ?? GAME_MODES[0]
-  const url = new URL(`${apiBase()}${path}`)
-  url.searchParams.set("namespace", config.staticNamespace)
-  url.searchParams.set("locale", locale())
-
+/**
+ * Stammdaten-Index. `null` statt Fehler: ohne Index gibt es nur keine
+ * Fehlliste. Für Forever ist nicht belegt, dass diese Indizes liefern –
+ * siehe „Gestrichen bis bestätigt" in `docs/roadmap.md`.
+ */
+async function staticIndex(path: string, token: string): Promise<RawIndex | null> {
   try {
-    const res = await fetch(url.toString(), {
-      headers: { Authorization: `Bearer ${token}` },
-      next: { revalidate: STATIC_REVALIDATE },
-    })
-    if (!res.ok) return null
-    return (await res.json()) as RawIndex
+    return await bnetGet<RawIndex>(path, token, "static", STATIC_REVALIDATE)
   } catch {
     return null
   }
 }
 
 /** Alle Reittiere – eine Antwort, eine Woche gecacht. */
-export function getMountIndex(token: string, mode: GameMode = "retail") {
-  return staticIndex("/data/wow/mount/index", token, mode)
+export function getMountIndex(token: string) {
+  return staticIndex("/data/wow/mount/index", token)
 }
 
-export function getPetIndex(token: string, mode: GameMode = "retail") {
-  return staticIndex("/data/wow/pet/index", token, mode)
+export function getPetIndex(token: string) {
+  return staticIndex("/data/wow/pet/index", token)
 }
 
-export function getToyIndex(token: string, mode: GameMode = "retail") {
-  return staticIndex("/data/wow/toy/index", token, mode)
+export function getToyIndex(token: string) {
+  return staticIndex("/data/wow/toy/index", token)
 }
 
 // ─── Sammlungs-Abrufe ─────────────────────────────────────────────────────────
 
-async function profileFetch<T>(
-  path: string,
-  token: string,
-  mode: GameMode
-): Promise<T> {
-  const config = GAME_MODES.find((m) => m.id === mode) ?? GAME_MODES[0]
-  const url = new URL(`${apiBase()}${path}`)
-  url.searchParams.set("namespace", config.namespace)
-  url.searchParams.set("locale", locale())
-
-  const res = await fetch(url.toString(), {
-    headers: { Authorization: `Bearer ${token}` },
-    next: { revalidate: 900 },
-  })
-  if (!res.ok) throw new Error(`Sammlungen ${res.status}: ${path}`)
-  return res.json() as Promise<T>
+function profileFetch<T>(path: string, token: string): Promise<T> {
+  return bnetGet<T>(path, token, "profile", 900)
 }
 
 /** Account-weite Reittiere. */
-export function fetchAccountMounts(token: string, mode: GameMode = "retail") {
-  return profileFetch<RawMountCollection>(
-    "/profile/user/wow/collections/mounts",
-    token,
-    mode
-  )
+export function fetchAccountMounts(token: string) {
+  return profileFetch<RawMountCollection>("/profile/user/wow/collections/mounts", token)
 }
 
 /** Account-weite Begleiter. */
-export function fetchAccountPets(token: string, mode: GameMode = "retail") {
-  return profileFetch<RawPetCollection>(
-    "/profile/user/wow/collections/pets",
-    token,
-    mode
-  )
+export function fetchAccountPets(token: string) {
+  return profileFetch<RawPetCollection>("/profile/user/wow/collections/pets", token)
 }
 
-export function fetchCharacterToys(
-  realm: string,
-  name: string,
-  token: string,
-  mode: GameMode = "retail"
-) {
-  return profileFetch<RawToyCollection>(
-    `/profile/wow/character/${realm}/${name.toLowerCase()}/collections/toys`,
-    token,
-    mode
-  )
+export function fetchCharacterToys(slug: string, token: string) {
+  return profileFetch<RawToyCollection>(characterPath(slug, "collections/toys"), token)
 }
 
-export function fetchCharacterTitles(
-  realm: string,
-  name: string,
-  token: string,
-  mode: GameMode = "retail"
-) {
-  return profileFetch<RawTitleCollection>(
-    `/profile/wow/character/${realm}/${name.toLowerCase()}/titles`,
-    token,
-    mode
-  )
+export function fetchCharacterTitles(slug: string, token: string) {
+  return profileFetch<RawTitleCollection>(characterPath(slug, "titles"), token)
 }

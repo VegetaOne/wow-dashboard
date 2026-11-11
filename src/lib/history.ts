@@ -10,10 +10,9 @@
  * Oberfläche auch – statt eine Linie durch einen Punkt zu zeichnen.
  */
 
-import { getHistory, type SnapshotKey, type Dataset } from "./snapshot"
-import type { GameMode } from "./battlenet"
+import { getHistory, characterKey } from "./snapshot"
 import { parseProfessions, type RawProfessions } from "./professions"
-import { parseProgress, parseMythicProfile, type RawEncounters, type RawMythicProfile } from "./progress"
+import { parseProgress, type RawEncounters } from "./progress"
 import type { AchievementSummary } from "./achievements"
 
 import type { TrendPoint, TrendSeries } from "./trend"
@@ -24,15 +23,6 @@ export { deltaOf, chartGeometry } from "./trend"
 
 // ─── Reihen aus den gespeicherten Formen gewinnen ────────────────────────────
 
-function key(
-  mode: GameMode,
-  realm: string,
-  name: string,
-  dataset: Dataset
-): SnapshotKey {
-  return { gameMode: mode, realmSlug: realm, charName: name, dataset }
-}
-
 /**
  * Alle Verlaufsreihen eines Charakters.
  *
@@ -40,9 +30,7 @@ function key(
  * Reihe – die Seite zeigt dann die anderen, statt ganz auszufallen.
  */
 export async function characterTrends(
-  mode: GameMode,
-  realm: string,
-  name: string,
+  slug: string,
   limitDays = 90
 ): Promise<TrendSeries[]> {
   const series: TrendSeries[] = []
@@ -52,7 +40,7 @@ export async function characterTrends(
     const rows = await getHistory<{
       equippedItemLevel?: number
       averageItemLevel?: number
-    }>(key(mode, realm, name, "profile"), limitDays)
+    }>(characterKey(slug, "profile"), limitDays)
 
     const equipped: TrendPoint[] = []
     const average: TrendPoint[] = []
@@ -78,7 +66,7 @@ export async function characterTrends(
   // ── Erfolge ──
   try {
     const rows = await getHistory<AchievementSummary>(
-      key(mode, realm, name, "achievements"),
+      characterKey(slug, "achievements"),
       limitDays
     )
 
@@ -103,33 +91,10 @@ export async function characterTrends(
     /* übersprungen */
   }
 
-  // ── Mythisch+ Wertung ──
-  if (mode === "retail") {
-    try {
-      const rows = await getHistory<RawMythicProfile>(
-        key(mode, realm, name, "mythic-keystone"),
-        limitDays
-      )
-
-      const points: TrendPoint[] = []
-      for (const row of rows) {
-        const parsed = parseMythicProfile(row.data)
-        if (parsed?.currentRating != null) {
-          points.push({ day: row.day, value: Math.round(parsed.currentRating) })
-        }
-      }
-      if (points.length > 0) {
-        series.push({ key: "mplus", label: "Mythisch+ Wertung", points })
-      }
-    } catch {
-      /* übersprungen */
-    }
-  }
-
   // ── Bekannte Rezepte ──
   try {
     const rows = await getHistory<RawProfessions>(
-      key(mode, realm, name, "professions"),
+      characterKey(slug, "professions"),
       limitDays
     )
 
@@ -153,7 +118,7 @@ export async function characterTrends(
   // ── Bosskills insgesamt ──
   try {
     const rows = await getHistory<RawEncounters>(
-      key(mode, realm, name, "raids"),
+      characterKey(slug, "raids"),
       limitDays
     )
 

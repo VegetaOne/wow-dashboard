@@ -8,8 +8,7 @@
  * Beides wird tolerant gelesen; fehlende Felder werden `null`.
  */
 
-import { GAME_MODES, type GameMode } from "./battlenet"
-import { apiBase, locale } from "./runtime"
+import { bnetGet, characterPath } from "./battlenet"
 
 
 export interface ReputationView {
@@ -76,23 +75,9 @@ export function tierProgress(rep: ReputationView): number | null {
   return Math.min(100, Math.round((rep.value / rep.max) * 100))
 }
 
-export async function fetchReputations(
-  realm: string,
-  name: string,
-  token: string,
-  mode: GameMode
+export function fetchReputations(
+  slug: string,
+  token: string
 ): Promise<RawReputations> {
-  const config = GAME_MODES.find((m) => m.id === mode) ?? GAME_MODES[0]
-  const url = new URL(
-    `${apiBase()}/profile/wow/character/${realm}/${name.toLowerCase()}/reputations`
-  )
-  url.searchParams.set("namespace", config.namespace)
-  url.searchParams.set("locale", locale())
-
-  const res = await fetch(url.toString(), {
-    headers: { Authorization: `Bearer ${token}` },
-    next: { revalidate: 900 },
-  })
-  if (!res.ok) throw new Error(`Ansehen ${res.status}`)
-  return res.json() as Promise<RawReputations>
+  return bnetGet<RawReputations>(characterPath(slug, "reputations"), token, "profile", 900)
 }

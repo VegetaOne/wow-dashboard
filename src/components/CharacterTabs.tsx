@@ -9,18 +9,10 @@ import { useT } from "./I18nProvider"
  * Tab-Leiste unter dem Charakterkopf. Nur freigeschaltete Tabs erscheinen,
  * damit kein Reiter auf eine leere Seite führt.
  */
-export function CharacterTabs({
-  realm,
-  name,
-  mode,
-}: {
-  realm: string
-  name: string
-  mode: string
-}) {
+export function CharacterTabs({ slug }: { slug: string }) {
   const t = useT()
   const pathname = usePathname()
-  const base = characterBase(mode, realm, name)
+  const base = characterBase(slug)
   const tabs = visibleTabs()
 
   // Ein einzelner Tab ist keine Navigation – dann gar nichts anzeigen
@@ -29,9 +21,11 @@ export function CharacterTabs({
   return (
     <nav className="flex items-stretch overflow-x-auto border-b-2 border-line">
       {tabs.map((tab) => {
-        const href = tabHref(mode, realm, name, tab.slug)
+        const href = tabHref(slug, tab.slug)
+        // usePathname liefert den Pfad kodiert wie in der Adresszeile –
+        // Umlaute im Namen kämen sonst ungleich an
         const target = tab.slug ? `${base}/${tab.slug}` : base
-        const isActive = pathname === target
+        const isActive = pathname === target || decodeURIComponent(pathname) === decodeURIComponent(target)
 
         return (
           <Link

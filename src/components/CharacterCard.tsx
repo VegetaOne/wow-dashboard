@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import type { WoWCharacter, GameMode, CharacterDetails } from "@/lib/battlenet"
+import type { WoWCharacter, CharacterDetails } from "@/lib/battlenet"
 import { CLASS_COLORS } from "@/lib/battlenet"
 import { characterBase } from "@/lib/characterTabs"
 import { classCode } from "@/lib/i18n"
@@ -10,8 +10,7 @@ import { useLanguage, useT } from "./I18nProvider"
 interface CharacterCardProps {
   character: WoWCharacter & { isFavorite?: boolean }
   onToggleFavorite: () => void
-  mode?: GameMode
-  /** Gegenstandsstufe und Avatar – werden nachgeladen, sobald der Realm sichtbar ist */
+  /** Gegenstandsstufe und Avatar – werden nachgeladen, sobald der Abschnitt sichtbar ist */
   details?: CharacterDetails
   /** true, solange die Werte noch unterwegs sind */
   detailsPending?: boolean
@@ -22,7 +21,6 @@ interface CharacterCardProps {
 export function CharacterCard({
   character,
   onToggleFavorite,
-  mode = "retail",
   details,
   detailsPending = false,
   tint = "edge",
@@ -34,14 +32,14 @@ export function CharacterCard({
   const band = isAlliance ? "var(--faction-alliance)" : "var(--faction-horde)"
   const classColor = CLASS_COLORS[character.playable_class.id] ?? "#FFFFFF"
   const code = classCode(language, character.playable_class.id)
-  // Modus steht im Pfad: derselbe Name kann in mehreren Modi existieren
-  const href = characterBase(mode, character.realm.slug, character.name.toLowerCase())
+  const href = characterBase(character.slug)
 
-  // Retail: Gegenstandsstufe als Hauptkennzahl.
-  // Classic und Classic Era liefern keine — dort die Stufe.
-  const showItemLevel = mode === "retail"
-  const metric = showItemLevel ? details?.equippedItemLevel : character.level
-  const metricLabel = showItemLevel ? t("card.itemLevel") : t("card.level")
+  // Hauptkennzahl ist die Stufe – sie kommt mit der Account-Liste. Ob Forever
+  // eine Gegenstandsstufe im Profil führt, ist nicht belegt; sie steht darum
+  // daneben und bleibt „—", wenn sie fehlt.
+  const fullName = character.surname
+    ? `${character.name} ${character.surname}`
+    : character.name
 
   return (
     <div
@@ -63,28 +61,27 @@ export function CharacterCard({
 
       <Link href={href} className="flex min-w-0 flex-1 basis-[150px] flex-col py-2.5 no-underline">
         <span className="font-heading text-[15px] font-extrabold leading-tight text-ink">
-          {character.name}
+          {fullName}
         </span>
-        {/* Realm steht in der Gruppenüberschrift, hier wäre er doppelt */}
         <span className="text-[11px] uppercase tracking-[0.05em] opacity-55">
           {character.playable_race.name} {character.playable_class.name}
         </span>
       </Link>
 
       <span className="w-14 flex-none text-right">
-        <span className="block eyebrow">{metricLabel}</span>
+        <span className="block eyebrow">{t("card.level")}</span>
         <Metric
-          value={metric}
-          pending={detailsPending && showItemLevel}
+          value={character.level || undefined}
+          pending={false}
           loadingLabel={t("card.loading")}
         />
       </span>
 
       <span className="hidden w-14 flex-none text-right text-[13px] opacity-75 sm:block">
-        <span className="block eyebrow">{t("card.averageItemLevel")}</span>
+        <span className="block eyebrow">{t("card.itemLevel")}</span>
         <Metric
-          value={details?.averageItemLevel}
-          pending={detailsPending && showItemLevel}
+          value={details?.equippedItemLevel}
+          pending={detailsPending}
           loadingLabel={t("card.loading")}
           small
         />

@@ -1,7 +1,6 @@
 import { getServerSession } from "next-auth"
 import { NextRequest, NextResponse } from "next/server"
 import { getAuthOptions } from "@/lib/auth"
-import { GAME_MODES, type GameMode } from "@/lib/battlenet"
 import { getCategoryCatalog } from "@/lib/achievements"
 import { getT } from "@/lib/t"
 
@@ -18,8 +17,6 @@ export async function GET(req: NextRequest) {
 
   const params = req.nextUrl.searchParams
   const categoryId = Number.parseInt(params.get("categoryId") ?? "", 10)
-  const mode = (GAME_MODES.find((m) => m.id === params.get("mode"))?.id ??
-    "retail") as GameMode
 
   if (!Number.isFinite(categoryId)) {
     return NextResponse.json(
@@ -28,7 +25,7 @@ export async function GET(req: NextRequest) {
     )
   }
 
-  const catalog = await getCategoryCatalog(categoryId, session.accessToken, mode)
+  const catalog = await getCategoryCatalog(categoryId, session.accessToken)
 
   // Kein Katalog ist kein Fehler – dann ist nur keine Fehlliste möglich
   return NextResponse.json({ catalog })

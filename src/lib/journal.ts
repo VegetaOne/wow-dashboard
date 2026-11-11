@@ -5,13 +5,14 @@
  * Encounter → Item-Details). Deshalb wird er einmal ausgeführt und das
  * Ergebnis in die lokale Datenbank geschrieben, nicht pro Seitenaufruf.
  *
- * Ob die Journal-API für die Classic-Namespaces überhaupt Daten liefert,
- * ist nicht garantiert – alle Funktionen liefern im Zweifel leere Listen
- * statt zu werfen, und der Aufrufer kann das dem Nutzer melden.
+ * **Für WoW Forever nicht belegt** (Stand 2026-11-11): es gibt keinen
+ * Bericht, dass die Journal-API im Namespace `static-forever-{region}`
+ * liefert. Steht auf der Liste „Gestrichen bis bestätigt" in
+ * `docs/roadmap.md`. Alle Funktionen liefern im Zweifel leere Listen statt
+ * zu werfen, und der Aufrufer meldet das dem Nutzer.
  */
 
-import { GAME_MODES, type GameMode } from "./battlenet"
-import { apiBase, locale } from "./runtime"
+import { bnetGet, mapLimit } from "./battlenet"
 
 
 /** Statische Spieldaten – eine Woche Cache ist reichlich konservativ. */
@@ -78,72 +79,27 @@ export function inventoryTypesForSlot(slotType: string): string[] {
 
 // ─── Fetch-Hilfen ─────────────────────────────────────────────────────────────
 
-async function staticFetch<T>(
-  path: string,
-  token: string,
-  namespace: string
-): Promise<T> {
-  const url = new URL(`${apiBase()}${path}`)
-  url.searchParams.set("namespace", namespace)
-  url.searchParams.set("locale", locale())
-
-  const res = await fetch(url.toString(), {
-    headers: { Authorization: `Bearer ${token}` },
-    next: { revalidate: STATIC_REVALIDATE },
-  })
-
-  if (!res.ok) {
-    throw new Error(`Journal-API ${res.status} (${namespace}): ${path}`)
-  }
-  return res.json() as Promise<T>
-}
-
-async function mapLimit<T, R>(
-  items: T[],
-  limit: number,
-  fn: (item: T) => Promise<R>
-): Promise<R[]> {
-  const results = new Array<R>(items.length)
-  let cursor = 0
-
-  async function worker(): Promise<void> {
-    while (cursor < items.length) {
-      const index = cursor++
-      results[index] = await fn(items[index])
-    }
-  }
-
-  await Promise.all(
-    Array.from({ length: Math.min(limit, items.length) }, () => worker())
-  )
-  return results
-}
-
-function namespaceFor(mode: GameMode): string {
-  return (GAME_MODES.find((m) => m.id === mode) ?? GAME_MODES[0]).staticNamespace
+function staticFetch<T>(path: string, token: string): Promise<T> {
+  return bnetGet<T>(path, token, "static", STATIC_REVALIDATE)
 }
 
 // ─── Journal durchlaufen ──────────────────────────────────────────────────────
 
 /**
- * Alle Instanzen eines Spielmodus. Leere Liste, wenn die Journal-API
- * für diesen Namespace nichts hergibt.
+ * Alle Instanzen. Leere Liste, wenn die Journal-API nichts hergibt.
  */
-export async function listInstances(
-  token: string,
-  mode: GameMode
-): Promise<JournalInstanceRef[]> {
+export async function listInstances(token: string): Promise<JournalInstanceRef[]> {
   try {
     const data = await staticFetch<{
       instances?: { id: number; name: string }[]
-    }>("/data/wow/journal-instance/index", token, namespaceFor(mode))
+    }>("/data/wow/journal-instance/index", token)
 
     return (data.instances ?? [])
       .map((i) => ({ id: i.id, name: i.name }))
       .sort((a, b) => a.name.localeCompare(b.name))
   } catch (error) {
     console.warn(
-      `[journal] Instanzliste für ${mode} nicht verfügbar:`,
+      "[journal] Instanzliste nicht verfügbar:",
       error instanceof Error ? error.message : error
     )
     return []
@@ -153,15 +109,14 @@ export async function listInstances(
 /** Item-Details: Slot-Typ, Stufe, Qualität. */
 async function getItemMeta(
   itemId: number,
-  token: string,
-  namespace: string
+  token: string
 ): Promise<{ inventoryType: string; itemLevel: number | null; quality: string | null } | null> {
   try {
     const data = await staticFetch<{
       level?: number
       quality?: { type?: string }
       inventory_type?: { type?: string }
-    }>(`/data/wow/item/${itemId}`, token, namespace)
+    }>(`/data/wow/item/${itemId}`, token)
 
     const inventoryType = data.inventory_type?.type
     if (!inventoryType) return null
@@ -182,15 +137,12 @@ async function getItemMeta(
  */
 export async function getInstanceLoot(
   instanceId: number,
-  token: string,
-  mode: GameMode
+  token: string
 ): Promise<{ instanceName: string; entries: LootEntry[] }> {
-  const namespace = namespaceFor(mode)
-
   const instance = await staticFetch<{
     name?: string
     encounters?: { id: number; name: string }[]
-  }>(`/data/wow/journal-instance/${instanceId}`, token, namespace)
+  }>(`/data/wow/journal-instance/${instanceId}`, token)
 
   const instanceName = instance.name ?? `Instanz ${instanceId}`
   const encounters = instance.encounters ?? []
@@ -200,7 +152,7 @@ export async function getInstanceLoot(
       const data = await staticFetch<{
         name?: string
         items?: { item?: { id?: number; name?: string } }[]
-      }>(`/data/wow/journal-encounter/${enc.id}`, token, namespace)
+      }>(`/data/wow/journal-encounter/${enc.id}`, token)
 
       const encounterName = data.name ?? enc.name
       const rawItems = (data.items ?? [])
@@ -208,7 +160,7 @@ export async function getInstanceLoot(
         .filter((i): i is { id: number; name?: string } => typeof i?.id === "number")
 
       const withMeta = await mapLimit(rawItems, CONCURRENCY, async (item) => {
-        const meta = await getItemMeta(item.id, token, namespace)
+        const meta = await getItemMeta(item.id, token)
         // Ohne Slot-Typ ist ein Item für den Vergleich nutzlos (z.B. Materialien)
         if (!meta) return null
 

@@ -1,12 +1,11 @@
 "use client"
 
 import { useCallback, useEffect, useRef, useState } from "react"
-import type { GameMode } from "@/lib/battlenet"
 import { useT } from "./I18nProvider"
 import type { TranslationKey } from "@/lib/i18n"
 
 interface IndexStatus {
-  gameMode: string
+  region: string
   status: "PENDING" | "RUNNING" | "DONE" | "FAILED" | "EMPTY"
   totalInstances: number
   indexedInstances: number
@@ -27,7 +26,7 @@ const STATUS_LABEL_KEY: Record<IndexStatus["status"], TranslationKey> = {
  * deshalb läuft er instanzweise und der Client treibt die Schleife –
  * so bleibt jede Anfrage kurz und der Fortschritt sichtbar.
  */
-export function LootIndexPanel({ mode }: { mode: GameMode }) {
+export function LootIndexPanel() {
   const t = useT()
   const [status, setStatus] = useState<IndexStatus | null>(null)
   const [busy, setBusy] = useState(false)
@@ -37,24 +36,24 @@ export function LootIndexPanel({ mode }: { mode: GameMode }) {
 
   const fetchStatus = useCallback(async () => {
     try {
-      const res = await fetch(`/api/wow/loot-index?mode=${mode}`)
+      const res = await fetch("/api/wow/loot-index")
       const data = await res.json()
       if (data.status) setStatus(data.status)
     } catch {
       // Stiller Fehlschlag: der Knopf bleibt bedienbar
     }
-  }, [mode])
+  }, [])
 
   useEffect(() => {
-    cancelRef.current = true // laufende Schleife eines anderen Modus stoppen
-    setBusy(false)
-    setCurrent(null)
-    setError(null)
     fetchStatus()
-  }, [mode, fetchStatus])
+    // Beim Verlassen der Seite eine laufende Schleife stoppen
+    return () => {
+      cancelRef.current = true
+    }
+  }, [fetchStatus])
 
   async function step(action: "start" | "step") {
-    const res = await fetch(`/api/wow/loot-index?mode=${mode}`, {
+    const res = await fetch("/api/wow/loot-index", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action }),
