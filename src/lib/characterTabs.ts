@@ -27,6 +27,7 @@ export const CHARACTER_TABS: CharacterTab[] = [
   { slug: "sammlungen", labelKey: "tab.collections", enabled: true, noteKey: "tab.collections.note" },
   { slug: "erfolge", labelKey: "tab.achievements", enabled: true, noteKey: "tab.achievements.note" },
   { slug: "ansehen", labelKey: "tab.reputation", enabled: true, noteKey: "tab.reputation.note" },
+  { slug: "talente", labelKey: "tab.talents", enabled: true, noteKey: "tab.talents.note" },
   { slug: "pvp", labelKey: "tab.pvp", enabled: true, noteKey: "tab.pvp.note" },
   { slug: "gilde", labelKey: "tab.guild", enabled: true, noteKey: "tab.guild.note" },
   { slug: "wirtschaft", labelKey: "tab.economy", enabled: true, noteKey: "tab.economy.note" },

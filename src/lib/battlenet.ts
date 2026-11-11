@@ -463,6 +463,9 @@ export interface CharacterProfileData {
   rulesetId?: number
   averageItemLevel?: number
   equippedItemLevel?: number
+  /** Klasse – für die Talentbäume; ältere Snapshots haben sie nicht */
+  classId?: number
+  className?: string
 }
 
 /**
@@ -481,6 +484,7 @@ export async function getCharacterProfile(
     ruleset?: { id?: number; name?: string; type?: string }
     average_item_level?: number
     equipped_item_level?: number
+    character_class?: { id?: number; name?: string }
   }>(characterPath(slug), token, "profile")
 
   return {
@@ -491,6 +495,8 @@ export async function getCharacterProfile(
     rulesetId: data.ruleset?.id,
     averageItemLevel: data.average_item_level,
     equippedItemLevel: data.equipped_item_level,
+    classId: data.character_class?.id,
+    className: data.character_class?.name,
   }
 }
 

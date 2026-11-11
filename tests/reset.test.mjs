@@ -1,29 +1,13 @@
 // Tests für die Reset-Arithmetik in src/lib/reset.ts.
 //
-// reset.ts ist TypeScript ohne Importe. Node 20 (das Image) kann TS nicht
-// direkt laden; darum hier mit dem TypeScript-Compiler aus den
-// devDependencies übersetzen und das Ergebnis als Modul laden. Keine
-// zusätzliche Abhängigkeit.
+// reset.ts ist TypeScript ohne Importe – geladen über load-ts.mjs.
 
 import { test } from "node:test"
 import assert from "node:assert/strict"
-import { readFileSync, mkdtempSync, writeFileSync } from "node:fs"
-import { tmpdir } from "node:os"
-import { join } from "node:path"
-import { pathToFileURL } from "node:url"
-import ts from "typescript"
+import { loadTs } from "./load-ts.mjs"
 
-const source = readFileSync(new URL("../src/lib/reset.ts", import.meta.url), "utf8")
-const { outputText } = ts.transpileModule(source, {
-  compilerOptions: { module: ts.ModuleKind.ES2020, target: ts.ScriptTarget.ES2020 },
-})
-const dir = mkdtempSync(join(tmpdir(), "reset-test-"))
-const file = join(dir, "reset.mjs")
-writeFileSync(file, outputText)
 const { resetConfig, lastDailyReset, nextDailyReset, lastWeeklyReset, nextWeeklyReset } =
-  await import(
-    pathToFileURL(file).href
-  )
+  await loadTs("src/lib/reset.ts")
 
 // Overrides aus der Umgebung würden die Erwartungen verschieben
 delete process.env.WOW_RESET_WEEKDAY
