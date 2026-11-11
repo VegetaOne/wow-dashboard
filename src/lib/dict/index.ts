@@ -22,6 +22,7 @@ import * as pvp from "./pvp"
 import * as guild from "./guild"
 import * as economy from "./economy"
 import * as history from "./history"
+import * as talents from "./talents"
 
 export const EN = {
   ...core.en,
@@ -36,6 +37,7 @@ export const EN = {
   ...guild.en,
   ...economy.en,
   ...history.en,
+  ...talents.en,
 }
 
 export type TranslationKey = keyof typeof EN
@@ -53,4 +55,5 @@ export const DE: Record<TranslationKey, string> = {
   ...guild.de,
   ...economy.de,
   ...history.de,
+  ...talents.de,
 }

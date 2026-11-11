@@ -10,6 +10,8 @@
 
 import { notFound } from "next/navigation"
 import {
+  bnetGet,
+  characterPath,
   isCharacterSlug,
   isNotFound,
   getCharacterEquipment,
@@ -29,6 +31,7 @@ import {
   guildKey,
   type SnapshotResult,
 } from "./snapshot"
+import type { RawSpecializations } from "./talent-tree"
 import {
   fetchCharacterGuild,
   fetchGuild,
@@ -113,6 +116,17 @@ export function profile(
   return withSnapshot(
     characterKey(ref.slug, "profile"),
     () => getCharacterProfile(ref.slug, token)
+  )
+}
+
+/** Gesetzte Talente je Spezialisierung (Rohform – gelesen in talent-tree.ts). */
+export function specializations(
+  ref: CharacterRef,
+  token: string
+): Promise<SnapshotResult<RawSpecializations>> {
+  return withSnapshot(
+    characterKey(ref.slug, "specializations"),
+    () => bnetGet<RawSpecializations>(characterPath(ref.slug, "specializations"), token, "profile")
   )
 }
 
