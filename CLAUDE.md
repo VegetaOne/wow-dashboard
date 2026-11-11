@@ -24,7 +24,8 @@ docker compose up --build            # wie es beim Nutzer läuft
 ```
 
 `npm test` läuft mit `node:test` (steckt in Node 20, braucht keine Abhängigkeit) und
-deckt bisher nur das Secret-Format in `tools/` ab. Wenn du etwas mit Arithmetik oder Krypto
+deckt das Secret-Format in `tools/` und die Reset-Arithmetik in `tests/` ab. TypeScript ohne
+Importe lässt sich wie in `tests/reset.test.mjs` mit `ts.transpileModule` laden. Wenn du etwas mit Arithmetik oder Krypto
 anfasst (`src/lib/reset.ts`, `lockouts.ts`, `secrets.ts`), lege Tests dazu an und trage sie
 im Skript in `package.json` ein. Ändert sich das Format in `secrets.ts`, muss
 `tools/secret-format.mjs` mitziehen – der Testvektor bricht sonst. Vorhandene Testbehauptungen in `docs/` stammen aus Wegwerf-Skripten,
