@@ -17,9 +17,9 @@ if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma
 export interface FavoriteRecord {
   id: string
   userId: string
-  characterName: string
-  realmSlug: string
-  gameMode: string
+  region: string
+  /** `{name}-{surname}` – Forever-Charaktere haben keinen Realm */
+  charSlug: string
 }
 
 // ─── User ─────────────────────────────────────────────────────────────────────
@@ -34,25 +34,20 @@ export async function getOrCreateUser(battleTag: string, region = "eu") {
 
 // ─── Favoriten ────────────────────────────────────────────────────────────────
 
-export async function getFavorites(userId: string): Promise<FavoriteRecord[]> {
-  return prisma.favorite.findMany({ where: { userId } })
+/** Favoriten eines Nutzers in einer Region – Slugs sind nur je Region eindeutig. */
+export async function getFavorites(
+  userId: string,
+  region: string
+): Promise<FavoriteRecord[]> {
+  return prisma.favorite.findMany({ where: { userId, region } })
 }
 
 export async function toggleFavorite(
   userId: string,
-  characterName: string,
-  realmSlug: string,
-  gameMode: string
+  region: string,
+  charSlug: string
 ): Promise<boolean> {
-  const key = {
-    userId_characterName_realmSlug_gameMode: {
-      userId,
-      characterName,
-      realmSlug,
-      gameMode,
-    },
-  }
-
+  const key = { userId_region_charSlug: { userId, region, charSlug } }
   const existing = await prisma.favorite.findUnique({ where: key })
 
   if (existing) {
@@ -60,23 +55,6 @@ export async function toggleFavorite(
     return false
   }
 
-  await prisma.favorite.create({
-    data: { userId, characterName, realmSlug, gameMode },
-  })
+  await prisma.favorite.create({ data: { userId, region, charSlug } })
   return true
-}
-
-// ─── Einstellungen ────────────────────────────────────────────────────────────
-
-export async function setMainChar(
-  userId: string,
-  characterName: string,
-  realmSlug: string,
-  gameMode: string
-) {
-  return prisma.userPreference.upsert({
-    where: { userId },
-    update: { mainChar: characterName, mainRealm: realmSlug, mainMode: gameMode },
-    create: { userId, mainChar: characterName, mainRealm: realmSlug, mainMode: gameMode },
-  })
 }

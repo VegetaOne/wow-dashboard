@@ -1,84 +1,105 @@
-# WoW Dashboard – Roadmap
+# WoW Dashboard – Roadmap zum Companion für WoW Forever
 
-> Stand: 2026-09-15
-> Ziel: ein Begleiter für die eigene WoW-Zeit – Charaktere, Ausrüstung, Fortschritt,
-> Berufe, Sammlungen und Raid-Leistung an einem Ort, self-hosted, erweiterbar auf WoW Forever.
-> Verbindliche Reihenfolge steht in [Reihenfolge und Entscheide](./reihenfolge.md).
+> Stand: 2026-11-11 · Umgestellt auf **nur WoW Forever**. Retail, Classic und Classic Era
+> sind nicht mehr Teil der Planung und aus der App entfernt (Phase 0, umgesetzt).
+> Ziel: ein Begleiter für die eigene Forever-Zeit – Charaktere, Ausrüstung, Fortschritt,
+> Berufe, Sammlungen und Gilde an einem Ort, self-hosted.
 
 ---
 
 ## 1. Leitprinzipien
 
-Diese vier Regeln haben sich beim Bau der ersten Version bewährt und gelten weiter:
+Diese Regeln haben sich beim Bau der ersten Version bewährt und gelten weiter:
 
-**Ehrlich beschriften.** Was die Daten nicht hergeben, wird nicht behauptet. „Loot-Kandidaten" statt „Best in Slot", „aus 12 von 30 geladen" statt eines stillschweigend wandernden Schnitts. Eine Zahl ohne Grundlage ist schlimmer als keine Zahl.
+**Ehrlich beschriften.** Was die Daten nicht hergeben, wird nicht behauptet. „Loot-Kandidaten" statt „Best in Slot", „aus 12 von 30 geladen" statt eines stillschweigend wandernden Schnitts. Eine Zahl ohne Grundlage ist schlimmer als keine Zahl. Für Forever heisst das zusätzlich: ein 404 der API ist oft „noch keine Daten", nicht „Fehler" – und die Oberfläche sagt, welches von beiden.
 
 **Nur laden, was gebraucht wird.** Ein Companion hat viele Ansichten. Würde jede beim Aufruf alles holen, wäre die App unbenutzbar. Jede neue Ansicht lädt ihre Daten selbst und erst wenn sie sichtbar ist.
 
-**Offizielle APIs zuerst.** Fremdquellen ohne dokumentierte API (Wowhead, Raidbots, Sixty Upgrades) kommen nicht in den Kern. Wo sie unvermeidlich sind, werden sie als abschaltbarer Zusatz gebaut, von dem die App nicht abhängt.
+**Offizielle APIs zuerst.** Fremdquellen ohne dokumentierte API (Wowhead, Raidbots, Sixty Upgrades) kommen nicht in den Kern. Wo sie unvermeidlich sind, werden sie als abschaltbarer Zusatz gebaut, von dem die App nicht abhängt. Die Forever-API ist Blizzards eigene, aber **nicht dokumentiert** – sie gilt als offiziell, wird aber behandelt wie etwas, das sich jederzeit ändern kann.
 
-**Adapter-Grenze halten.** Alles Spielmodus-Abhängige läuft über `GAME_MODES` und die Adapter-Schnittstelle. WoW Forever soll später ein Eintrag sein, kein Umbau.
+**Nur belegte Datenquellen einplanen.** Was für Forever nicht nachweislich liefert, kommt nicht in die Phasen, sondern in die Liste „Gestrichen bis bestätigt" (Abschnitt 2). Ein Feature, das auf einer Annahme steht, wird erst eingeplant, wenn die Annahme geprüft ist.
+
+**Namespaces an einer Stelle.** Alle Namespaces und Pfadmuster liegen in `src/lib/battlenet.ts` (`namespace()`, `characterPath()`, `bnetGet()`). Ändert Blizzard etwas an der undokumentierten API, ist es eine Stelle, kein Suchen durch die Ansichten.
 
 ---
 
 ## 2. Datenquellen – was geht, was nicht
 
+### Namespaces (Stand 2026-11-11)
+
+Seit dem Start am 4. November 2026 antwortet die Battle.net-API für Forever. Alles hier stammt aus Community-Tests, nicht aus einer Dokumentation von Blizzard.
+
+| Namespace | Inhalt |
+|---|---|
+| `static-forever-{region}` | Spieldaten. Derzeit Version 1.60.1_70399, fest einstellbar als `static-1.60.1_70399-forever-{region}`. Vor dem Start lieferte der unversionierte Name 403. Die aktuelle Version steht in den `playable_class`-/`playable_race`-Links des Account-Profils – `bnetGet` lernt sie dort und weicht bei 403 darauf aus. |
+| `dynamic-forever-{region}` | Rulesets, Region, Auktionshäuser |
+| `profile-forever-{region}` | Account, Charaktere, Gilden |
+
+Regionen: US, EU, KR, TW (CN braucht wie immer einen eigenen Client). **Standard ist EU**, umstellbar im Setup und in den Einstellungen.
+
+### Was Forever anders adressiert
+
+- **Charaktere haben keinen Realm.** Vor- und Nachname, pro Region eindeutig. Slug ist `{name}-{surname}` in Kleinbuchstaben.
+- **Gilden haben keinen Realm:** `/data/wow/guild/{guild-slug}` plus `roster`, `activity`, `achievements`, im Profil-Namespace.
+- **Rulesets statt Realms.** Realm-Index liefert 404, Realm-Suche 0 Treffer. Stattdessen `/data/wow/ruleset/index` – EU und US: 1 PvP, 2 Normal, 3 Rollenspiel, 15 Rollenspiel-PvP; KR und TW nur 1 und 2.
+
 ### Blizzard Profil-API (OAuth mit Nutzer-Token)
 
-Bestätigt vorhanden, alle unter `/profile/wow/character/{realm}/{name}/…`:
+Laut Community-Tests liefernd, alle unter `/profile/wow/character/{name}-{surname}/…?namespace=profile-forever-{region}`:
 
 | Endpunkt | Liefert | Für Feature |
 |---|---|---|
+| *(ohne Unterpfad)* | Charakterprofil | Charakterübersicht |
+| `equipment` | Angelegte Ausrüstung | Ausrüstung, Upgrades |
+| `character-media` | Gerendertes Charakterbild | Darstellung |
+| `appearance` | Aussehen | Darstellung |
+| `specializations` | Aktive Spezialisierung, Talente | Übersicht |
 | `professions` | Berufe, Rezepte, Fertigkeitsstufen | Berufe |
-| `collections/mounts` | Reittiere des Charakters | Sammlungen |
-| `collections/pets` | Begleiter | Sammlungen |
-| `collections/toys` | Spielzeug | Sammlungen |
+| `collections` | Sammlungen des Charakters | Sammlungen |
 | `achievements` | Erfolge mit Zeitstempel | Erfolge |
-| `achievements/statistics` | Statistikwerte | Erfolge, Auswertungen |
-| `titles` | Freigeschaltete Titel | Sammlungen |
-| `reputations` | Ansehen bei Fraktionen | Reputationen |
 | `statistics` | Charakterstatistiken | Auswertungen |
-| `quests` / `quests/completed` | Offene und erledigte Quests | Wochenübersicht |
-| `encounters/raids` | Bosskills je Schwierigkeit | Raid-Fortschritt |
-| `encounters/dungeons` | Dungeon-Abschlüsse | Fortschritt |
-| `mythic-keystone-profile` | M+-Läufe, Great Vault | Mythisch+ (Retail) |
-| `pvp-summary`, `pvp-bracket/{b}` | Arena- und BG-Werte | PvP |
-| `hunter-pets` | Jägertiere | Sammlungen |
-| `appearance` | Aussehen, Transmog | Darstellung |
-| `specializations` | Talente, aktive Spezialisierung | Ausrüstung, Auswertungen |
+| `titles` | Freigeschaltete Titel | Sammlungen |
+| `reputations` | Ansehen bei Fraktionen | Ansehen |
+| `quests` | Quests | Wochenübersicht |
+| `encounters` | Raid- und Dungeon-Abschlüsse | Fortschritt, Wochenübersicht |
+| `pvp-summary` | PvP-Werte | PvP |
 
-Account-weit (`/profile/user/wow/…`): `collections/mounts`, `collections/pets`.
-**Wichtig:** Reittiere und Begleiter sind account-, nicht charaktergebunden – die gehören auf eine Account-Seite, nicht in die Charakteransicht.
+Account-weit (`/profile/user/wow`, Scope `wow.profile`): listet die Forever-Charaktere; `collections` liefert ebenfalls.
+**Wichtig:** Die Account-Übersicht kann dem Charakterprofil um **20–40 Minuten** nachlaufen, z. B. bei der Stufe. Für Stufe und Ausrüstung gilt das Charakterprofil, nicht die Account-Liste.
 
-### Blizzard Spieldaten-API (statischer Namespace)
+### Blizzard Spieldaten-API
 
 | Endpunkt | Liefert | Für Feature |
 |---|---|---|
-| `/data/wow/item/{id}` | Werte, Slot, Stufe, Qualität | Tooltips, Loot-Vergleich |
-| `/data/wow/media/item/{id}` | Icon-URL | Icons überall |
-| `/data/wow/journal-instance/*`, `journal-encounter/*` | Loot-Tabellen | Loot-Kandidaten (gebaut) |
-| `/data/wow/mount/*`, `/data/wow/pet/*` | Stammdaten der Sammelobjekte | Sammlungen: Fehlliste |
-| `/data/wow/achievement/*` | Erfolgs-Stammdaten, Kategorien | Erfolge: Fehlliste |
+| `/data/wow/item/{id}` | Werte, Slot, Stufe, Qualität | Tooltips, Upgrade-Vergleich |
+| `/data/wow/playable-class/*`, `playable-race/*` | Klassen, Völker | Darstellung |
 | `/data/wow/profession/*`, `recipe/*` | Berufs- und Rezept-Stammdaten | Berufe: Fehlliste |
-| `/data/wow/connected-realm/{id}/auctions` | Auktionshaus | Berufs-Wirtschaft |
-| `/data/wow/guild/{realm}/{name}` + `roster` | Gilde | Gilde |
+| `/data/wow/ruleset/index` | Rulesets | Auktionshaus |
+| `/data/wow/ruleset/{id}/auctions/` | Auktionshäuser, dann je Haus | Berufs-Wirtschaft |
 
-### Warcraft Logs – API v2 (eigene OAuth-Registrierung)
+**Auktionshaus:** Schrägstrich am Ende nötig, sonst 404. 15 Häuser (IDs 110–121, 123–125). Jedes Ruleset liefert dieselben Häuser und Angebote – **nicht über Rulesets aufsummieren**. Commodities laufen pro Haus; der alte Commodities-Endpunkt liefert 404. Die Häuser 112, 115 und 118 hatten kein `auctions`-Feld. Der Pfad je Haus (`/auctions/{houseId}`) ist aus dem Index abgeleitet und **ungeprüft**.
 
-Bestätigt vorhanden:
+### 404, das kein Fehler ist
 
-- GraphQL, öffentlich: `https://www.warcraftlogs.com/api/v2/client`
-- GraphQL, nutzerbezogen: `https://www.warcraftlogs.com/api/v2/user`
-- Token: `https://www.warcraftlogs.com/oauth/token`
-- Client-Credentials-Flow reicht für öffentliche Reports – das ist unser Fall
-- Scopes für private Reports: `view-user-profile`, `view-private-reports`
+- Charaktere unter Stufe 10 oder ohne bisherigen Logout
+- `character-media` eine Weile nach dem ersten Auftauchen eines Charakters
+- **Gegenstände:** in einem EU-Allianz-Haus lieferten 652 von 1'515 Item-IDs 404 aus static-forever, meist ältere Classic-Gegenstände. Tooltips und Icons brauchen darum eine Darstellung für „keine Stammdaten", statt zu brechen.
+- EU-Charakterendpunkte waren am 2026-11-06 bei einem Nutzer durchgehend 404, am selben Tag bei anderen mit 200. Vermutlich Timing – mit dem eigenen Charakter prüfen, nicht annehmen.
 
-Erfordert eine **zweite App-Registrierung**, unabhängig von Battle.net.
+### Gestrichen bis bestätigt
 
-### Raider.IO
+Für Forever nicht belegt. Nicht eingeplant, bis ein Test mit echten Daten sie bestätigt:
 
-Öffentliche, dokumentierte API für M+-Scores und Rankings. Kein Token nötig.
-Nur für Retail relevant.
+| Quelle | Hängt daran | Stand |
+|---|---|---|
+| `/data/wow/journal-instance/*`, `journal-encounter/*` | **Loot-Kandidaten** und Upgrade-Vorschläge | Kein Bericht, dass die Journal-API in static-forever liefert. Das ist die Lücke mit den grössten Folgen – die Upgrade-Funktion steht darauf. Als Erstes prüfen. Der Code ist noch da und meldet „keine Instanzen", wenn nichts kommt. |
+| `/data/wow/media/item/{id}` | Item-Icons | Kein ausdrücklicher Bericht für Forever |
+| Stammdaten Reittiere, Begleiter, Spielzeug, Erfolge, Titel | Fehllisten in Sammlungen und Erfolgen | Nur in der Abdeckungsliste eines Community-SDK genannt, ohne Testbericht |
+| Talentbäume (`talent-tree`) | Talentbuilds | Nur in derselben SDK-Liste genannt; Struktur ungeprüft |
+| `mythic-keystone-profile` | – | Antwortet laut Tests, aber Mythisch+ hat in Forever keinen erkennbaren Inhalt. Aus der App entfernt. |
+| `hunter-pets` | Jägertiere | Liefert 404 |
+| Warcraft Logs | Raid-Leistung | Nicht geklärt, ob Warcraft Logs Forever führt |
+| Bindungsdauern der Schlachtzüge | Wochenübersicht | Die Vanilla-Tabelle gilt als Annahme; jede Länge wird als „angenommen" angezeigt |
 
 ### Nicht verfügbar – unabhängig vom Aufwand
 
@@ -88,84 +109,103 @@ Nur für Retail relevant.
 | DPS-Bewertung, Best-in-Slot | Braucht Statgewichte. Blizzard liefert keine, Raidbots hat keine offene API. Nur über eigene SimulationCraft-Instanz. |
 | Drehbares 3D-Charaktermodell | Die API liefert ein gerendertes PNG aus festem Winkel. Nur über Fremd-Viewer. |
 | Live-Daten während des Spielens | Die Profil-API aktualisiert erst beim Ausloggen des Charakters. |
+| Dokumentation | Blizzard hat die Forever-API nicht dokumentiert. Jeder Endpunkt kann sich ohne Ankündigung ändern. |
 
 **Die Verzögerung der Profil-API ist wichtig für die Erwartung:** Charakterdaten spiegeln den Stand beim letzten Ausloggen, nicht den Moment. Ein Polling-Intervall unter mehreren Minuten bringt darum nichts.
 
 ---
 
-## 3. Phase 0 – Detailschliff (nächster Schritt)
+## 3. Phase 0 – Umstellung auf Forever (umgesetzt, ungeprüft)
 
-Kleine, abgeschlossene Verbesserungen an dem, was schon steht.
+> **Stand 2026-11-11:** im Branch `wow-forever-umstellung` umgesetzt. `tsc` und `next build`
+> laufen durch. **Nicht geprüft** ist alles, was echte Battle.net-Zugangsdaten braucht –
+> Anmeldung, Account-Liste, jeder Charakterabruf – und das Einspielen der Migration auf eine
+> bestehende Datenbank. Das ist der nächste Schritt (unten, „Mit echten Daten prüfen").
 
-### Icons und Tooltips für Loot-Kandidaten
+### Alte Spielmodi entfernen – erledigt
 
-Die Kandidatenliste zeigt derzeit nur Namen und Stufe. Angeglichen an die ausgerüsteten Items:
+- [x] `GAME_MODES` ist ganz entfallen, nicht auf einen Eintrag geschrumpft: bei einem Modus wäre die Liste nur noch Umweg. An ihre Stelle tritt `namespace("profile" | "static" | "dynamic")` in `battlenet.ts`, das die Region bei jedem Aufruf liest.
+- [x] `GameModeTabs` entfernt
+- [x] `src/lib/adapters/` gelöscht
+- [x] Mythisch+ entfernt (Panel, Abruf, Verlaufsreihe, Wörterbuch)
+- [x] Modus-Weichen aufgelöst (Auktionshaus, Verzauberungen, Gegenstandsstufe, Ausrüstungshinweise)
+- [x] Spielmodus-Auswahl aus Setup und Einstellungen entfernt; Wörterbücher um die entfallenen Schlüssel gekürzt
+- [x] **Alte Daten löschen:** Migration `0007_wow_forever` legt Snapshots, Favoriten, Loot-Index und Auktionspreise neu an – die alten Zeilen sind damit weg – und entfernt `gameModes`/`defaultMode` aus der Konfiguration. **Vor dem Einspielen Datenbank und `prisma/config.key` sichern.**
 
-- **Icons:** Nicht in den Index schreiben. Der Index ruft schon einen Endpunkt pro Item auf; Icons dort mitzuziehen würde ihn verdoppeln. Stattdessen `getItemIcons` für die aufgeklappten Kandidaten eines Slots nachladen – höchstens acht, und serverseitig eine Woche gecacht.
-- **Tooltip:** Beim Überfahren `/data/wow/item/{id}` holen und im Client zwischenspeichern. Der bestehende `ItemTooltip` wird so umgebaut, dass er sowohl ein Ausrüstungsteil als auch ein Stammdaten-Item annimmt.
-- **Vergleich im Tooltip:** Werte des Kandidaten gegen das angelegte Item, Differenz je Wert. Das ist die eigentlich nützliche Information und braucht keine Statgewichte.
+### Forever-Adressierung einbauen – erledigt
 
-### Weitere Kleinigkeiten
+- [x] **Charakterpfad** `{name}-{surname}`: in den API-Aufrufen (`characterPath`), in den Routen (`/dashboard/[character]`) und im Snapshot-Schlüssel (`region` + `charSlug`)
+- [x] Der Slug kommt bevorzugt aus `character.href` der Account-Liste, sonst aus `name` + `surname`
+- [x] **Static-Version** wird aus den `playable_class`-Links gelernt und bei 403 benutzt
+- [x] **Gilde** über `/data/wow/guild/{guild-slug}`, Mitglieder über ihren Slug
+- [x] **Auktionshaus** über Rulesets, gespeichert je Region und Haus
+- [x] **Region:** war schon im Setup und in den Einstellungen wählbar, Standard EU. Neu: sie steht in jedem Datenbankschlüssel, damit ein Wechsel nie Stände der alten Region zeigt.
+- [x] Kopf der Charakterseite: Vor- und Nachname, Stufe und Ruleset statt Realm
+- [x] Charakterliste nach Fraktion gruppiert – die Account-Liste nennt weder Realm noch Ruleset
+- [x] Wochenübersicht: Bindungsdauern gelten als angenommen (siehe „Gestrichen bis bestätigt")
 
-- Detailseite: Spezialisierung und Talente anzeigen (`specializations`)
-- Charakterliste: Spalte für Spezialisierung
-- Ausrüstung: Transmog-Anzeige aus `appearance`
-- Fehlerbild vereinheitlichen – momentan gibt es drei verschiedene Darstellungen
+### 404 sauber einordnen – erledigt, ein Rest
+
+- [x] `attempt()` setzt `notFound` bei 404; gemeinsame Darstellung `<NoDataYet />` im Charakterkopf und auf allen Charakterseiten
+- [x] Ein Account ohne Forever-Charakter ergibt eine leere Liste, keinen Fehler
+- [ ] Gegenstände ohne Stammdaten: die Ausrüstung kommt ohne sie aus (Name, Stufe und Werte stehen in der Ausrüstungsantwort), es fehlt nur das Icon. Ein ausdrücklicher Hinweis im Kandidaten-Tooltip fehlt noch.
+
+### Mit echten Daten prüfen – offen
+
+- [ ] Migration auf eine Kopie der echten Datenbank einspielen
+- [ ] Mit dem eigenen EU-Charakter anmelden und jeden Endpunkt aus Abschnitt 2 einmal aufrufen; festhalten, was tatsächlich liefert
+- [ ] Dabei die Punkte aus „Gestrichen bis bestätigt" mitprüfen, allen voran die Journal-API
+- [ ] Prüfen, in welcher Form das Profil `ruleset` und die Gilde `slug` führen – beides wird tolerant gelesen, die Form ist nicht belegt
 
 ---
 
-## 4. Architektur-Entscheidungen, die vor Phase 1 fallen müssen
+## 4. Architektur-Entscheidungen
 
-Diese drei Punkte entscheiden, ob die Erweiterung trägt oder in Umbauten endet.
+Die drei Punkte bleiben, ändern sich aber durch den Wegfall der Realms.
 
 ### 4.1 Caching: Snapshots statt Durchreichen
 
-Bisher: jede Ansicht fragt bei Bedarf die API und verlässt sich auf den Fetch-Cache von Next (5 Minuten, nur im Prozess).
-
-Das reicht nicht mehr, sobald mehrere Ansichten pro Charakter dazukommen. Der Vorschlag ist eine **Snapshot-Tabelle** wie beim Loot-Index:
+Die Snapshot-Tabelle bleibt die Grundlage für Verlauf, Offline-Anzeige und weniger Anfragen. Für Forever hat sich nur der Schlüssel geändert: `gameMode` fällt weg, `realmSlug` und `charName` werden zu einem `charSlug`, dazu kommt die Region. Der Tag bleibt im eindeutigen Schlüssel – so entsteht die Historie von selbst.
 
 ```prisma
 model CharacterSnapshot {
-  id         String   @id @default(cuid())
-  gameMode   String
-  realmSlug  String
-  charName   String
-  /// "professions" | "collections" | "achievements" | "raids" | …
-  dataset    String
-  /// Rohantwort als JSON
-  payload    String
-  fetchedAt  DateTime @default(now())
+  id        String   @id @default(cuid())
+  region    String
+  /// `{name}-{surname}`, `@account` oder `@guild:<slug>`
+  charSlug  String
+  dataset   String
+  /// Tag als YYYY-MM-DD
+  day       String
+  payload   String
+  fetchedAt DateTime @default(now())
 
-  @@unique([gameMode, realmSlug, charName, dataset])
-  @@index([gameMode, dataset])
+  @@unique([region, charSlug, dataset, day])
 }
 ```
 
 Vorteile, die über Geschwindigkeit hinausgehen:
 
-- **Verlauf.** Behält man alte Snapshots, entsteht die eigentliche Companion-Funktion: „Deine Gegenstandsstufe ist diese Woche von 604 auf 619 gestiegen", „drei neue Reittiere seit Montag", „Erfolg X am 12.9. abgeschlossen". Das kann keine Live-Abfrage.
+- **Verlauf.** Behält man alte Snapshots, entsteht die eigentliche Companion-Funktion: „Deine Gegenstandsstufe ist diese Woche gestiegen", „drei neue Reittiere seit Montag", „Erfolg X am 12.11. abgeschlossen". Das kann keine Live-Abfrage.
 - **Offline benutzbar.** Ist Battle.net gerade nicht erreichbar, zeigt die App den letzten Stand mit Zeitstempel statt eines Fehlers.
 - **Weniger Anfragen.** Ein Datensatz wird nur geholt, wenn der Snapshot älter als eine gesetzte Frist ist.
 
-**Entscheid nötig:** nur den jeweils neuesten Snapshot behalten, oder eine Historie? Historie kostet Platz (bei 30 Charakteren × 8 Datensätzen × täglich ≈ 7.000 Zeilen im Jahr, unkritisch für SQLite) und ist die Grundlage für alles Verlaufsbezogene. Empfehlung: Historie, aber ausdünnen – täglich einen Stand behalten, nicht jeden Abruf.
+**Für Forever besonders wichtig:** Liefert ein Endpunkt plötzlich 404, weil Blizzard die undokumentierte API umbaut, bleibt der letzte Stand sichtbar.
 
 ### 4.2 Navigation: Unterseiten je Charakter
 
-Die Charakterseite wird sonst zu lang. Vorschlag:
-
 ```
-/dashboard                          Charakterliste (gebaut)
-/dashboard/account                  Sammlungen, accountweite Statistik
-/dashboard/{realm}/{name}           Übersicht: Kopfzeile, Ausrüstung (gebaut)
-/dashboard/{realm}/{name}/berufe
-/dashboard/{realm}/{name}/erfolge
-/dashboard/{realm}/{name}/fortschritt   Raids, Dungeons, M+
-/dashboard/{realm}/{name}/logs          Warcraft Logs
-/dashboard/{realm}/{name}/pvp
-/dashboard/{realm}/{name}/verlauf       Aus den Snapshots
+/dashboard                                Charakterliste
+/dashboard/account                        Sammlungen, accountweite Statistik
+/dashboard/woche                          Wochenübersicht
+/dashboard/{name}-{surname}               Übersicht: Kopfzeile, Ausrüstung
+/dashboard/{name}-{surname}/berufe
+/dashboard/{name}-{surname}/erfolge
+/dashboard/{name}-{surname}/fortschritt   Raids, Dungeons
+/dashboard/{name}-{surname}/pvp
+/dashboard/{name}-{surname}/verlauf       Aus den Snapshots
 ```
 
-Tab-Leiste unter dem Charakterkopf, im Stil der bestehenden `GameModeTabs`.
+Tab-Leiste unter dem Charakterkopf. Die Spielmodus-Tabs sind entfallen. Die Region steht nicht in der URL, sondern kommt aus der Konfiguration. Die statischen Seiten (`account`, `woche`, `einstellungen`) kollidieren nicht mit Charakteren: ein Charakter-Slug enthält immer einen Bindestrich.
 
 ### 4.3 Auffrischen im Hintergrund
 
@@ -179,94 +219,81 @@ Zwei Wege: ein zweiter Container mit einem Cron-Prozess, oder eine Route, die vo
 
 ## 5. Phasen
 
-### Phase 1 – Fortschritt und Berufe
+### Phase 1 – Bestehende Ansichten auf Forever prüfen
 
-Die Datensätze mit dem besten Verhältnis von Nutzen zu Aufwand, weil sie ohne neue Fremdquelle auskommen.
+Die Ansichten sind für Retail und Classic gebaut und in Phase 0 auf die Forever-Adressierung umgestellt. Jede wird gegen echte Forever-Daten geprüft und angepasst, bevor Neues dazukommt.
 
-- [ ] Snapshot-Tabelle und Auffrisch-Logik (4.1)
-- [ ] Tab-Navigation je Charakter (4.2)
-- [ ] **Berufe:** Berufe mit Fertigkeitsstufe, bekannte Rezepte, Fortschrittsbalken. Abgleich mit den Stammdaten (`/data/wow/profession/*`) ergibt die Fehlliste – „diese Rezepte kennst du noch nicht".
-- [ ] **Raid- und Dungeon-Fortschritt:** Bosskills je Schwierigkeit, aus `encounters/raids`. Pro Tier gruppiert, mit Fortschrittsanzeige.
-- [ ] **Spezialisierung und Talente** auf der Übersicht
+- [ ] **Charakterliste und Übersicht:** Nachname, Ruleset, Stufe aus dem Charakterprofil
+- [ ] **Ausrüstung:** Paperdoll und Tooltips mit Rückfall für fehlende Item-Stammdaten
+- [ ] **Berufe:** Fertigkeitsstufen und bekannte Rezepte; Fehlliste gegen `/data/wow/profession/*`
+- [ ] **Fortschritt:** Raids und Dungeons aus `encounters`
+- [ ] **Sammlungen, Erfolge, Titel, Ansehen:** Anzeige des Besessenen; Fehllisten nur, wo die Stammdaten bestätigt sind
+- [ ] **PvP:** aus `pvp-summary`; „nie gespielt" statt leerer Zeile
+- [ ] **Gilde:** realmlos, mit Roster und Aktivität
+- [ ] **Auktionshaus und Berufs-Wirtschaft:** Pfad je Haus prüfen, Häuser nicht doppelt gezählt
+- [ ] **Wochenübersicht:** Lockouts aus `encounters`, Bindungsdauern der Forever-Raids belegen
+- [ ] **Verlauf:** läuft auf dem neuen Snapshot-Schlüssel
 
-### Phase 2 – Sammlungen und Erfolge
+### Phase 2 – Detailschliff
 
-- [ ] **Account-Seite** für accountweite Daten
-- [ ] **Reittiere:** Besessene gegen alle vorhandenen (`/data/wow/mount/index`) – Sammelfortschritt und Fehlliste mit Quelle
-- [ ] **Begleiter und Spielzeug:** analog
-- [ ] **Titel**
-- [ ] **Erfolge:** nach Kategorie, Fortschritt je Kategorie, zuletzt erreichte mit Datum. Die Erfolgs-Stammdaten sind umfangreich – das braucht einen Index wie beim Loot.
-- [ ] **Reputationen:** Ansehen je Fraktion, gruppiert nach Erweiterung
+Kleine, abgeschlossene Verbesserungen an dem, was nach Phase 1 steht.
 
-### Phase 3 – Raid-Leistung (Warcraft Logs)
+- [ ] Detailseite: Spezialisierung anzeigen (`specializations`)
+- [ ] Charakterliste: Spalte für Spezialisierung
+- [ ] Ausrüstung: Aussehen aus `appearance`
+- [ ] **Upgrade-Vergleich im Tooltip:** Werte eines Gegenstands gegen das angelegte Item, Differenz je Wert. Braucht keine Statgewichte und nur `/data/wow/item/{id}`.
+- [ ] Fehlerbild vereinheitlichen – auf dem 404-Umgang aus Phase 0 aufbauend
 
-- [ ] Eigene App bei Warcraft Logs registrieren, Client-Credentials in die `.env`
-- [ ] GraphQL-Client gegen `api/v2/client`, Token-Verwaltung mit Ablauf
-- [ ] **Berichte je Charakter:** letzte Kämpfe, Parse-Prozente, Rolle
-- [ ] **Verlauf:** Entwicklung der Parses über die Zeit, aus den Snapshots
-- [ ] **Gildenberichte**, falls die Gilde öffentlich loggt
+### Phase 3 – Was es nur in Forever gibt
 
-**Vorbehalt:** Warcraft Logs deckt nur ab, was auch geloggt und hochgeladen wurde. Für Charaktere, deren Gilde nicht loggt, bleibt die Ansicht leer – das muss die Oberfläche sagen, statt wie ein Fehler auszusehen.
+- [ ] Vor- und Nachname als Charakteridentität durchgängig, auch im Verlauf
+- [ ] Ruleset des Charakters in der Charakterliste (die Account-Liste führt es nicht – braucht den Profilabruf)
+- [ ] Prüfen, welche Forever-eigenen Inhalte die API führt (neue Zonen, Dungeons, 10er- und 20er-Raids, accountweite Vorteile) – und nur das Belegte einplanen
 
-### Phase 4 – Wirtschaft und Gilde
-
-- [ ] **Gilde:** Mitgliederliste mit Gegenstandsstufen, Gildenerfolge, Aktivität
-- [ ] **Auktionshaus:** aktuelle Preise für die Materialien der eigenen Berufe. Der Auktionsendpunkt liefert grosse Antworten (mehrere MB) – braucht einen eigenen Index und ein sinnvolles Auffrisch-Intervall.
-- [ ] **Berufs-Wirtschaft:** Herstellkosten gegen Verkaufspreis für bekannte Rezepte. Hier wird die App wirklich nützlich statt nur informativ.
-
-### Phase 5 – Auswertung und Verlauf
+### Phase 4 – Auswertung und Verlauf
 
 Baut auf der Snapshot-Historie auf und ist der Teil, den es so nirgends fertig gibt.
 
-- [ ] **Verlaufsseite:** Gegenstandsstufe, Erfolge, Sammlungen, Parses über Zeit
+- [ ] **Verlaufsseite:** Gegenstandsstufe, Erfolge, Sammlungen über Zeit
 - [ ] **Wochenrückblick:** was sich seit letzter Woche geändert hat, über alle Charaktere
-- [ ] **Charaktervergleich:** zwei Charaktere nebeneinander
-- [ ] **Reset-Tracker:** Wochenreset, offene Wochenaufgaben, Great Vault
-
-### Phase 6 – WoW Forever
-
-- [ ] `GAME_MODES` um den Modus ergänzen, sobald die Namespaces bekannt sind
-- [ ] `WoWForeverAdapter` befüllen
-- [ ] Prüfen, welche Datensätze der neue Modus überhaupt führt – wahrscheinlich anfangs deutlich weniger
-- [ ] Modus-spezifische Ansichten für alles, was es nur dort gibt
+- [ ] **Reset-Tracker:** wöchentliche Quests und Belohnungen, sobald belegt ist, was `quests` dafür liefert
 
 ---
 
 ## 6. Reihenfolge-Empfehlung
 
-> **Überholt.** Dieser Abschnitt und Abschnitt 7 sind durch [Reihenfolge und Entscheide](./reihenfolge.md) ersetzt, wo dort etwas anderes steht.
+Die verbindliche Reihenfolge steht in [Reihenfolge](./reihenfolge.md). Die Empfehlung aus Sicht dieser Roadmap:
 
-Die Architekturpunkte aus Abschnitt 4 **vor** Phase 1 – nicht danach. Snapshot-Schicht und Tab-Navigation nachträglich einzuziehen, wenn schon fünf Ansichten daran hängen, kostet ein Mehrfaches.
+1. **Prüfung mit echten Daten** – schliesst Phase 0 ab und entscheidet, was aus „Gestrichen bis bestätigt" zurückkommt
+2. **Phase 1** (Bestand prüfen) – macht die vorhandenen Ansichten für Forever brauchbar
+3. **Phase 2** (Detailschliff) – schnelle Erfolge
+4. **Phase 3** (Forever-Eigenes) – erst wenn klar ist, was die API dazu führt
+5. **Phase 4** (Verlauf) – braucht gesammelte Forever-Snapshots, wird mit der Zeit besser
 
-Danach nach dem, was am meisten für die eigene Spielzeit bringt:
-
-1. **Architektur** (Snapshots, Navigation) – Grundlage
-2. **Phase 0** (Detailschliff) – schnelle Erfolge, macht das Bestehende rund
-3. **Berufe** – täglich genutzt, keine Fremdquelle nötig
-4. **Fortschritt** – Raids und Dungeons
-5. **Sammlungen** – die Fehllisten sind der eigentliche Mehrwert
-6. **Warcraft Logs** – grösster Einzelaufwand, aber der Teil, der über andere Tools hinausgeht
-7. **Verlauf** – braucht erst gesammelte Snapshots, wird mit der Zeit besser
-8. **Wirtschaft** – Auktionsdaten sind umfangreich, lohnt sich nur bei aktivem Handel
-
-**Der Verlauf ist das Argument, früh mit Snapshots anzufangen:** Er wird nur gut, wenn schon Monate an Daten liegen. Die Schicht jetzt zu bauen kostet wenig und ist die Voraussetzung dafür, dass Phase 5 später überhaupt etwas zeigen kann.
+**Der Verlauf ist das Argument, Phase 0 bald einzuspielen:** Forever-Snapshots entstehen erst, wenn die App Forever-Charaktere abruft. Jede Woche davor fehlt später im Verlauf.
 
 ---
 
-## 7. Offene Entscheide
+## 7. Entscheide
 
-- [ ] **Snapshot-Historie** behalten oder nur den neuesten Stand? (Empfehlung: Historie, täglich ausgedünnt)
+### Entschieden (2026-11-11)
+
+- [x] **Alte Snapshots** von Retail- und Classic-Charakteren werden gelöscht – Migration `0007_wow_forever`, mit Backup davor.
+- [x] **Region:** Standard EU, im Setup bzw. in den Einstellungen auf US, KR oder TW umstellbar.
+
+### Offen
+
 - [ ] **Hintergrund-Auffrischer** jetzt oder später? Erfordert persistente, verschlüsselte Refresh-Tokens.
-- [ ] **Warcraft Logs**: eigene App registrieren – willst du das? Ohne sie entfällt Phase 3.
 - [ ] **Mehrere Nutzer**: Bisher sieht jeder nur seine Charaktere. Sollen du und dein Kollege Gilden- oder Vergleichsansichten teilen können?
 - [ ] **Fremd-Viewer für das 3D-Modell** – bewusst dagegen entschieden oder als abschaltbarer Zusatz?
-- [ ] **Sprache**: Alles ist auf `de_DE` verdrahtet. Umschaltbar machen?
 
 ---
 
 ## 8. Quellen
 
-- Warcraft Logs API v2: GraphQL-Endpunkte und OAuth-Flows – https://github.com/aurokin/warcraft_cli/blob/main/docs/warcraftlogs/README.md
-- Blizzard Profil-Endpunkte (Berufe, Sammlungen, Erfolge, Fortschritt) – https://pkg.go.dev/github.com/Thenecromance/Go_Blizzard_API/api/wow/ProfileService
-- Blizzard Journal-API (Loot-Tabellen) – https://pkg.go.dev/github.com/Thenecromance/Go_Blizzard_API/api/wow/DataService/Journal
-- Blizzard API-Dokumentation – https://develop.battle.net/documentation
+- WoW Forever – Community-Stand der API (Namespaces, Endpunkte, 404-Fälle, Auktionshaus) – https://us.forums.blizzard.com/en/blizzard/t/wow-forever-api-what-works-so-far-plus-a-ts-client/60334
+- WoW Forever – Namespace-Thread vor dem Start (Account-Liste mit `surname`, `character.href`) – https://us.forums.blizzard.com/en/blizzard/t/world-of-warcraft-forever-api-namespace/59774
+- WoW Forever – EU-Charakterendpunkte mit 404 (2026-11-06) – https://us.forums.blizzard.com/en/blizzard/t/wow-forever-eu-all-character-profile-endpoints-return-404/60355
+- WoW Forever – Gegenprobe mit 200 auf EU (2026-11-06) – https://github.com/Everloot/everloot/pull/867
+- WoW Forever – Community-SDK mit Abdeckungsliste der Namespaces – https://github.com/SideQuest-Guild/wow-forever-sdk
+- Blizzard API-Dokumentation (allgemein, ohne Forever) – https://develop.battle.net/documentation

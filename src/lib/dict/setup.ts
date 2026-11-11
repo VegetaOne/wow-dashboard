@@ -73,11 +73,6 @@ export const en = {
   "setup.unknownRegion": "Unknown region.",
 
   // ─── Einrichtung, Stufe 2 ────────────────────────────────────────────────
-  "setup2.modesHeading": "Which game modes interest you?",
-  "setup2.modesHint":
-    "Modes you leave out disappear from the tabs. This can be changed at any time.",
-  "setup2.startHeading": "Which one should the roster start with?",
-  "setup2.pickModeFirst": "Pick at least one mode first.",
   "setup2.pollHeading": "How often should the roster catch up?",
   "setup2.pollHint":
     "More often than every few minutes demonstrably gains nothing: Blizzard's profile API only updates once the character logs out.",
@@ -112,8 +107,6 @@ export const en = {
   "settings.enterSecret": "Enter secret",
   "settings.secretNeverReturned":
     "Stored secrets are never sent back and never displayed.",
-  "settings.gameModes": "Game modes",
-  "settings.startView": "Start view",
   "settings.pollInterval": "Fetch interval",
   "settings.wclHint": "Optional. The part of the app that uses it is not built yet.",
   "settings.save": "Save",
@@ -121,7 +114,6 @@ export const en = {
 
   // ─── API-Fehlermeldungen (Settings-Route) ────────────────────────────────
   "settings.ownerOnly": "Only the owner of this instance may change the settings.",
-  "settings.atLeastOneMode": "At least one game mode must be selected.",
   "settings.clientIdRequired": "Without a client ID, sign-in is no longer possible.",
 
   // ─── Account-Sammlungen ──────────────────────────────────────────────────
@@ -198,11 +190,6 @@ export const de: Record<keyof typeof en, string> = {
     "Battle.net war nicht erreichbar. Das sagt nichts über die Zugangsdaten – nur, dass die Prüfung nicht stattfinden konnte.",
   "setup.unknownRegion": "Unbekannte Region.",
 
-  "setup2.modesHeading": "Welche Spielmodi interessieren dich?",
-  "setup2.modesHint":
-    "Nicht gewählte Modi verschwinden aus den Tabs. Das lässt sich jederzeit ändern.",
-  "setup2.startHeading": "Womit soll die Kaderliste starten?",
-  "setup2.pickModeFirst": "Wähle zuerst mindestens einen Modus.",
   "setup2.pollHeading": "Wie oft soll die Kaderliste nachziehen?",
   "setup2.pollHint":
     "Häufiger als ein paar Minuten bringt nachweislich nichts: die Profil-API von Blizzard aktualisiert erst, wenn der Charakter ausloggt.",
@@ -235,15 +222,12 @@ export const de: Record<keyof typeof en, string> = {
   "settings.enterSecret": "Secret eintragen",
   "settings.secretNeverReturned":
     "Gespeicherte Secrets werden nie zurückgesendet und nie angezeigt.",
-  "settings.gameModes": "Spielmodi",
-  "settings.startView": "Startansicht",
   "settings.pollInterval": "Abrufintervall",
   "settings.wclHint": "Optional. Der Teil der App, der das nutzt, ist noch nicht gebaut.",
   "settings.save": "Speichern",
   "settings.saved": "Gespeichert.",
 
   "settings.ownerOnly": "Nur der Besitzer dieser Instanz darf die Einstellungen ändern.",
-  "settings.atLeastOneMode": "Mindestens ein Spielmodus muss gewählt sein.",
   "settings.clientIdRequired": "Ohne Client ID ist keine Anmeldung mehr möglich.",
 
   "account.eyebrow": "Account",

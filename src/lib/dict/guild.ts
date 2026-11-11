@@ -42,8 +42,7 @@ export const en = {
   "guild.recentAchievements": "Recently earned guild achievements",
   "guild.achievementsEndpointFailed": "The guild achievements endpoint did not answer.",
   "guild.noAchievementsWithDate": "No guild achievements with a date available.",
-  "guild.activityEndpointFailedText":
-    "The activity endpoint did not answer. Classic modes do not carry it consistently.",
+  "guild.activityEndpointFailedText": "The activity endpoint did not answer. The WoW Forever API is not documented, so it may not carry this yet.",
   "guild.noEvents": "No events available.",
   "guild.achievementKind": "Achievement",
   "guild.bossKillKind": "Boss kill",
@@ -84,8 +83,7 @@ export const de: Record<keyof typeof en, string> = {
   "guild.recentAchievements": "Zuletzt erreichte Gildenerfolge",
   "guild.achievementsEndpointFailed": "Der Endpunkt für Gildenerfolge hat nicht geantwortet.",
   "guild.noAchievementsWithDate": "Keine Gildenerfolge mit Datum vorhanden.",
-  "guild.activityEndpointFailedText":
-    "Der Aktivitäts-Endpunkt hat nicht geantwortet. In den Classic-Modi führt die API ihn nicht durchgängig.",
+  "guild.activityEndpointFailedText": "Der Aktivitäts-Endpunkt hat nicht geantwortet. Die API von WoW Forever ist nicht dokumentiert und führt ihn womöglich noch nicht.",
   "guild.noEvents": "Keine Ereignisse vorhanden.",
   "guild.achievementKind": "Erfolg",
   "guild.bossKillKind": "Bosskill",

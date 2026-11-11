@@ -3,21 +3,12 @@
 import { useRouter } from "next/navigation"
 import { useState } from "react"
 import {
-  ALL_GAME_MODES,
   LANGUAGES,
   REGIONS,
   type AppConfigView,
   type Language,
 } from "@/lib/config-cache"
-import type { GameMode } from "@/lib/battlenet"
-import type { TranslationKey } from "@/lib/i18n"
 import { useT } from "./I18nProvider"
-
-const MODE_LABELS: Record<GameMode, TranslationKey> = {
-  retail: "mode.retail",
-  classic: "mode.classic",
-  "classic-era": "mode.classicEra",
-}
 
 /**
  * Einstellungen nach dem Setup.
@@ -36,24 +27,12 @@ export function SettingsForm({ config }: { config: AppConfigView }) {
   const [region, setRegion] = useState(config.region)
   const [clientId, setClientId] = useState(config.bnetClientId ?? "")
   const [clientSecret, setClientSecret] = useState("")
-  const [modes, setModes] = useState<GameMode[]>(config.gameModes)
-  const [defaultMode, setDefaultMode] = useState<GameMode>(config.defaultMode)
   const [pollSeconds, setPollSeconds] = useState(config.pollSeconds)
   const [wclId, setWclId] = useState(config.warcraftLogsClientId ?? "")
   const [wclSecret, setWclSecret] = useState("")
 
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null)
-
-  const effectiveDefault = modes.includes(defaultMode) ? defaultMode : modes[0]
-
-  function toggleMode(mode: GameMode) {
-    setModes((current) =>
-      current.includes(mode)
-        ? current.filter((m) => m !== mode)
-        : [...current, mode]
-    )
-  }
 
   async function save() {
     setSaving(true)
@@ -67,8 +46,6 @@ export function SettingsForm({ config }: { config: AppConfigView }) {
           region,
           bnetClientId: clientId,
           bnetClientSecret: clientSecret,
-          gameModes: modes,
-          defaultMode: effectiveDefault,
           pollSeconds,
           warcraftLogsClientId: wclId,
           warcraftLogsSecret: wclSecret,
@@ -171,36 +148,6 @@ export function SettingsForm({ config }: { config: AppConfigView }) {
       </section>
 
       <section>
-        <h3>{t("settings.gameModes")}</h3>
-        <div className="mt-3 flex flex-wrap gap-2">
-          {ALL_GAME_MODES.map((mode) => (
-            <button
-              key={mode}
-              type="button"
-              onClick={() => toggleMode(mode)}
-              className={`btn ${modes.includes(mode) ? "btn-primary" : "btn-secondary"}`}
-            >
-              {t(MODE_LABELS[mode])}
-            </button>
-          ))}
-        </div>
-
-        <h4 className="mt-6">{t("settings.startView")}</h4>
-        <div className="mt-2 flex flex-wrap gap-2">
-          {modes.map((mode) => (
-            <button
-              key={mode}
-              type="button"
-              onClick={() => setDefaultMode(mode)}
-              className={`btn ${effectiveDefault === mode ? "btn-primary" : "btn-secondary"}`}
-            >
-              {t(MODE_LABELS[mode])}
-            </button>
-          ))}
-        </div>
-      </section>
-
-      <section>
         <h3>{t("settings.pollInterval")}</h3>
         <label className="mt-3 block max-w-[200px]">
           <span className="eyebrow block">{t("setup2.seconds")}</span>
@@ -256,7 +203,7 @@ export function SettingsForm({ config }: { config: AppConfigView }) {
           type="button"
           className="btn btn-primary"
           onClick={save}
-          disabled={saving || modes.length === 0 || !clientId.trim()}
+          disabled={saving || !clientId.trim()}
         >
           {saving ? t("setup.saving") : t("settings.save")}
         </button>

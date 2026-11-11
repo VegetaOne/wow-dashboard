@@ -27,12 +27,10 @@ export interface CandidateTarget {
  */
 export function CandidateTooltip({
   target,
-  mode,
   cache,
   onLoaded,
 }: {
   target: CandidateTarget | null
-  mode: string
   cache: Record<number, ItemDetails>
   onLoaded: (items: Record<number, ItemDetails>) => void
 }) {
@@ -56,7 +54,7 @@ export function CandidateTooltip({
     let active = true
     setLoading(true)
 
-    fetch(`/api/wow/item?ids=${itemId}&mode=${mode}`)
+    fetch(`/api/wow/item?ids=${itemId}`)
       .then((r) => r.json())
       .then((data) => {
         if (active && data.items) onLoaded(data.items)
@@ -72,7 +70,7 @@ export function CandidateTooltip({
       active = false
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [itemId, known, mode])
+  }, [itemId, known])
 
   if (!target) return null
 

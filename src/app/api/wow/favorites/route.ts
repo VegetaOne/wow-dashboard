@@ -2,7 +2,8 @@ import { getServerSession } from "next-auth"
 import { NextRequest, NextResponse } from "next/server"
 import { getAuthOptions } from "@/lib/auth"
 import { getOrCreateUser, toggleFavorite } from "@/lib/db"
-import { GAME_MODES } from "@/lib/battlenet"
+import { isCharacterSlug } from "@/lib/battlenet"
+import { region } from "@/lib/runtime"
 
 export async function POST(req: NextRequest) {
   const session = await getServerSession(await getAuthOptions())
@@ -10,23 +11,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Nicht eingeloggt" }, { status: 401 })
   }
 
-  const body = await req.json()
-  const { characterName, realmSlug } = body
+  const body = await req.json().catch(() => null)
+  const slug = typeof body?.slug === "string" ? body.slug.toLowerCase() : ""
 
-  if (!characterName || !realmSlug) {
+  if (!isCharacterSlug(slug)) {
     return NextResponse.json({ error: "Fehlende Parameter" }, { status: 400 })
   }
 
-  // gameMode ist optional – ältere Clients schicken ihn nicht mit
-  const gameMode = GAME_MODES.find((m) => m.id === body.gameMode)?.id ?? "retail"
-
+  // Slugs sind nur je Region eindeutig – der Favorit gilt für die eingestellte
   const user = await getOrCreateUser(session.battleTag)
-  const isFavorite = await toggleFavorite(
-    user.id,
-    characterName,
-    realmSlug,
-    gameMode
-  )
+  const isFavorite = await toggleFavorite(user.id, region(), slug)
 
-  return NextResponse.json({ isFavorite, gameMode })
+  return NextResponse.json({ isFavorite })
 }

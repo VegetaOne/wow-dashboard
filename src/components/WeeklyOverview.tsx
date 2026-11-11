@@ -1,6 +1,5 @@
 import Link from "next/link"
 import { characterBase } from "@/lib/characterTabs"
-import type { GameMode } from "@/lib/battlenet"
 import type { CharacterWeek, InstanceStatus } from "@/lib/weekly"
 import type { Language } from "@/lib/config-cache"
 import {
@@ -14,8 +13,8 @@ import {
  * Tabelle der Wochenübersicht.
  *
  * Bewusst je Charakter eine Karte statt einer breiten Tabelle: die Zahl der
- * Instanzen ist je Modus verschieden, und eine Spalte je Instanz würde bei
- * Classic Era mit sieben Schlachtzügen noch gehen, bei Retail aber nicht.
+ * Instanzen wächst mit jedem neuen Schlachtzug, den Forever nachliefert, und
+ * eine Spalte je Instanz würde dann nicht mehr tragen.
  *
  * Server-Komponente: die Sprache kommt deshalb als Eigenschaft herein und
  * nicht über den Client-Kontext.
@@ -108,12 +107,10 @@ function InstanceRow({
 
 export function WeeklyOverview({
   characters,
-  mode,
   generatedAtMs,
   language,
 }: {
   characters: CharacterWeek[]
-  mode: GameMode
   generatedAtMs: number
   language: Language
 }) {
@@ -135,18 +132,19 @@ export function WeeklyOverview({
 
         return (
           <section
-            key={`${character.realmSlug}:${character.name}`}
+            key={character.slug}
             className="border-2 border-line"
           >
             <div className="flex flex-wrap items-baseline gap-3 border-b-2 border-line px-4 py-3">
               <Link
-                href={characterBase(mode, character.realmSlug, character.name)}
+                href={characterBase(character.slug)}
                 className="font-heading text-[17px] font-extrabold tracking-[-0.01em] no-underline"
               >
-                {character.name}
+                {character.surname
+                  ? `${character.name} ${character.surname}`
+                  : character.name}
               </Link>
               <span className="text-[13px] opacity-60">
-                {character.realmName} ·{" "}
                 {t("character.levelClass", { level: character.level })} ·{" "}
                 {character.className}
               </span>

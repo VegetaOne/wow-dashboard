@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useRef, useState } from "react"
-import type { GameMode, ItemDetails } from "@/lib/battlenet"
+import type { ItemDetails } from "@/lib/battlenet"
 import { QUALITY_COLORS } from "@/lib/battlenet"
 import { CandidateTooltip, type CandidateTarget } from "./CandidateTooltip"
 import { useT } from "./I18nProvider"
@@ -33,15 +33,7 @@ interface IndexStatus {
  * ohne Statgewichte ist keine Aussage darüber möglich, ob ein Item
  * für die Spezialisierung besser ist.
  */
-export function SlotCandidates({
-  realm,
-  name,
-  mode,
-}: {
-  realm: string
-  name: string
-  mode: GameMode
-}) {
+export function SlotCandidates({ slug }: { slug: string }) {
   const t = useT()
   const [slots, setSlots] = useState<SlotUpgrades[]>([])
   const [indexStatus, setIndexStatus] = useState<IndexStatus | null>(null)
@@ -69,7 +61,7 @@ export function SlotCandidates({
 
       try {
         const res = await fetch(
-          `/api/wow/item?ids=${missing.join(",")}&mode=${mode}`
+          `/api/wow/item?ids=${missing.join(",")}`
         )
         const data = await res.json()
         if (data.icons) setIcons((prev) => ({ ...prev, ...data.icons }))
@@ -78,7 +70,7 @@ export function SlotCandidates({
         for (const id of missing) requestedIcons.current.delete(id)
       }
     },
-    [mode, mergeItems]
+    [mergeItems]
   )
 
   function toggleSlot(slot: SlotUpgrades) {
@@ -87,19 +79,11 @@ export function SlotCandidates({
     if (next) loadIconsFor(slot.candidates)
   }
 
-  // Moduswechsel: Geladenes verwerfen, es gilt pro Modus
-  useEffect(() => {
-    setIcons({})
-    setItemCache({})
-    requestedIcons.current = new Set()
-    setOpenSlot(null)
-  }, [mode])
-
   useEffect(() => {
     let active = true
     setLoading(true)
 
-    fetch(`/api/wow/upgrades?realm=${realm}&name=${name}&mode=${mode}`)
+    fetch(`/api/wow/upgrades?character=${encodeURIComponent(slug)}`)
       .then((r) => r.json())
       .then((data) => {
         if (!active) return
@@ -116,7 +100,7 @@ export function SlotCandidates({
     return () => {
       active = false
     }
-  }, [realm, name, mode])
+  }, [slug])
 
   if (loading) {
     return (
@@ -150,7 +134,6 @@ export function SlotCandidates({
     <div className="border-2 border-line" onMouseLeave={() => setTooltip(null)}>
       <CandidateTooltip
         target={tooltip}
-        mode={mode}
         cache={itemCache}
         onLoaded={mergeItems}
       />
@@ -161,7 +144,7 @@ export function SlotCandidates({
         </span>
         <p className="mt-1 text-[12px] opacity-60">
           {t("loot.candidatesHint")}
-          {mode !== "retail" && <> {t("loot.classicLevelCaveat")}</>}{" "}
+          {" "}{t("loot.levelCaveat")}{" "}
           {t("loot.noDpsRating")}
         </p>
       </div>

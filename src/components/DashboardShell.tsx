@@ -2,9 +2,7 @@
 
 import { Suspense, useCallback, useState } from "react"
 import { Header } from "./Header"
-import { GameModeTabs } from "./GameModeTabs"
 import { CharacterGrid, POLL_MS } from "./CharacterGrid"
-import type { GameMode } from "@/lib/battlenet"
 import { WeeklyLink } from "./WeeklyLink"
 import { useT } from "./I18nProvider"
 
@@ -14,15 +12,10 @@ import { useT } from "./I18nProvider"
  */
 export function DashboardShell({
   battleTag,
-  modes,
-  defaultMode = "retail",
   pollSeconds = POLL_MS / 1000,
   isOwner = false,
 }: {
   battleTag?: string
-  /** Im Setup gewählte Spielmodi */
-  modes?: GameMode[]
-  defaultMode?: GameMode
   pollSeconds?: number
   /** Besitzer der Instanz – nur er darf die Sprache umstellen. */
   isOwner?: boolean
@@ -46,10 +39,6 @@ export function DashboardShell({
         canChangeLanguage={isOwner}
       />
 
-      <Suspense fallback={<div className="h-[70px] border-b-2 border-line" />}>
-        <GameModeTabs modes={modes} defaultMode={defaultMode} />
-      </Suspense>
-
       <main>
         <div className="flex flex-wrap items-center gap-4 border-b-2 border-line px-6 py-5">
           <div>
@@ -60,9 +49,7 @@ export function DashboardShell({
           </div>
 
           <div className="ml-auto">
-            <Suspense fallback={null}>
-              <WeeklyLink />
-            </Suspense>
+            <WeeklyLink />
           </div>
         </div>
 
@@ -76,7 +63,6 @@ export function DashboardShell({
           <CharacterGrid
             onSync={handleSync}
             pollMs={pollSeconds * 1000}
-            defaultMode={defaultMode}
           />
         </Suspense>
       </main>

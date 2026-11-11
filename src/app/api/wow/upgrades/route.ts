@@ -3,10 +3,9 @@ import { NextRequest, NextResponse } from "next/server"
 import { getAuthOptions } from "@/lib/auth"
 import {
   getCharacterEquipment,
-  GAME_MODES,
+  isCharacterSlug,
   SLOT_ORDER,
   SLOT_NAMES,
-  type GameMode,
 } from "@/lib/battlenet"
 import { getIndexStatus, getSlotCandidates, type LootCandidate } from "@/lib/loot"
 import { getT } from "@/lib/t"
@@ -35,16 +34,13 @@ export async function GET(req: NextRequest) {
   }
 
   const params = req.nextUrl.searchParams
-  const realm = params.get("realm")
-  const name = params.get("name")
-  const mode = (GAME_MODES.find((m) => m.id === params.get("mode"))?.id ??
-    "retail") as GameMode
+  const slug = (params.get("character") ?? "").toLowerCase()
 
-  if (!realm || !name) {
-    return NextResponse.json({ error: t("loot.realmAndNameRequired") }, { status: 400 })
+  if (!isCharacterSlug(slug)) {
+    return NextResponse.json({ error: t("core.characterSlugInvalid") }, { status: 400 })
   }
 
-  const indexStatus = await getIndexStatus(mode)
+  const indexStatus = await getIndexStatus()
 
   // Ohne Index gibt es nichts zu vergleichen – das sagen wir offen,
   // statt eine leere Liste als "keine Upgrades" auszugeben.
@@ -53,12 +49,7 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const equipment = await getCharacterEquipment(
-      realm,
-      name,
-      session.accessToken,
-      mode
-    )
+    const equipment = await getCharacterEquipment(slug, session.accessToken)
     const equipped = equipment.equipped_items ?? []
 
     const bySlot = new Map(
@@ -70,7 +61,7 @@ export async function GET(req: NextRequest) {
     const slots: SlotUpgrades[] = []
 
     for (const slotType of SLOT_ORDER) {
-      const candidates = await getSlotCandidates(mode, slotType)
+      const candidates = await getSlotCandidates(slotType)
       if (candidates.length === 0) continue
 
       const item = bySlot.get(slotType)

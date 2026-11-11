@@ -38,17 +38,18 @@ export function visibleTabs(): CharacterTab[] {
   return CHARACTER_TABS.filter((t) => t.enabled)
 }
 
-/** Basis-Pfad eines Charakters. Der Modus ist Teil der Adresse. */
-export function characterBase(mode: string, realm: string, name: string): string {
-  return `/dashboard/${mode}/${realm}/${name}`
+/**
+ * Basis-Pfad eines Charakters: `/dashboard/{name}-{surname}`.
+ *
+ * Seit WoW Forever gibt es weder Spielmodus noch Realm in der Adresse. Die
+ * statischen Geschwister (`account`, `woche`, `einstellungen`) kollidieren
+ * nicht: ein Charakter-Slug enthält immer einen Bindestrich.
+ */
+export function characterBase(characterSlug: string): string {
+  return `/dashboard/${encodeURIComponent(characterSlug)}`
 }
 
-export function tabHref(
-  mode: string,
-  realm: string,
-  name: string,
-  slug: string
-): string {
-  const base = characterBase(mode, realm, name)
-  return slug ? `${base}/${slug}` : base
+export function tabHref(characterSlug: string, tabSlug: string): string {
+  const base = characterBase(characterSlug)
+  return tabSlug ? `${base}/${tabSlug}` : base
 }

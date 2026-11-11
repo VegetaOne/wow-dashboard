@@ -1,13 +1,11 @@
 "use client"
 
 import { useCallback, useRef, useState } from "react"
-import type { GameMode } from "@/lib/battlenet"
 import type { ProfessionView, ProfessionTierView, TierCatalog } from "@/lib/professions"
 import { useT } from "./I18nProvider"
 
 interface ProfessionsPanelProps {
   professions: ProfessionView[]
-  mode: GameMode
 }
 
 const KIND_HEADING_BASE: Record<"primary" | "secondary", string> = {
@@ -15,7 +13,7 @@ const KIND_HEADING_BASE: Record<"primary" | "secondary", string> = {
   secondary: "professions.secondaryHeading",
 }
 
-export function ProfessionsPanel({ professions, mode }: ProfessionsPanelProps) {
+export function ProfessionsPanel({ professions }: ProfessionsPanelProps) {
   const t = useT()
   // Kataloge je Fertigkeitsstufe – erst auf Anforderung geladen
   const [catalogs, setCatalogs] = useState<Record<number, TierCatalog | null>>({})
@@ -31,7 +29,7 @@ export function ProfessionsPanel({ professions, mode }: ProfessionsPanelProps) {
 
       try {
         const res = await fetch(
-          `/api/wow/profession-tier?professionId=${professionId}&tierId=${tierId}&mode=${mode}`
+          `/api/wow/profession-tier?professionId=${professionId}&tierId=${tierId}`
         )
         const data = await res.json()
         setCatalogs((prev) => ({ ...prev, [tierId]: data.catalog ?? null }))
@@ -42,7 +40,7 @@ export function ProfessionsPanel({ professions, mode }: ProfessionsPanelProps) {
         setLoadingTier(null)
       }
     },
-    [mode]
+    []
   )
 
   function toggleTier(professionId: number, tier: ProfessionTierView) {
@@ -229,8 +227,8 @@ function TierRow({
             </span>
           )}
 
-          {/* Kein Katalog: die Classic-Namespaces führen Rezept-Stammdaten
-              nicht durchgängig. Dann nur zeigen, was bekannt ist. */}
+          {/* Kein Katalog: ob Forever Rezept-Stammdaten führt, ist nicht
+              belegt. Dann nur zeigen, was bekannt ist. */}
           {!isLoading && hasCatalog && !catalog && (
             <div>
               <p className="mb-2 text-[12px] opacity-60">

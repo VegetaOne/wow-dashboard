@@ -18,9 +18,8 @@
  * beantwortet nur: „lohnt es sich, das überhaupt anzuschauen?"
  */
 
-import { GAME_MODES, type GameMode } from "./battlenet"
+import { bnetGet } from "./battlenet"
 import type { PriceEntry } from "./auction"
-import { apiBase, locale } from "./runtime"
 
 /** Rezeptdaten sind statisch – eine Woche zwischenspeichern. */
 const STATIC_REVALIDATE = 60 * 60 * 24 * 7
@@ -208,22 +207,19 @@ export function requiredItemIds(recipes: RecipeDetail[]): number[] {
 
 export async function fetchRecipe(
   recipeId: number,
-  token: string,
-  mode: GameMode
+  token: string
 ): Promise<RecipeDetail | null> {
-  const config = GAME_MODES.find((m) => m.id === mode) ?? GAME_MODES[0]
-  const url = new URL(`${apiBase()}/data/wow/recipe/${recipeId}`)
-  url.searchParams.set("namespace", config.staticNamespace)
-  url.searchParams.set("locale", locale())
-
-  const res = await fetch(url.toString(), {
-    headers: { Authorization: `Bearer ${token}` },
-    next: { revalidate: STATIC_REVALIDATE },
-  })
-
   // Ein unbekanntes Rezept ist kein Grund, die ganze Tabelle scheitern
   // zu lassen – die Zeile fällt weg.
-  if (!res.ok) return null
-
-  return parseRecipe((await res.json()) as RawRecipe)
+  try {
+    const raw = await bnetGet<RawRecipe>(
+      `/data/wow/recipe/${recipeId}`,
+      token,
+      "static",
+      STATIC_REVALIDATE
+    )
+    return parseRecipe(raw)
+  } catch {
+    return null
+  }
 }

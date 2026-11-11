@@ -37,7 +37,6 @@ export const en = {
   "collections.accountOverviewLink": "to the account overview",
   "collections.titlesLoadFailed": "Titles could not be loaded.",
   "collections.toysLoadFailed": "Toys could not be loaded.",
-  "collections.classicNoToys": "Classic namespaces do not carry toys.",
 } as const
 
 export const de: Record<keyof typeof en, string> = {
@@ -67,5 +66,4 @@ export const de: Record<keyof typeof en, string> = {
   "collections.accountOverviewLink": "zur Account-Übersicht",
   "collections.titlesLoadFailed": "Titel konnten nicht geladen werden.",
   "collections.toysLoadFailed": "Spielzeug konnte nicht geladen werden.",
-  "collections.classicNoToys": "Die Classic-Namespaces führen Spielzeug nicht.",
 }

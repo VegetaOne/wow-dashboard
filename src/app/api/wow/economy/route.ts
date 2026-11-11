@@ -1,7 +1,7 @@
 import { getServerSession } from "next-auth"
 import { NextRequest, NextResponse } from "next/server"
 import { getAuthOptions } from "@/lib/auth"
-import { GAME_MODES, mapLimit, type GameMode } from "@/lib/battlenet"
+import { mapLimit } from "@/lib/battlenet"
 import { getPrices } from "@/lib/auction"
 import {
   fetchRecipe,
@@ -38,21 +38,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: t("core.invalidRequestBody") }, { status: 400 })
   }
 
-  const {
-    mode: requestedMode,
-    connectedRealmId,
-    houseId,
-    recipeIds,
-  } = (body ?? {}) as {
-    mode?: string
-    connectedRealmId?: number
+  const { houseId, recipeIds } = (body ?? {}) as {
     houseId?: number
     recipeIds?: unknown[]
   }
 
-  if (typeof connectedRealmId !== "number" || typeof houseId !== "number") {
+  if (typeof houseId !== "number") {
     return NextResponse.json(
-      { error: t("economy.connectedRealmAndHouseRequired") },
+      { error: t("economy.houseRequired") },
       { status: 400 }
     )
   }
@@ -65,21 +58,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ rows: [], unresolved: 0 })
   }
 
-  const mode = (GAME_MODES.find((m) => m.id === requestedMode)?.id ??
-    "retail") as GameMode
-
   try {
     const fetched = await mapLimit(ids, CONCURRENCY, (id) =>
-      fetchRecipe(id, session.accessToken!, mode)
+      fetchRecipe(id, session.accessToken!)
     )
 
     const recipes = fetched.filter((r): r is RecipeDetail => r !== null)
-    const prices = await getPrices(
-      mode,
-      connectedRealmId,
-      houseId,
-      requiredItemIds(recipes)
-    )
+    const prices = await getPrices(houseId, requiredItemIds(recipes))
 
     const rows: MarginRow[] = sortByMargin(
       recipes.map((recipe) => computeMargin(recipe, prices))

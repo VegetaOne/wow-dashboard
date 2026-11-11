@@ -4,8 +4,8 @@ import { useMemo, useState } from "react"
 import Link from "next/link"
 import type { GuildMember } from "@/lib/guild"
 import { rankLabel } from "@/lib/guild"
-import type { CharacterDetails, GameMode } from "@/lib/battlenet"
-import { CLASS_COLORS, detailKey } from "@/lib/battlenet"
+import type { CharacterDetails } from "@/lib/battlenet"
+import { CLASS_COLORS } from "@/lib/battlenet"
 import { characterBase } from "@/lib/characterTabs"
 import { useT, useFormat } from "./I18nProvider"
 
@@ -13,19 +13,14 @@ const PAGE = 40
 /** Obergrenze der API-Route – mehr nimmt sie pro Anfrage nicht an. */
 const BATCH = 40
 
-export function GuildRoster({
-  members,
-  mode,
-  /**
-   * Die Classic-APIs führen keine Gegenstandsstufen. Dann gibt es den
-   * Knopf gar nicht, statt ihn ins Leere laufen zu lassen.
-   */
-  canLoadItemLevels,
-}: {
-  members: GuildMember[]
-  mode: GameMode
-  canLoadItemLevels: boolean
-}) {
+/**
+ * Mitgliederliste einer Gilde. Forever-Mitglieder führen Vor- und Nachnamen
+ * und werden über ihren Slug adressiert, nicht über Realm und Name.
+ *
+ * Ob Forever eine Gegenstandsstufe im Profil führt, ist nicht belegt. Der
+ * Knopf bleibt darum, und fehlende Werte erscheinen als „—".
+ */
+export function GuildRoster({ members }: { members: GuildMember[] }) {
   const t = useT()
   const f = useFormat()
   const [query, setQuery] = useState("")
@@ -40,6 +35,7 @@ export function GuildRoster({
     return members.filter(
       (m) =>
         m.name.toLowerCase().includes(q) ||
+        (m.surname ?? "").toLowerCase().includes(q) ||
         (m.className ?? "").toLowerCase().includes(q) ||
         (m.raceName ?? "").toLowerCase().includes(q) ||
         rankLabel(m.rank).toLowerCase().includes(q)
@@ -49,7 +45,7 @@ export function GuildRoster({
   const shown = filtered.slice(0, limit)
 
   // Zeilen, die sichtbar sind und noch keine Gegenstandsstufe haben
-  const pending = shown.filter((m) => !(detailKey(m.realmSlug, m.name) in details))
+  const pending = shown.filter((m) => !(m.slug in details))
 
   async function loadItemLevels() {
     const batch = pending.slice(0, BATCH)
@@ -62,10 +58,7 @@ export function GuildRoster({
       const res = await fetch("/api/wow/character-details", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          mode,
-          characters: batch.map((m) => ({ realm: m.realmSlug, name: m.name })),
-        }),
+        body: JSON.stringify({ slugs: batch.map((m) => m.slug) }),
       })
 
       if (!res.ok) throw new Error(`Status ${res.status}`)
@@ -77,7 +70,7 @@ export function GuildRoster({
       // Auch Mitglieder ohne Antwort merken – sonst fragt der Knopf sie
       // bei jedem Klick erneut an, obwohl ihr Profil nicht abrufbar ist.
       const merged: Record<string, CharacterDetails> = {}
-      for (const m of batch) merged[detailKey(m.realmSlug, m.name)] = {}
+      for (const m of batch) merged[m.slug] = {}
       Object.assign(merged, data.details ?? {})
 
       setDetails((prev) => ({ ...prev, ...merged }))
@@ -118,7 +111,7 @@ export function GuildRoster({
           }}
         />
 
-        {canLoadItemLevels && pending.length > 0 && (
+        {pending.length > 0 && (
           <button
             onClick={loadItemLevels}
             disabled={loading}
@@ -156,12 +149,12 @@ export function GuildRoster({
       ) : (
         <>
           {shown.map((member) => {
-            const detail = details[detailKey(member.realmSlug, member.name)]
+            const detail = details[member.slug]
             const ilvl = detail?.equippedItemLevel
 
             return (
               <div
-                key={`${member.realmSlug}-${member.name}`}
+                key={member.slug}
                 className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5 border-b border-line px-4 py-2 last:border-0"
               >
                 <span className="w-24 flex-none">
@@ -169,7 +162,7 @@ export function GuildRoster({
                 </span>
 
                 <Link
-                  href={characterBase(mode, member.realmSlug, member.name)}
+                  href={characterBase(member.slug)}
                   className="min-w-0 flex-1 basis-[140px] truncate text-[13px] no-underline"
                   style={{
                     color:
@@ -178,7 +171,7 @@ export function GuildRoster({
                         : undefined,
                   }}
                 >
-                  {member.name}
+                  {member.surname ? `${member.name} ${member.surname}` : member.name}
                 </Link>
 
                 <span className="hidden w-32 flex-none truncate text-[12px] opacity-70 sm:block">
@@ -196,7 +189,7 @@ export function GuildRoster({
                   {member.level !== null ? f.number(member.level) : "—"}
                 </span>
 
-                {canLoadItemLevels && (
+                {(
                   <span
                     className="w-12 flex-none text-right"
                     style={{ fontVariantNumeric: "tabular-nums" }}

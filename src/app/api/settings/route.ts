@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { getAuthOptions } from "@/lib/auth"
 import {
-  ALL_GAME_MODES,
   REGIONS,
   isOwner,
   loadConfig,
@@ -10,7 +9,6 @@ import {
   toView,
   type Language,
 } from "@/lib/config"
-import type { GameMode } from "@/lib/battlenet"
 import { getT } from "@/lib/t"
 
 /**
@@ -49,21 +47,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: t("setup.unknownRegion") }, { status: 400 })
   }
 
-  const modes = Array.isArray(body.gameModes)
-    ? (body.gameModes as string[]).filter((m): m is GameMode =>
-        ALL_GAME_MODES.includes(m as GameMode)
-      )
-    : config.gameModes
-
-  if (modes.length === 0) {
-    return NextResponse.json(
-      { error: t("settings.atLeastOneMode") },
-      { status: 400 }
-    )
-  }
-
-  const requestedDefault = String(body.defaultMode ?? config.defaultMode) as GameMode
-
   const clientId = String(body.bnetClientId ?? "").trim()
   const clientSecret = String(body.bnetClientSecret ?? "").trim()
 
@@ -81,8 +64,6 @@ export async function POST(req: NextRequest) {
     region,
     bnetClientId: clientId,
     bnetClientSecret: clientSecret,
-    gameModes: modes,
-    defaultMode: modes.includes(requestedDefault) ? requestedDefault : modes[0],
     pollSeconds: Number(body.pollSeconds) || config.pollSeconds,
     warcraftLogsClientId: String(body.warcraftLogsClientId ?? ""),
     warcraftLogsSecret: String(body.warcraftLogsSecret ?? ""),

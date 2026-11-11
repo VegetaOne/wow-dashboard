@@ -1,6 +1,22 @@
 /**
- * Battle.net API Client
+ * Battle.net API Client für WoW Forever.
  * Alle Requests laufen server-seitig (Token verlässt nie das Backend).
+ *
+ * Seit 2026-11-11 kennt die App nur noch WoW Forever. Retail, Classic und
+ * Classic Era sind entfernt – siehe `docs/reihenfolge.md`.
+ *
+ * **Die Forever-API ist von Blizzard nicht dokumentiert.** Alles hier stammt
+ * aus Community-Tests (Stand 2026-11-11, Quellen in `docs/roadmap.md`) und
+ * kann sich ohne Ankündigung ändern. Darum liegen alle Namespaces und
+ * Pfadmuster an dieser einen Stelle, und Fehler tragen ihren HTTP-Status,
+ * damit die Ansichten ein 404 („noch keine Daten") von einem echten Fehler
+ * unterscheiden können.
+ *
+ * Was Forever anders adressiert als Retail und Classic:
+ * - Charaktere haben **keinen Realm**, sondern Vor- und Nachnamen, pro
+ *   Region eindeutig. Der Pfad ist `/profile/wow/character/{name}-{surname}`.
+ * - Gilden haben ebenfalls keinen Realm: `/data/wow/guild/{guild-slug}`.
+ * - Statt Realms gibt es Rulesets (PvP, Normal, Rollenspiel, …).
  */
 
 import { apiBase, locale, region } from "./runtime"
@@ -9,91 +25,115 @@ import type { TranslationKey } from "./i18n"
 /** Wie viele Charakter-Requests parallel laufen dürfen (Rate-Limit-Schutz) */
 const CONCURRENCY = 8
 
-// ─── Spielmodi ────────────────────────────────────────────────────────────────
+// ─── Namespaces ───────────────────────────────────────────────────────────────
 
-export type GameMode = "retail" | "classic" | "classic-era"
+/** Anzeigename des Spiels – steht über dem Charakterkopf. */
+export const GAME_LABEL = "WoW Forever"
 
-export interface GameModeConfig {
-  id: GameMode
-  label: string
-  /** Namespace für Profildaten (Charaktere, Ausrüstung) */
-  namespace: string
-  /** Namespace für statische Spieldaten (Item-Icons, Medien) */
-  staticNamespace: string
-  /** Namespace für veränderliche Spieldaten (Auktionen, verbundene Realms) */
-  dynamicNamespace: string
-  accent: string
-  /** Retail liefert ilvl + Avatar, Classic-Namespaces nicht */
-  hasRichProfile: boolean
-}
+export type NamespaceKind = "profile" | "static" | "dynamic"
 
 /**
- * Die Spielmodi.
+ * Gelernte Static-Namespaces je Region.
  *
- * Die Namespaces tragen die Region im Namen, und die Region steht seit dem
- * Setup in der Datenbank – sie kann sich also zur Laufzeit ändern. Deshalb
- * sind die drei Namespace-Felder **Getter**: als feste Zeichenketten wären
- * sie beim Laden des Moduls eingefroren und würden nach einer Umstellung
- * weiter auf die alte Region zeigen.
+ * Vor dem Start lieferte der unversionierte Name `static-forever-{region}`
+ * ein 403; nur die versionierte Form (`static-1.60.1_70399-forever-eu`)
+ * antwortete. Seit dem Start geht auch die unversionierte. Damit ein
+ * Rückfall nicht wieder alle Tooltips leert, wird die versionierte Form aus
+ * den Verweisen des Account-Profils gelernt (`playable_class.key.href`) und
+ * bei einem 403 der unversionierten Form benutzt – nie hart verdrahtet.
+ *
+ * Bewusst je Region: ein Wechsel der Region darf keinen Namespace der alten
+ * Region weiterverwenden.
  */
-export const GAME_MODES: GameModeConfig[] = [
-  {
-    id: "retail",
-    label: "Retail",
-    get namespace() {
-      return `profile-${region()}`
-    },
-    get staticNamespace() {
-      return `static-${region()}`
-    },
-    get dynamicNamespace() {
-      return `dynamic-${region()}`
-    },
-    accent: "#D4AF37",
-    hasRichProfile: true,
-  },
-  {
-    id: "classic",
-    label: "Classic",
-    get namespace() {
-      return `profile-classic-${region()}`
-    },
-    get staticNamespace() {
-      return `static-classic-${region()}`
-    },
-    get dynamicNamespace() {
-      return `dynamic-classic-${region()}`
-    },
-    accent: "#C9A227",
-    hasRichProfile: false,
-  },
-  {
-    id: "classic-era",
-    label: "Classic Era",
-    get namespace() {
-      return `profile-classic1x-${region()}`
-    },
-    get staticNamespace() {
-      return `static-classic1x-${region()}`
-    },
-    get dynamicNamespace() {
-      return `dynamic-classic1x-${region()}`
-    },
-    accent: "#7BA05B",
-    hasRichProfile: false,
-  },
-]
+const learnedStatic = new Map<string, string>()
 
 /**
- * Slots, die verzaubert werden können. Nur für Retail belegt –
- * für die Classic-Modi gelten andere Regeln, die hier nicht abgedeckt sind.
+ * Namespace für eine Datenart. Als Funktion, nicht als Konstante: die Region
+ * steht in der Datenbank und kann sich zur Laufzeit ändern.
  */
-export const ENCHANTABLE_SLOTS: Partial<Record<GameMode, string[]>> = {
-  retail: [
-    "MAIN_HAND", "OFF_HAND", "CHEST", "LEGS",
-    "FEET", "WRIST", "BACK", "FINGER_1", "FINGER_2",
-  ],
+export function namespace(kind: NamespaceKind): string {
+  return `${kind}-forever-${region()}`
 }
+
+/** Versionierter Static-Namespace, wenn einer gelernt wurde. */
+function learnedStaticNamespace(): string | null {
+  return learnedStatic.get(region()) ?? null
+}
+
+/**
+ * Static-Namespace aus einem API-Verweis lernen. Erwartet eine URL mit
+ * `namespace=static-…-forever-{region}` – alles andere wird ignoriert.
+ */
+export function learnStaticNamespace(href: string | undefined | null): void {
+  if (!href) return
+  try {
+    const ns = new URL(href).searchParams.get("namespace")
+    const current = region()
+    if (ns && ns.startsWith("static-") && ns.endsWith(`-forever-${current}`)) {
+      learnedStatic.set(current, ns)
+    }
+  } catch {
+    // Kein gültiger Verweis – nichts zu lernen
+  }
+}
+
+// ─── Charakter-Adressierung ───────────────────────────────────────────────────
+
+/**
+ * Slug eines Forever-Charakters: `{name}-{surname}`, klein geschrieben.
+ * Umlaute und Akzente bleiben – die URL-Kodierung übernimmt `characterPath`.
+ */
+export function characterSlug(name: string, surname: string): string {
+  return `${name.trim()}-${surname.trim()}`.toLowerCase()
+}
+
+/**
+ * Slug aus dem `character.href` des Account-Profils lesen. Das ist die
+ * verlässlichste Quelle: Blizzard baut den Verweis selbst, wir müssen die
+ * Schreibweise nicht nachbilden.
+ */
+export function slugFromHref(href: string | undefined | null): string | null {
+  if (!href) return null
+  try {
+    const path = new URL(href).pathname
+    const match = path.match(/\/profile\/wow\/character\/([^/]+)$/)
+    return match ? decodeURIComponent(match[1]).toLowerCase() : null
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Ein Slug, wie er aus der URL kommt, prüfen. Forever-Slugs enthalten immer
+ * einen Bindestrich zwischen Vor- und Nachnamen; ohne ihn ist es kein
+ * Forever-Charakter (etwa ein alter Link aus Retail-Zeiten).
+ */
+export function isCharacterSlug(slug: string): boolean {
+  return /^[^/\s]+-[^/\s]+$/.test(slug)
+}
+
+/** Profilpfad eines Charakters, optional mit Unterpfad. */
+export function characterPath(slug: string, sub?: string): string {
+  const base = `/profile/wow/character/${encodeURIComponent(slug.toLowerCase())}`
+  return sub ? `${base}/${sub}` : base
+}
+
+/** Anzeigename aus dem Slug, wenn die API keinen liefert: „anduin-wrynn" → „Anduin Wrynn". */
+export function displayNameFromSlug(slug: string): string {
+  return slug
+    .split("-")
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ")
+}
+
+/**
+ * Slots, die verzaubert werden können. Für Forever noch nicht belegt –
+ * deshalb leer: lieber keine Warnung „fehlende Verzauberung" als eine
+ * erfundene. Wird gefüllt, sobald mit echten Daten geprüft ist, welche Slots
+ * Verzauberungen tragen.
+ */
+export const ENCHANTABLE_SLOTS: string[] = []
 
 /** Slot-Anordnung wie im Charakterfenster: links, rechts, Waffen unten. */
 export const PAPERDOLL_LEFT = [
@@ -109,14 +149,16 @@ export const PAPERDOLL_WEAPONS = ["MAIN_HAND", "OFF_HAND"]
 
 export interface WoWCharacter {
   id: number
+  /** `{name}-{surname}`, klein – die Adresse des Charakters */
+  slug: string
   name: string
-  realm: { slug: string; name: string }
+  /** Nachname. `null`, wenn die API keinen liefert */
+  surname: string | null
   level: number
   faction: { type: "ALLIANCE" | "HORDE"; name: string }
   playable_class: { id: number; name: string }
   playable_race: { id: number; name: string }
   gender: { type: string; name: string }
-  gameMode: GameMode
   averageItemLevel?: number
   equippedItemLevel?: number
   avatarUrl?: string | null
@@ -130,7 +172,7 @@ export interface EquipmentSlot {
   /** Anzeigename des Gegenstands (oberste Ebene der API-Antwort) */
   name?: string
   quality?: { type: string; name?: string }
-  /** Die Classic-APIs liefern für viele Gegenstände keine Stufe */
+  /** Nicht jeder Gegenstand führt eine Stufe */
   level?: { value: number; display_string?: string }
   enchantments?: { display_string: string }[]
   sockets?: { socket_type: { type: string }; item?: { name?: string } }[]
@@ -148,20 +190,45 @@ export interface EquipmentSlot {
 }
 
 export interface CharacterEquipment {
-  character?: { name?: string; realm?: { slug?: string } }
+  character?: { name?: string }
   equipped_items?: EquipmentSlot[]
+}
+
+// ─── Fehler ───────────────────────────────────────────────────────────────────
+
+/**
+ * Fehler einer Battle.net-Anfrage, mit HTTP-Status.
+ *
+ * Der Status ist der Punkt: bei Forever heisst ein 404 oft „noch keine
+ * Daten" (Charakter unter Stufe 10, noch nie ausgeloggt, Bild noch nicht
+ * gerendert) und nicht „kaputt". Siehe `isNotFound`.
+ */
+export class BnetError extends Error {
+  constructor(
+    readonly status: number,
+    readonly path: string,
+    readonly ns: string
+  ) {
+    super(`Battle.net ${status} (${ns}): ${path}`)
+    this.name = "BnetError"
+  }
+}
+
+/** true, wenn der Fehler ein 404 der API ist – also „keine Daten", nicht „Fehler". */
+export function isNotFound(error: unknown): boolean {
+  return error instanceof BnetError && error.status === 404
 }
 
 // ─── Hilfsfunktionen ──────────────────────────────────────────────────────────
 
-async function bnetFetch<T>(
+async function rawFetch<T>(
   path: string,
   token: string,
-  namespace: string,
-  revalidate = 300
+  ns: string,
+  revalidate: number
 ): Promise<T> {
   const url = new URL(`${apiBase()}${path}`)
-  url.searchParams.set("namespace", namespace)
+  url.searchParams.set("namespace", ns)
   url.searchParams.set("locale", locale())
 
   const res = await fetch(url.toString(), {
@@ -169,11 +236,32 @@ async function bnetFetch<T>(
     next: { revalidate },
   })
 
-  if (!res.ok) {
-    throw new Error(`Battle.net ${res.status} (${namespace}): ${await res.text()}`)
-  }
-
+  if (!res.ok) throw new BnetError(res.status, path, ns)
   return res.json() as Promise<T>
+}
+
+/**
+ * Eine Anfrage an die Forever-API. Alle Module gehen hierüber, damit
+ * Namespace, Locale und Fehlerform an einer Stelle stehen.
+ *
+ * Für Static-Daten: antwortet die unversionierte Form mit 403 und ist eine
+ * versionierte gelernt, wird einmal mit dieser wiederholt.
+ */
+export async function bnetGet<T>(
+  path: string,
+  token: string,
+  kind: NamespaceKind,
+  revalidate = 300
+): Promise<T> {
+  try {
+    return await rawFetch<T>(path, token, namespace(kind), revalidate)
+  } catch (error) {
+    const fallback = kind === "static" ? learnedStaticNamespace() : null
+    if (fallback && error instanceof BnetError && error.status === 403) {
+      return rawFetch<T>(path, token, fallback, revalidate)
+    }
+    throw error
+  }
 }
 
 /** Führt fn über alle items aus, aber höchstens `limit` gleichzeitig. */
@@ -200,68 +288,104 @@ export async function mapLimit<T, R>(
 
 // ─── Charaktere laden ─────────────────────────────────────────────────────────
 
-interface RawCharacter {
-  id: number
-  name: string
-  realm: { slug: string; name: string }
-  level: number
-  faction: { type: string; name: string }
-  playable_class: { id: number; name: string }
-  playable_race: { id: number; name: string }
-  gender: { type: string; name: string }
+/**
+ * Eintrag der Account-Liste, so tolerant gelesen wie möglich. Laut
+ * Community-Tests trägt er `name`, `surname`, Klasse, Volk, Fraktion, Stufe
+ * und einen `character.href` – aber keinen Realm.
+ */
+interface RawAccountCharacter {
+  id?: number
+  name?: string
+  surname?: string
+  character?: { href?: string }
+  level?: number
+  faction?: { type?: string; name?: string }
+  playable_class?: { id?: number; name?: string; key?: { href?: string } }
+  playable_race?: { id?: number; name?: string; key?: { href?: string } }
+  gender?: { type?: string; name?: string }
+}
+
+/** Slug eines Account-Eintrags: zuerst aus dem Verweis, sonst aus Vor- und Nachname. */
+function accountEntrySlug(c: RawAccountCharacter): string | null {
+  const fromHref = slugFromHref(c.character?.href)
+  if (fromHref) return fromHref
+  if (c.name && c.surname) return characterSlug(c.name, c.surname)
+  return null
 }
 
 /**
- * Charaktere eines einzelnen Spielmodus.
- * Schlägt der Namespace fehl (z.B. Modus für den Account nicht vorhanden),
- * wird eine leere Liste zurückgegeben statt zu werfen.
+ * Alle Forever-Charaktere des Accounts als flache Liste – ein einziger
+ * API-Call.
+ *
+ * Bewusst OHNE Gegenstandsstufe und Avatar: die kosten zwei weitere Anfragen
+ * pro Charakter und würden den ersten Seitenaufbau um Dutzende Requests
+ * verzögern. Sie kommen über getCharacterDetails nach, wenn sie gebraucht werden.
+ *
+ * Die Account-Liste kann dem Charakterprofil um 20–40 Minuten nachlaufen,
+ * etwa bei der Stufe. Für Stufe und Ausrüstung gilt darum das Profil.
  */
-async function getCharactersForMode(
-  mode: GameModeConfig,
-  token: string
+export async function getCharacters(
+  token: string,
+  favoriteSlugs: Set<string>
 ): Promise<WoWCharacter[]> {
-  try {
-    const data = await bnetFetch<{
-      wow_accounts?: { characters: RawCharacter[] }[]
-    }>("/profile/user/wow", token, mode.namespace)
+  const data = await bnetGet<{
+    wow_accounts?: { characters?: RawAccountCharacter[] }[]
+  }>("/profile/user/wow", token, "profile")
 
-    const raw = (data.wow_accounts ?? []).flatMap((acc) => acc.characters ?? [])
+  const raw = (data.wow_accounts ?? []).flatMap((acc) => acc.characters ?? [])
 
-    return raw.map((c) => ({
-      id: c.id,
+  const characters: WoWCharacter[] = []
+  for (const c of raw) {
+    // Nebenbei die versionierte Static-Namespace lernen – siehe oben
+    learnStaticNamespace(c.playable_class?.key?.href ?? c.playable_race?.key?.href)
+
+    const slug = accountEntrySlug(c)
+    if (!slug || !c.name) continue
+
+    characters.push({
+      id: typeof c.id === "number" ? c.id : 0,
+      slug,
       name: c.name,
-      realm: c.realm,
-      level: c.level,
+      surname: c.surname ?? null,
+      level: typeof c.level === "number" ? c.level : 0,
       faction: {
-        type: c.faction.type === "ALLIANCE" ? "ALLIANCE" : "HORDE",
-        name: c.faction.name,
+        type: c.faction?.type === "HORDE" ? "HORDE" : "ALLIANCE",
+        name: c.faction?.name ?? "",
       },
-      playable_class: c.playable_class,
-      playable_race: c.playable_race,
-      gender: c.gender,
-      gameMode: mode.id,
-    }))
-  } catch (error) {
-    console.warn(
-      `[wow] Namespace ${mode.namespace} nicht verfügbar – übersprungen.`,
-      error instanceof Error ? error.message : error
-    )
-    return []
+      playable_class: {
+        id: c.playable_class?.id ?? 0,
+        name: c.playable_class?.name ?? "",
+      },
+      playable_race: {
+        id: c.playable_race?.id ?? 0,
+        name: c.playable_race?.name ?? "",
+      },
+      gender: { type: c.gender?.type ?? "", name: c.gender?.name ?? "" },
+      isFavorite: favoriteSlugs.has(slug),
+    })
   }
+
+  return characters.sort(
+    (a, b) => b.level - a.level || a.name.localeCompare(b.name)
+  )
 }
 
-/** ilvl eines Charakters – nur Retail liefert diese Werte */
+export interface CharacterDetails {
+  equippedItemLevel?: number
+  averageItemLevel?: number
+  avatarUrl?: string | null
+}
+
+/** Gegenstandsstufe eines Charakters – fehlt sie, bleibt sie leer. */
 async function fetchProfileDetails(
-  realm: string,
-  name: string,
-  token: string,
-  namespace: string
+  slug: string,
+  token: string
 ): Promise<{ averageItemLevel?: number; equippedItemLevel?: number }> {
   try {
-    const data = await bnetFetch<{
+    const data = await bnetGet<{
       average_item_level?: number
       equipped_item_level?: number
-    }>(`/profile/wow/character/${realm}/${name.toLowerCase()}`, token, namespace)
+    }>(characterPath(slug), token, "profile")
     return {
       averageItemLevel: data.average_item_level,
       equippedItemLevel: data.equipped_item_level,
@@ -272,17 +396,12 @@ async function fetchProfileDetails(
 }
 
 /** Avatar-URL eines Charakters */
-async function fetchAvatar(
-  realm: string,
-  name: string,
-  token: string,
-  namespace: string
-): Promise<string | null> {
+async function fetchAvatar(slug: string, token: string): Promise<string | null> {
   try {
-    const data = await bnetFetch<{ assets?: { key: string; value: string }[] }>(
-      `/profile/wow/character/${realm}/${name.toLowerCase()}/character-media`,
+    const data = await bnetGet<{ assets?: { key: string; value: string }[] }>(
+      characterPath(slug, "character-media"),
       token,
-      namespace
+      "profile"
     )
     return data.assets?.find((a) => a.key === "avatar")?.value ?? null
   } catch {
@@ -291,100 +410,78 @@ async function fetchAvatar(
 }
 
 /**
- * Charaktere eines Spielmodus als flache Liste – ein einziger API-Call.
+ * Gegenstandsstufe und Avatar für eine begrenzte Auswahl an Charakteren,
+ * je Slug. Wird vom Client nur für die Abschnitte angefragt, die er zeigt.
  *
- * Bewusst OHNE Gegenstandsstufe und Avatar: die kosten zwei weitere Anfragen
- * pro Charakter und würden den ersten Seitenaufbau um Dutzende Requests
- * verzögern. Sie kommen über getCharacterDetails nach, wenn sie gebraucht werden.
- */
-export async function getCharacters(
-  token: string,
-  modeId: GameMode,
-  favoriteKeys: Set<string>
-): Promise<WoWCharacter[]> {
-  const mode = GAME_MODES.find((m) => m.id === modeId) ?? GAME_MODES[0]
-  const characters = await getCharactersForMode(mode, token)
-
-  return characters
-    .map((char) => ({
-      ...char,
-      isFavorite: favoriteKeys.has(`${mode.id}:${char.realm.slug}:${char.name}`),
-    }))
-    .sort((a, b) => b.level - a.level || a.name.localeCompare(b.name))
-}
-
-export interface CharacterDetails {
-  equippedItemLevel?: number
-  averageItemLevel?: number
-  avatarUrl?: string | null
-}
-
-/** Schlüssel, unter dem Details zu einem Charakter geführt werden. */
-export function detailKey(realmSlug: string, name: string): string {
-  return `${realmSlug}:${name}`
-}
-
-/**
- * Gegenstandsstufe und Avatar für eine begrenzte Auswahl an Charakteren.
- * Wird vom Client nur für die Realm-Abschnitte angefragt, die er zeigt.
+ * Ob Forever eine Gegenstandsstufe im Profil führt, ist nicht belegt – fehlt
+ * sie, bleibt das Feld leer und die Oberfläche zeigt „—".
  */
 export async function getCharacterDetails(
-  refs: { realm: string; name: string }[],
-  token: string,
-  modeId: GameMode
+  slugs: string[],
+  token: string
 ): Promise<Record<string, CharacterDetails>> {
-  const mode = GAME_MODES.find((m) => m.id === modeId) ?? GAME_MODES[0]
-
-  // Die Classic-APIs führen diese Werte nicht – gar nicht erst anfragen.
-  if (!mode.hasRichProfile) return {}
-
-  const results = await mapLimit(refs, CONCURRENCY, async (ref) => {
-    const key = detailKey(ref.realm, ref.name)
+  const results = await mapLimit(slugs, CONCURRENCY, async (slug) => {
     try {
       const [details, avatarUrl] = await Promise.all([
-        fetchProfileDetails(ref.realm, ref.name, token, mode.namespace),
-        fetchAvatar(ref.realm, ref.name, token, mode.namespace),
+        fetchProfileDetails(slug, token),
+        fetchAvatar(slug, token),
       ])
-      return [key, { ...details, avatarUrl }] as const
+      return [slug, { ...details, avatarUrl }] as const
     } catch {
-      return [key, {} as CharacterDetails] as const
+      return [slug, {} as CharacterDetails] as const
     }
   })
 
   const map: Record<string, CharacterDetails> = {}
-  for (const [key, value] of results) map[key] = value
+  for (const [slug, value] of results) map[slug] = value
   return map
 }
 
-// ─── Ausrüstung ───────────────────────────────────────────────────────────────
+// ─── Charakterprofil und Ausrüstung ───────────────────────────────────────────
 
-export async function getCharacterEquipment(
-  realm: string,
-  name: string,
-  token: string,
-  mode: GameMode = "retail"
+export function getCharacterEquipment(
+  slug: string,
+  token: string
 ): Promise<CharacterEquipment> {
-  const config = GAME_MODES.find((m) => m.id === mode) ?? GAME_MODES[0]
-  return bnetFetch<CharacterEquipment>(
-    `/profile/wow/character/${realm}/${name.toLowerCase()}/equipment`,
-    token,
-    config.namespace
-  )
+  return bnetGet<CharacterEquipment>(characterPath(slug, "equipment"), token, "profile")
 }
 
+/** Was die Kopfzeile eines Charakters aus dem Profil braucht. */
+export interface CharacterProfileData {
+  name?: string
+  surname?: string
+  level?: number
+  /** Name des Rulesets (PvP, Normal, Rollenspiel …) statt eines Realms */
+  rulesetName?: string
+  rulesetId?: number
+  averageItemLevel?: number
+  equippedItemLevel?: number
+}
+
+/**
+ * Charakterprofil. Laut Community-Tests führt es `surname` und `ruleset`
+ * statt eines Realms; die Form von `ruleset` ist nicht belegt und wird
+ * tolerant gelesen.
+ */
 export async function getCharacterProfile(
-  realm: string,
-  name: string,
-  token: string,
-  mode: GameMode = "retail"
-): Promise<{ averageItemLevel?: number; equippedItemLevel?: number }> {
-  const config = GAME_MODES.find((m) => m.id === mode) ?? GAME_MODES[0]
-  const data = await bnetFetch<{
+  slug: string,
+  token: string
+): Promise<CharacterProfileData> {
+  const data = await bnetGet<{
+    name?: string
+    surname?: string
+    level?: number
+    ruleset?: { id?: number; name?: string; type?: string }
     average_item_level?: number
     equipped_item_level?: number
-  }>(`/profile/wow/character/${realm}/${name.toLowerCase()}`, token, config.namespace)
+  }>(characterPath(slug), token, "profile")
 
   return {
+    name: data.name,
+    surname: data.surname,
+    level: data.level,
+    rulesetName: data.ruleset?.name ?? data.ruleset?.type,
+    rulesetId: data.ruleset?.id,
     averageItemLevel: data.average_item_level,
     equippedItemLevel: data.equipped_item_level,
   }
@@ -396,22 +493,21 @@ const STATIC_REVALIDATE = 60 * 60 * 24 * 7
 /**
  * Icon-URLs zu Gegenstands-IDs.
  * Fehlende Icons werden ausgelassen statt zu werfen – ein Icon ist kein
- * Grund, die ganze Ausrüstungsseite scheitern zu lassen.
+ * Grund, die ganze Ausrüstungsseite scheitern zu lassen. Bei Forever fehlen
+ * für ältere Gegenstände häufig die Stammdaten (siehe `docs/roadmap.md`).
  */
 export async function getItemIcons(
   itemIds: number[],
-  token: string,
-  mode: GameMode = "retail"
+  token: string
 ): Promise<Record<number, string>> {
-  const config = GAME_MODES.find((m) => m.id === mode) ?? GAME_MODES[0]
   const unique = Array.from(new Set(itemIds.filter((id) => id > 0)))
 
   const results = await mapLimit(unique, CONCURRENCY, async (id) => {
     try {
-      const data = await bnetFetch<{ assets?: { key: string; value: string }[] }>(
+      const data = await bnetGet<{ assets?: { key: string; value: string }[] }>(
         `/data/wow/media/item/${id}`,
         token,
-        config.staticNamespace,
+        "static",
         STATIC_REVALIDATE
       )
       return [id, data.assets?.find((a) => a.key === "icon")?.value] as const
@@ -443,18 +539,18 @@ export interface ItemDetails {
 /**
  * Stammdaten mehrerer Gegenstände. Fehlende werden ausgelassen statt
  * zu werfen – ein Tooltip ist kein Grund, die Seite scheitern zu lassen.
+ * Der Aufrufer erkennt fehlende Stammdaten daran, dass die ID in der
+ * Antwort fehlt.
  */
 export async function getItemDetails(
   itemIds: number[],
-  token: string,
-  mode: GameMode = "retail"
+  token: string
 ): Promise<Record<number, ItemDetails>> {
-  const config = GAME_MODES.find((m) => m.id === mode) ?? GAME_MODES[0]
   const unique = Array.from(new Set(itemIds.filter((id) => id > 0)))
 
   const results = await mapLimit(unique, CONCURRENCY, async (id) => {
     try {
-      const data = await bnetFetch<{
+      const data = await bnetGet<{
         id?: number
         name?: string
         level?: number
@@ -470,7 +566,7 @@ export async function getItemDetails(
           binding?: { name?: string }
           level?: { value?: number }
         }
-      }>(`/data/wow/item/${id}`, token, config.staticNamespace, STATIC_REVALIDATE)
+      }>(`/data/wow/item/${id}`, token, "static", STATIC_REVALIDATE)
 
       const preview = data.preview_item
       const stats = (preview?.stats ?? [])
@@ -485,7 +581,7 @@ export async function getItemDetails(
         id,
         {
           id,
-          name: data.name ?? `Gegenstand ${id}`,
+          name: data.name ?? `#${id}`,
           itemLevel:
             typeof data.level === "number"
               ? data.level
@@ -510,53 +606,25 @@ export async function getItemDetails(
 }
 
 /** Rohantwort eines beliebigen Charakter-Unterpfads. */
-async function characterEndpoint(
-  path: string,
-  realm: string,
-  name: string,
-  token: string,
-  mode: GameMode
+function characterEndpoint(
+  slug: string,
+  sub: string,
+  token: string
 ): Promise<unknown> {
-  const config = GAME_MODES.find((m) => m.id === mode) ?? GAME_MODES[0]
-  return bnetFetch<unknown>(
-    `/profile/wow/character/${realm}/${name.toLowerCase()}/${path}`,
-    token,
-    config.namespace
-  )
+  return bnetGet<unknown>(characterPath(slug, sub), token, "profile")
 }
 
-export function getCharacterRaids(
-  realm: string, name: string, token: string, mode: GameMode = "retail"
-): Promise<unknown> {
-  return characterEndpoint("encounters/raids", realm, name, token, mode)
+export function getCharacterRaids(slug: string, token: string): Promise<unknown> {
+  return characterEndpoint(slug, "encounters/raids", token)
 }
 
-export function getCharacterDungeons(
-  realm: string, name: string, token: string, mode: GameMode = "retail"
-): Promise<unknown> {
-  return characterEndpoint("encounters/dungeons", realm, name, token, mode)
-}
-
-/** Nur Retail – die Classic-Namespaces antworten hier mit 404. */
-export function getCharacterMythicKeystone(
-  realm: string, name: string, token: string, mode: GameMode = "retail"
-): Promise<unknown> {
-  return characterEndpoint("mythic-keystone-profile", realm, name, token, mode)
+export function getCharacterDungeons(slug: string, token: string): Promise<unknown> {
+  return characterEndpoint(slug, "encounters/dungeons", token)
 }
 
 /** Rohantwort des professions-Endpunkts – Auswertung in professions.ts */
-export async function getCharacterProfessions(
-  realm: string,
-  name: string,
-  token: string,
-  mode: GameMode = "retail"
-): Promise<unknown> {
-  const config = GAME_MODES.find((m) => m.id === mode) ?? GAME_MODES[0]
-  return bnetFetch<unknown>(
-    `/profile/wow/character/${realm}/${name.toLowerCase()}/professions`,
-    token,
-    config.namespace
-  )
+export function getCharacterProfessions(slug: string, token: string): Promise<unknown> {
+  return characterEndpoint(slug, "professions", token)
 }
 
 export interface CharacterMedia {
@@ -569,23 +637,21 @@ export interface CharacterMedia {
 }
 
 /**
- * Bilder eines Charakters. Die Classic-APIs liefern hier meist nichts –
- * in dem Fall kommen überall null zurück statt eines Fehlers.
+ * Bilder eines Charakters. Bei Forever fehlen sie eine Weile, nachdem ein
+ * Charakter zum ersten Mal auftaucht (404) – in dem Fall kommen überall
+ * null zurück statt eines Fehlers.
  */
 export async function getCharacterMedia(
-  realm: string,
-  name: string,
-  token: string,
-  mode: GameMode = "retail"
+  slug: string,
+  token: string
 ): Promise<CharacterMedia> {
-  const config = GAME_MODES.find((m) => m.id === mode) ?? GAME_MODES[0]
   const empty: CharacterMedia = { avatar: null, inset: null, main: null }
 
   try {
-    const data = await bnetFetch<{ assets?: { key: string; value: string }[] }>(
-      `/profile/wow/character/${realm}/${name.toLowerCase()}/character-media`,
+    const data = await bnetGet<{ assets?: { key: string; value: string }[] }>(
+      characterPath(slug, "character-media"),
       token,
-      config.namespace
+      "profile"
     )
     const assets = data.assets ?? []
     const pick = (key: string) => assets.find((a) => a.key === key)?.value ?? null

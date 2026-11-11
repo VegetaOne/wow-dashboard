@@ -1,9 +1,8 @@
 import { getServerSession } from "next-auth"
 import { NextRequest, NextResponse } from "next/server"
 import { getAuthOptions } from "@/lib/auth"
-import { GAME_MODES, type GameMode } from "@/lib/battlenet"
 import {
-  resolveConnectedRealm,
+  listRulesets,
   listAuctionHouses,
   getHouseStatuses,
   refreshHouse,
@@ -12,66 +11,45 @@ import {
 import { getT } from "@/lib/t"
 
 /**
- * Der Auktionsabruf ist die grösste Anfrage der ganzen App – bei vollen
- * Realms über zehn Megabyte. Er läuft darum nur auf Anforderung, nie
- * beim Seitenaufruf, und immer nur für ein Haus.
+ * Der Auktionsabruf ist die grösste Anfrage der ganzen App – mehrere
+ * Megabyte je Haus. Er läuft darum nur auf Anforderung, nie beim
+ * Seitenaufruf, und immer nur für ein Haus.
  */
 export const maxDuration = 300
 
-function resolveMode(value: unknown): GameMode {
-  return (GAME_MODES.find((m) => m.id === value)?.id ?? "retail") as GameMode
-}
-
-/** Häuser eines Realms und der Stand ihres letzten Durchlaufs. */
-export async function GET(req: NextRequest) {
+/**
+ * Häuser der Region und der Stand ihres letzten Durchlaufs.
+ *
+ * WoW Forever führt Häuser je Ruleset, aber jedes Ruleset liefert dieselben.
+ * Gelesen wird darum über das erste Ruleset; welches, ist gleich.
+ */
+export async function GET() {
   const t = await getT()
   const session = await getServerSession(await getAuthOptions())
   if (!session?.accessToken) {
     return NextResponse.json({ error: t("core.notLoggedIn") }, { status: 401 })
   }
 
-  const realm = req.nextUrl.searchParams.get("realm")
-  if (!realm) {
-    return NextResponse.json({ error: t("economy.realmMissing") }, { status: 400 })
-  }
-
-  const mode = resolveMode(req.nextUrl.searchParams.get("mode"))
+  // Fehlt die Häuserliste, ist das die Auskunft, nicht ein Fehler der Seite:
+  // die Auktionsendpunkte von Forever sind nicht dokumentiert.
+  let rulesetId: number | null = null
+  let houses: AuctionHouse[] = []
+  let housesError: string | null = null
 
   try {
-    const connectedRealmId = await resolveConnectedRealm(
-      realm,
-      session.accessToken,
-      mode
-    )
-
-    // Die Häuserliste kann fehlen, obwohl der Realm existiert: in Classic Era
-    // antworten die Auktionsendpunkte laut Blizzards Forum seit Ende 2024 mit
-    // 404. Dann gibt es keine Häuser – und das ist die Auskunft, nicht ein Fehler.
-    let houses: AuctionHouse[]
-    let housesError: string | null = null
-    try {
-      houses = await listAuctionHouses(connectedRealmId, session.accessToken, mode)
-    } catch (error) {
-      houses = []
-      housesError =
-        error instanceof Error ? error.message : t("economy.housesUnavailable")
+    const rulesets = await listRulesets(session.accessToken)
+    rulesetId = rulesets[0]?.id ?? null
+    if (rulesetId !== null) {
+      houses = await listAuctionHouses(rulesetId, session.accessToken)
     }
-
-    const statuses = await getHouseStatuses(mode, connectedRealmId)
-
-    return NextResponse.json({
-      connectedRealmId,
-      houses,
-      housesError,
-      statuses,
-    })
   } catch (error) {
-    console.error("Fehler beim Auflösen des Auktionshauses:", error)
-    return NextResponse.json(
-      { error: t("economy.connectedRealmUnresolved") },
-      { status: 502 }
-    )
+    housesError =
+      error instanceof Error ? error.message : t("economy.housesUnavailable")
   }
+
+  const statuses = await getHouseStatuses()
+
+  return NextResponse.json({ rulesetId, houses, housesError, statuses })
 }
 
 /** Ein Haus neu einlesen. */
@@ -89,31 +67,22 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: t("core.invalidRequestBody") }, { status: 400 })
   }
 
-  const {
-    mode: requestedMode,
-    connectedRealmId,
-    houseId,
-    houseName,
-  } = (body ?? {}) as {
-    mode?: string
-    connectedRealmId?: number
+  const { rulesetId, houseId, houseName } = (body ?? {}) as {
+    rulesetId?: number
     houseId?: number
     houseName?: string
   }
 
-  if (typeof connectedRealmId !== "number" || typeof houseId !== "number") {
+  if (typeof rulesetId !== "number" || typeof houseId !== "number") {
     return NextResponse.json(
-      { error: t("economy.connectedRealmAndHouseRequired") },
+      { error: t("economy.rulesetAndHouseRequired") },
       { status: 400 }
     )
   }
 
-  const mode = resolveMode(requestedMode)
-
   try {
     const status = await refreshHouse(
-      mode,
-      connectedRealmId,
+      rulesetId,
       { id: houseId, name: houseName ?? t("economy.houseFallbackName", { id: houseId }) },
       session.accessToken
     )

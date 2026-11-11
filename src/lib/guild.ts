@@ -14,20 +14,22 @@
  *    wird sie nicht hier geholt, sondern im Client für die Zeilen, die
  *    tatsächlich sichtbar sind (über `/api/wow/character-details`).
  *
+ * WoW Forever: Gilden haben **keinen Realm**, sondern ein Ruleset. Der Pfad
+ * ist `/data/wow/guild/{guild-slug}` im Profil-Namespace; Mitglieder führen
+ * Vor- und Nachnamen und einen eigenen Slug (laut Community-Tests,
+ * Stand 2026-11-11 – tolerant gelesen).
+ *
  * Was die API ebenfalls nicht hergibt: **die Namen der Ränge.** Sie liefert
  * nur die Rangnummer. Rang 0 ist der Gildenmeister, alles darunter wird als
  * „Rang N" geführt – eine erfundene Bezeichnung wäre schlimmer als eine Zahl.
  */
 
-import { GAME_MODES, type GameMode } from "./battlenet"
-import { apiBase, locale } from "./runtime"
+import { bnetGet, characterPath, characterSlug } from "./battlenet"
 
 
 // ─── Sichten ──────────────────────────────────────────────────────────────────
 
 export interface GuildRef {
-  /** Realm der Gilde – nicht zwingend der des Charakters */
-  realmSlug: string
   /** Für den API-Pfad: klein, Leerzeichen als Bindestrich */
   slug: string
   /** Für die Anzeige, mit Gross-/Kleinschreibung und Leerzeichen */
@@ -36,7 +38,8 @@ export interface GuildRef {
 
 export interface GuildView {
   name: string
-  realmName: string | null
+  /** Ruleset der Gilde (PvP, Normal, Rollenspiel …), wenn die API es nennt */
+  rulesetName: string | null
   faction: string | null
   memberCount: number | null
   createdAt: number | null
@@ -45,7 +48,9 @@ export interface GuildView {
 
 export interface GuildMember {
   name: string
-  realmSlug: string
+  surname: string | null
+  /** `{name}-{surname}` – Adresse des Mitglieds */
+  slug: string
   level: number | null
   className: string | null
   classId: number | null
@@ -84,7 +89,7 @@ export interface GuildAchievementsView {
 export interface RawGuild {
   name?: string
   faction?: { name?: string }
-  realm?: { name?: string; slug?: string }
+  ruleset?: { name?: string; type?: string }
   member_count?: number
   created_timestamp?: number
   achievement_points?: number
@@ -94,10 +99,12 @@ export interface RawGuildRoster {
   members?: {
     character?: {
       name?: string
+      surname?: string
+      slug?: string
+      key?: { href?: string }
       level?: number
       playable_class?: { id?: number; name?: string }
       playable_race?: { name?: string }
-      realm?: { slug?: string }
     }
     rank?: number
   }[]
@@ -146,7 +153,7 @@ export function parseGuild(raw: RawGuild | null): GuildView | null {
 
   return {
     name: raw.name,
-    realmName: raw.realm?.name ?? null,
+    rulesetName: raw.ruleset?.name ?? raw.ruleset?.type ?? null,
     faction: raw.faction?.name ?? null,
     memberCount: typeof raw.member_count === "number" ? raw.member_count : null,
     createdAt:
@@ -162,12 +169,17 @@ export function parseRoster(raw: RawGuildRoster | null): GuildRosterView {
   const members = entries
     .map((m): GuildMember | null => {
       const name = m.character?.name
-      const realmSlug = m.character?.realm?.slug
-      if (!name || !realmSlug) return null
+      const surname = m.character?.surname ?? null
+      // Zuerst der Slug, den die API selbst nennt; sonst aus den Namen gebaut
+      const slug =
+        m.character?.slug?.toLowerCase() ??
+        (surname ? characterSlug(name ?? "", surname) : null)
+      if (!name || !slug) return null
 
       return {
         name,
-        realmSlug,
+        surname,
+        slug,
         level: typeof m.character?.level === "number" ? m.character.level : null,
         className: m.character?.playable_class?.name ?? null,
         classId:
@@ -274,22 +286,9 @@ export function parseGuildAchievements(
 
 // ─── Abrufe ───────────────────────────────────────────────────────────────────
 
-async function guildFetch<T>(
-  path: string,
-  token: string,
-  mode: GameMode
-): Promise<T> {
-  const config = GAME_MODES.find((m) => m.id === mode) ?? GAME_MODES[0]
-  const url = new URL(`${apiBase()}${path}`)
-  url.searchParams.set("namespace", config.namespace)
-  url.searchParams.set("locale", locale())
-
-  const res = await fetch(url.toString(), {
-    headers: { Authorization: `Bearer ${token}` },
-    next: { revalidate: 900 },
-  })
-  if (!res.ok) throw new Error(`Gilde ${res.status}: ${path}`)
-  return res.json() as Promise<T>
+/** Gildenabrufe laufen im Profil-Namespace, wie Charaktere. */
+function guildFetch<T>(path: string, token: string): Promise<T> {
+  return bnetGet<T>(path, token, "profile", 900)
 }
 
 /**
@@ -298,68 +297,59 @@ async function guildFetch<T>(
  * kein Fehler, sondern ein möglicher Zustand.
  */
 export async function fetchCharacterGuild(
-  realm: string,
-  name: string,
-  token: string,
-  mode: GameMode
+  slug: string,
+  token: string
 ): Promise<GuildRef | null> {
   const data = await guildFetch<{
-    guild?: { name?: string; realm?: { slug?: string } }
-  }>(`/profile/wow/character/${realm}/${name.toLowerCase()}`, token, mode)
+    guild?: { name?: string; slug?: string }
+  }>(characterPath(slug), token)
 
   const guildName = data.guild?.name
-  const guildRealm = data.guild?.realm?.slug
-  if (!guildName || !guildRealm) return null
+  if (!guildName) return null
 
   return {
-    realmSlug: guildRealm,
-    slug: guildSlug(guildName),
+    slug: data.guild?.slug?.toLowerCase() ?? guildSlug(guildName),
     name: guildName,
   }
 }
 
+/** Forever-Gilden haben keinen Realm im Pfad. */
 function guildPath(ref: GuildRef, suffix = ""): string {
-  return `/data/wow/guild/${ref.realmSlug}/${encodeURIComponent(ref.slug)}${suffix}`
+  return `/data/wow/guild/${encodeURIComponent(ref.slug)}${suffix}`
 }
 
 export function fetchGuild(
   ref: GuildRef,
-  token: string,
-  mode: GameMode
+  token: string
 ): Promise<RawGuild> {
-  return guildFetch<RawGuild>(guildPath(ref), token, mode)
+  return guildFetch<RawGuild>(guildPath(ref), token)
 }
 
 /** Mitgliederliste, gleich verdichtet – die Rohantwort ist zu gross zum Aufbewahren. */
 export async function fetchRoster(
   ref: GuildRef,
-  token: string,
-  mode: GameMode
+  token: string
 ): Promise<GuildRosterView> {
   const raw = await guildFetch<RawGuildRoster>(
     guildPath(ref, "/roster"),
-    token,
-    mode
+    token
   )
   return parseRoster(raw)
 }
 
 export function fetchGuildActivity(
   ref: GuildRef,
-  token: string,
-  mode: GameMode
+  token: string
 ): Promise<RawGuildActivity> {
-  return guildFetch<RawGuildActivity>(guildPath(ref, "/activity"), token, mode)
+  return guildFetch<RawGuildActivity>(guildPath(ref, "/activity"), token)
 }
 
 export function fetchGuildAchievements(
   ref: GuildRef,
-  token: string,
-  mode: GameMode
+  token: string
 ): Promise<RawGuildAchievements> {
   return guildFetch<RawGuildAchievements>(
     guildPath(ref, "/achievements"),
-    token,
-    mode
+    token
   )
 }

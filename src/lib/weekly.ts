@@ -12,7 +12,7 @@
  * Instanz steht, taucht hier noch nicht auf.
  */
 
-import type { GameMode, WoWCharacter } from "./battlenet"
+import type { WoWCharacter } from "./battlenet"
 import { attempt, raids, type CharacterRef } from "./character"
 import { parseProgress, type ExpansionProgress } from "./progress"
 import { lockoutFor } from "./lockouts"
@@ -51,8 +51,9 @@ export interface InstanceStatus {
 
 export interface CharacterWeek {
   name: string
-  realmSlug: string
-  realmName: string
+  surname: string | null
+  /** `{name}-{surname}` – Adresse des Charakters */
+  slug: string
   level: number
   className: string
   faction: "ALLIANCE" | "HORDE"
@@ -110,7 +111,6 @@ async function pooled<T, R>(
  */
 function relevantInstances(
   expansions: ExpansionProgress[],
-  mode: GameMode,
   now: Date,
   cfg: ResetConfig
 ): InstanceStatus[] {
@@ -121,7 +121,7 @@ function relevantInstances(
 
   for (const expansion of expansions) {
     for (const instance of expansion.instances) {
-      const lockout = lockoutFor(mode, instance.name)
+      const lockout = lockoutFor(instance.name)
       const window = lockoutWindow(now, cfg, lockout.days)
 
       const cleared: DifficultyStatus[] = []
@@ -181,30 +181,25 @@ function relevantInstances(
 export async function buildWeeklyOverview(
   characters: WoWCharacter[],
   token: string,
-  mode: GameMode,
   now: Date = new Date()
 ): Promise<WeeklyOverviewData> {
   const cfg = resetConfig()
   const week = lockoutWindow(now, cfg, 7)
 
   const rows = await pooled(characters, async (character): Promise<CharacterWeek> => {
-    const ref: CharacterRef = {
-      realm: character.realm.slug,
-      name: character.name,
-      mode,
-    }
+    const ref: CharacterRef = { slug: character.slug }
 
     const result = await attempt(() => raids(ref, token))
     const expansions = parseProgress(result.value)
 
     return {
       name: character.name,
-      realmSlug: character.realm.slug,
-      realmName: character.realm.name,
+      surname: character.surname,
+      slug: character.slug,
       level: character.level,
       className: character.playable_class?.name ?? "—",
       faction: character.faction?.type ?? "ALLIANCE",
-      instances: relevantInstances(expansions, mode, now, cfg),
+      instances: relevantInstances(expansions, now, cfg),
       failed: result.failed,
       stale: result.stale,
       fetchedAt: result.fetchedAt,

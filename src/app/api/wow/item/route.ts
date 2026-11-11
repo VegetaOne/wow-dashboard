@@ -1,7 +1,7 @@
 import { getServerSession } from "next-auth"
 import { NextRequest, NextResponse } from "next/server"
 import { getAuthOptions } from "@/lib/auth"
-import { getItemDetails, getItemIcons, GAME_MODES, type GameMode } from "@/lib/battlenet"
+import { getItemDetails, getItemIcons } from "@/lib/battlenet"
 
 /** Obergrenze, damit ein Client nicht den halben Index durchfragt. */
 const MAX_IDS = 12
@@ -17,9 +17,6 @@ export async function GET(req: NextRequest) {
   }
 
   const params = req.nextUrl.searchParams
-  const mode = (GAME_MODES.find((m) => m.id === params.get("mode"))?.id ??
-    "retail") as GameMode
-
   const ids = (params.get("ids") ?? "")
     .split(",")
     .map((s) => Number.parseInt(s.trim(), 10))
@@ -32,8 +29,8 @@ export async function GET(req: NextRequest) {
 
   try {
     const [items, icons] = await Promise.all([
-      getItemDetails(ids, session.accessToken, mode),
-      getItemIcons(ids, session.accessToken, mode),
+      getItemDetails(ids, session.accessToken),
+      getItemIcons(ids, session.accessToken),
     ])
     return NextResponse.json({ items, icons })
   } catch (error) {

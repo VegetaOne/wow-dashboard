@@ -1,22 +1,16 @@
 import { getServerSession } from "next-auth"
 import { NextRequest, NextResponse } from "next/server"
 import { getAuthOptions } from "@/lib/auth"
-import { GAME_MODES, type GameMode } from "@/lib/battlenet"
 import { getIndexStatus, startIndex, indexNextInstance } from "@/lib/loot"
 
-function resolveMode(req: NextRequest): GameMode {
-  const requested = req.nextUrl.searchParams.get("mode")
-  return (GAME_MODES.find((m) => m.id === requested)?.id ?? "retail") as GameMode
-}
-
 /** Aktueller Stand des Loot-Index. */
-export async function GET(req: NextRequest) {
+export async function GET() {
   const session = await getServerSession(await getAuthOptions())
   if (!session?.accessToken) {
     return NextResponse.json({ error: "Nicht eingeloggt" }, { status: 401 })
   }
 
-  const status = await getIndexStatus(resolveMode(req))
+  const status = await getIndexStatus()
   return NextResponse.json({ status })
 }
 
@@ -30,8 +24,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Nicht eingeloggt" }, { status: 401 })
   }
 
-  const mode = resolveMode(req)
-
   let action = "step"
   try {
     const body = await req.json()
@@ -43,8 +35,8 @@ export async function POST(req: NextRequest) {
   try {
     const status =
       action === "start"
-        ? await startIndex(session.accessToken, mode)
-        : await indexNextInstance(session.accessToken, mode)
+        ? await startIndex(session.accessToken)
+        : await indexNextInstance(session.accessToken)
 
     return NextResponse.json({ status })
   } catch (error) {

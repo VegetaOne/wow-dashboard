@@ -1,12 +1,17 @@
 # WoW Dashboard – Wochenübersicht
 
 > Stand: 2026-09-16 · gebaut, noch nicht im laufenden Betrieb geprüft
+> **Nachtrag 2026-11-11:** Die App kennt nur noch WoW Forever. Die Seite liegt unter
+> `/dashboard/woche`. Die Vanilla-Tabelle unten gilt für Forever als **Annahme** – jede
+> Bindungsdauer wird als „angenommen" angezeigt, bis sie mit echten Daten belegt ist
+> (`CONFIRMED` in `src/lib/lockouts.ts`). Die Abschnitte zu Retail und Classic sind
+> Geschichte und bleiben als Begründung stehen.
 
 ## Was entschieden wurde
 
 | Thema | Entscheid |
 | --- | --- |
-| **Ort** | Eigene Account-Seite unter `/dashboard/[mode]/woche`, kein Charakter-Tab. Die Frage „was steht noch an" stellt sich für den ganzen Kader. |
+| **Ort** | Eigene Account-Seite unter `/dashboard/woche`, kein Charakter-Tab. Die Frage „was steht noch an" stellt sich für den ganzen Kader. |
 | **Statusquelle** | `last_kill_timestamp` aus dem Schlachtzug-Endpunkt, nicht Snapshot-Diffs. |
 | **Lockout-Tabelle** | Vollständig für Classic Era angelegt, Handpflege im Repo. |
 | **Modi** | Classic und Classic Era gemeinsam; Retail läuft über denselben Weg mit. |

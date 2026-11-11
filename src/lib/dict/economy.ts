@@ -9,13 +9,11 @@
 
 export const en = {
   "economy.houseUnreachable.title": "Auction house not reachable",
-  "economy.houseUnreachable.body":
-    "The auction houses of this realm are not available.",
+  "economy.houseUnreachable.body": "The auction houses are not available right now.",
   "economy.loadingHouses": "Loading auction houses…",
-  "economy.noDataForMode": "No auction data for this mode",
-  "economy.noHouseForRealm": "The API has no auction house for this realm.",
-  "economy.classicEraNote":
-    "In Classic Era, the auction endpoints have answered 404 since late 2024, according to Blizzard's own forum. Once they respond again, the houses appear here without any change to the app.",
+  "economy.noHouses": "No auction houses",
+  "economy.noHousesText": "The API lists no auction house for WoW Forever right now.",
+  "economy.foreverNote": "The auction endpoints of WoW Forever are not documented by Blizzard. Houses are listed per ruleset, and every ruleset returns the same ones. If the API changes, this view says so instead of showing wrong prices.",
 
   "economy.house": "House",
   "economy.readingIn": "Reading…",
@@ -58,11 +56,9 @@ export const en = {
   "economy.andMore": "and {count} more",
 
   // ─── API-Routen (auction-index, economy) ─────────────────────────────────
-  "economy.realmMissing": "Realm missing",
   "economy.housesUnavailable": "Houses not available",
-  "economy.connectedRealmUnresolved": "Connected realm could not be determined",
-  "economy.connectedRealmAndHouseRequired":
-    "connectedRealmId and houseId are required",
+  "economy.rulesetAndHouseRequired": "rulesetId and houseId are required",
+  "economy.houseRequired": "houseId is required",
   "economy.houseFallbackName": "House {id}",
   "economy.fetchFailed": "Fetch failed",
   "economy.calculationFailedApi": "Calculation failed",
@@ -70,13 +66,11 @@ export const en = {
 
 export const de: Record<keyof typeof en, string> = {
   "economy.houseUnreachable.title": "Auktionshaus nicht erreichbar",
-  "economy.houseUnreachable.body":
-    "Die Auktionshäuser dieses Realms sind nicht abrufbar.",
+  "economy.houseUnreachable.body": "Die Auktionshäuser sind gerade nicht abrufbar.",
   "economy.loadingHouses": "Auktionshäuser werden geladen…",
-  "economy.noDataForMode": "Keine Auktionsdaten für diesen Modus",
-  "economy.noHouseForRealm": "Die API führt für diesen Realm kein Auktionshaus.",
-  "economy.classicEraNote":
-    "In Classic Era antworten die Auktionsendpunkte laut Blizzards eigenem Forum seit Ende 2024 mit 404. Sobald sie wieder liefern, erscheinen die Häuser hier ohne Änderung an der App.",
+  "economy.noHouses": "Keine Auktionshäuser",
+  "economy.noHousesText": "Die API führt für WoW Forever gerade kein Auktionshaus.",
+  "economy.foreverNote": "Die Auktionsendpunkte von WoW Forever sind von Blizzard nicht dokumentiert. Häuser werden je Ruleset geführt, und jedes Ruleset liefert dieselben. Ändert sich die API, sagt diese Ansicht das, statt falsche Preise zu zeigen.",
 
   "economy.house": "Haus",
   "economy.readingIn": "Liest ein…",
@@ -118,11 +112,9 @@ export const de: Record<keyof typeof en, string> = {
   "economy.noOfferFor": "Kein Angebot für: {items}",
   "economy.andMore": "und {count} weitere",
 
-  "economy.realmMissing": "Realm fehlt",
   "economy.housesUnavailable": "Häuser nicht abrufbar",
-  "economy.connectedRealmUnresolved": "Verbundener Realm nicht ermittelbar",
-  "economy.connectedRealmAndHouseRequired":
-    "connectedRealmId und houseId sind Pflicht",
+  "economy.rulesetAndHouseRequired": "rulesetId und houseId sind Pflicht",
+  "economy.houseRequired": "houseId ist Pflicht",
   "economy.houseFallbackName": "Haus {id}",
   "economy.fetchFailed": "Abruf fehlgeschlagen",
   "economy.calculationFailedApi": "Berechnung fehlgeschlagen",

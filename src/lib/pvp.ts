@@ -5,12 +5,12 @@
  * Hat ein Charakter eine Klasse nie gespielt, antwortet der Endpunkt mit
  * 404 – das ist hier kein Fehler, sondern bedeutet „nicht gespielt".
  *
- * PvP gibt es nur in Retail sinnvoll; die Classic-Namespaces führen
- * diese Endpunkte nicht durchgängig.
+ * WoW Forever: `pvp-summary` liefert laut Community-Tests. Ob es gewertete
+ * Klassen gibt, ist nicht belegt – fehlen sie, antworten die Endpunkte mit
+ * 404, und das heisst hier wie immer „nicht gespielt".
  */
 
-import { GAME_MODES, type GameMode } from "./battlenet"
-import { apiBase, locale } from "./runtime"
+import { bnetGet, characterPath } from "./battlenet"
 
 
 /** Die gewerteten Klassen, wie die API sie im Pfad erwartet. */
@@ -128,35 +128,15 @@ export function winRate(rec: MatchRecord | null): number | null {
 
 // ─── Abrufe ───────────────────────────────────────────────────────────────────
 
-async function pvpFetch<T>(
-  path: string,
-  token: string,
-  mode: GameMode
-): Promise<T> {
-  const config = GAME_MODES.find((m) => m.id === mode) ?? GAME_MODES[0]
-  const url = new URL(`${apiBase()}${path}`)
-  url.searchParams.set("namespace", config.namespace)
-  url.searchParams.set("locale", locale())
-
-  const res = await fetch(url.toString(), {
-    headers: { Authorization: `Bearer ${token}` },
-    next: { revalidate: 900 },
-  })
-  if (!res.ok) throw new Error(`PvP ${res.status}: ${path}`)
-  return res.json() as Promise<T>
+function pvpFetch<T>(path: string, token: string): Promise<T> {
+  return bnetGet<T>(path, token, "profile", 900)
 }
 
 export function fetchPvpSummary(
-  realm: string,
-  name: string,
-  token: string,
-  mode: GameMode
+  slug: string,
+  token: string
 ): Promise<RawPvpSummary> {
-  return pvpFetch<RawPvpSummary>(
-    `/profile/wow/character/${realm}/${name.toLowerCase()}/pvp-summary`,
-    token,
-    mode
-  )
+  return pvpFetch<RawPvpSummary>(characterPath(slug, "pvp-summary"), token)
 }
 
 /**
@@ -164,17 +144,14 @@ export function fetchPvpSummary(
  * das heisst, der Charakter hat diese Klasse nie gespielt.
  */
 export async function fetchBracket(
-  realm: string,
-  name: string,
+  slug: string,
   bracket: string,
-  token: string,
-  mode: GameMode
+  token: string
 ): Promise<RawBracket | null> {
   try {
     return await pvpFetch<RawBracket>(
-      `/profile/wow/character/${realm}/${name.toLowerCase()}/pvp-bracket/${bracket}`,
-      token,
-      mode
+      characterPath(slug, `pvp-bracket/${bracket}`),
+      token
     )
   } catch {
     return null

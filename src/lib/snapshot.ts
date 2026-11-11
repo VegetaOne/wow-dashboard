@@ -15,7 +15,7 @@
  */
 
 import { prisma } from "./db"
-import type { GameMode } from "./battlenet"
+import { region } from "./runtime"
 
 /** Bekannte Datensätze. Neue Features tragen sich hier ein. */
 export type Dataset =
@@ -27,7 +27,6 @@ export type Dataset =
   | "achievements"
   | "raids"
   | "dungeons"
-  | "mythic-keystone"
   | "reputations"
   | "titles"
   | "statistics"
@@ -47,10 +46,18 @@ export type Dataset =
   | "account-mounts"
   | "account-pets"
 
+/**
+ * Schlüssel eines Datensatzes.
+ *
+ * Seit der Umstellung auf WoW Forever ist ein Charakter `{name}-{surname}`
+ * ohne Realm. Eindeutig ist dieser Slug nur **je Region** – die Region
+ * gehört darum in jede Zeile. Sie kommt nicht aus dem Schlüssel, sondern
+ * wird beim Lesen und Schreiben aus der Konfiguration genommen
+ * (`region()`): so zeigt ein Wechsel der Region nie Stände der alten.
+ */
 export interface SnapshotKey {
-  gameMode: GameMode
-  realmSlug: string
-  charName: string
+  /** Charakter-Slug, `@account` oder `@guild:<slug>` */
+  charSlug: string
   dataset: Dataset
 }
 
@@ -62,32 +69,22 @@ export interface SnapshotKey {
 export const ACCOUNT_SCOPE = "@account"
 
 export function accountKey(dataset: Dataset): SnapshotKey {
-  return {
-    // Der Modus zählt hier nicht, ist im Schlüssel aber Pflicht
-    gameMode: "retail",
-    realmSlug: ACCOUNT_SCOPE,
-    charName: ACCOUNT_SCOPE,
-    dataset,
-  }
+  return { charSlug: ACCOUNT_SCOPE, dataset }
+}
+
+/** Schlüssel eines Charakter-Datensatzes. */
+export function characterKey(slug: string, dataset: Dataset): SnapshotKey {
+  return { charSlug: slug, dataset }
 }
 
 /**
  * Schlüssel für gildengebundene Datensätze. Eine Gilde gehört nicht zu einem
  * Charakter – sonst läge dieselbe Mitgliederliste einmal je Gildenmitglied in
- * der Tabelle. Sie nutzt dieselbe Tabelle, nur mit der Gilde im Namensfeld.
+ * der Tabelle. Sie nutzt dieselbe Tabelle, nur mit der Gilde im Schlüssel.
+ * Forever-Gilden haben wie Charaktere keinen Realm.
  */
-export function guildKey(
-  gameMode: GameMode,
-  realmSlug: string,
-  guildSlug: string,
-  dataset: Dataset
-): SnapshotKey {
-  return {
-    gameMode,
-    realmSlug,
-    charName: `@guild:${guildSlug}`,
-    dataset,
-  }
+export function guildKey(guildSlug: string, dataset: Dataset): SnapshotKey {
+  return { charSlug: `@guild:${guildSlug}`, dataset }
 }
 
 export interface SnapshotResult<T> {
@@ -107,8 +104,12 @@ function today(): string {
   return new Date().toISOString().slice(0, 10)
 }
 
-function normalize(key: SnapshotKey): SnapshotKey {
-  return { ...key, charName: key.charName.toLowerCase() }
+interface ScopedKey extends SnapshotKey {
+  region: string
+}
+
+function normalize(key: SnapshotKey): ScopedKey {
+  return { ...key, charSlug: key.charSlug.toLowerCase(), region: region() }
 }
 
 /** Was wir aus einer gespeicherten Zeile brauchen – entkoppelt von Prismas Typ. */
@@ -123,9 +124,8 @@ async function readLatest(key: SnapshotKey): Promise<StoredSnapshot | null> {
   const k = normalize(key)
   const rows = await prisma.characterSnapshot.findMany({
     where: {
-      gameMode: k.gameMode,
-      realmSlug: k.realmSlug,
-      charName: k.charName,
+      region: k.region,
+      charSlug: k.charSlug,
       dataset: k.dataset,
     },
     orderBy: { day: "desc" },
@@ -144,19 +144,17 @@ async function write(key: SnapshotKey, payload: unknown): Promise<Date> {
 
   await prisma.characterSnapshot.upsert({
     where: {
-      gameMode_realmSlug_charName_dataset_day: {
-        gameMode: k.gameMode,
-        realmSlug: k.realmSlug,
-        charName: k.charName,
+      region_charSlug_dataset_day: {
+        region: k.region,
+        charSlug: k.charSlug,
         dataset: k.dataset,
         day,
       },
     },
     update: { payload: JSON.stringify(payload), fetchedAt },
     create: {
-      gameMode: k.gameMode,
-      realmSlug: k.realmSlug,
-      charName: k.charName,
+      region: k.region,
+      charSlug: k.charSlug,
       dataset: k.dataset,
       day,
       payload: JSON.stringify(payload),
@@ -250,9 +248,8 @@ export async function getHistory<T>(
   const k = normalize(key)
   const rows = await prisma.characterSnapshot.findMany({
     where: {
-      gameMode: k.gameMode,
-      realmSlug: k.realmSlug,
-      charName: k.charName,
+      region: k.region,
+      charSlug: k.charSlug,
       dataset: k.dataset,
     },
     orderBy: { day: "desc" },
