@@ -9,6 +9,11 @@
  *   Bäume einer Klasse teilen die `treeId`. Klassisch also drei Bäume je Klasse.
  * - Knoten in `spec_talent_nodes` mit `display_row`/`display_col` (ab 1),
  *   `ranks[]` (je Rang Talent, Zauber, Beschreibung) und `locked_by`/`unlocks`.
+ * - **`display_col` beginnt nicht bei jedem Baum bei 1.** Die Bäume einer
+ *   Klasse liegen offenbar in einem gemeinsamen Raster nebeneinander; ohne
+ *   Ausgleich stand ein Baum rechts, einer links, einer mittig. Die Spalten
+ *   werden darum je Baum auf 1 gesetzt. Die Zeilen bleiben, wie sie sind –
+ *   sie tragen die Stufe (Punkte je Zeile).
  * - **`locked_by` zeigt in beide Richtungen.** Zwei verbundene Knoten sperren
  *   sich laut API gegenseitig (104927 ↔ 104928 im Gleichgewichtsbaum). Als
  *   Voraussetzung gilt darum nur ein Knoten in einer **höheren** Zeile.
@@ -31,7 +36,7 @@ export interface TalentNode {
   spellId: number | null
   /** Icon-URL aus den Zauber-Medien; `null`, wenn die API keins liefert */
   icon: string | null
-  /** Zeile und Spalte, ab 1 */
+  /** Zeile (Stufe, wie von der API) und Spalte (je Baum ab 1) */
   row: number
   col: number
   maxRank: number
@@ -147,6 +152,10 @@ export function parseSpecTree(raw: RawSpecTree | null, treeId: number, specId: n
         requires: (n.locked_by ?? []).filter((id) => (rowOf.get(id) ?? row) < row),
       }
     })
+
+  // Spalten je Baum ab 1 – siehe Kopfkommentar
+  const minCol = nodes.reduce((min, n) => Math.min(min, n.col), Infinity)
+  if (Number.isFinite(minCol)) for (const n of nodes) n.col -= minCol - 1
 
   return {
     treeId,

@@ -44,8 +44,8 @@ export function TalentTrees({
     .map((tree, index) => ({ tree, index, points: pointsInTree(tree, allocation) }))
     .sort((a, b) => b.points - a.points || a.index - b.index)
 
-  // Gemeinsame Breite: die Spalten der breitesten Bäume. Ein Baum, der die
-  // erste oder letzte Spalte nicht nutzt, stünde sonst schief.
+  // Gemeinsame Breite: die Spalten des breitesten Baums. Schmalere Bäume
+  // werden darin mittig gesetzt (Spalten beginnen je Baum bei 1, talent-tree.ts)
   const cols = Math.max(1, ...talents.trees.map((tree) => tree.cols))
 
   return (
@@ -95,7 +95,9 @@ function TreeView({
 
   const width = cols * STEP_X - (STEP_X - ICON)
   const height = Math.max(1, tree.rows) * STEP_Y - (STEP_Y - ICON)
-  const pos = (n: TalentNode) => ({ x: (n.col - 1) * STEP_X, y: (n.row - 1) * STEP_Y })
+  // Schmalerer Baum: mittig im gemeinsamen Raster
+  const offsetX = ((cols - Math.max(1, tree.cols)) * STEP_X) / 2
+  const pos = (n: TalentNode) => ({ x: offsetX + (n.col - 1) * STEP_X, y: (n.row - 1) * STEP_Y })
   // Je Farbe ein Pfeilkopf: `context-stroke` können nicht alle Browser
   const markerMet = `talent-arrow-met-${tree.specId}`
   const markerOpen = `talent-arrow-open-${tree.specId}`
@@ -170,7 +172,7 @@ function TreeView({
                 rank={allocation[node.id] ?? 0}
                 left={pos(node).x}
                 top={pos(node).y}
-                tooltipLeft={node.col > Math.ceil(cols / 2)}
+                tooltipLeft={node.col > Math.ceil(tree.cols / 2)}
                 open={hover === node.id}
                 onOpen={() => setHover(node.id)}
                 onClose={() => setHover((h) => (h === node.id ? null : h))}
