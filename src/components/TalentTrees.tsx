@@ -44,9 +44,13 @@ export function TalentTrees({
     .map((tree, index) => ({ tree, index, points: pointsInTree(tree, allocation) }))
     .sort((a, b) => b.points - a.points || a.index - b.index)
 
+  // Gemeinsame Breite: die Spalten der breitesten Bäume. Ein Baum, der die
+  // erste oder letzte Spalte nicht nutzt, stünde sonst schief.
+  const cols = Math.max(1, ...talents.trees.map((tree) => tree.cols))
+
   return (
     <div>
-      <div className="mb-4 flex flex-wrap items-baseline gap-x-4 gap-y-1 text-[13px]">
+      <div className="mb-4 flex flex-wrap items-baseline justify-center gap-x-4 gap-y-1 text-[13px]">
         <span className="font-heading font-extrabold">
           {total > 0 ? t("talents.spentTotal", { points: f.number(total) }) : t("talents.noneSpent")}
         </span>
@@ -58,14 +62,16 @@ export function TalentTrees({
       </div>
 
       {unmatched > 0 && (
-        <div className="mb-4 border-2 border-line px-4 py-2 text-[12px] opacity-75">
+        <div className="mx-auto mb-4 max-w-md border-2 border-line px-4 py-2 text-center text-[12px] opacity-75">
           {t("talents.unmatched", { count: f.number(unmatched) })}
         </div>
       )}
 
-      <div className="flex flex-col gap-6">
+      {/* Alle Bäume gleich breit wie im Client (Raster der breitesten), jeder
+          so schmal wie sein Inhalt und mittig – kein Rahmen weit draussen */}
+      <div className="flex flex-col items-center gap-6">
         {ordered.map(({ tree, points }) => (
-          <TreeView key={tree.specId} tree={tree} points={points} allocation={allocation} />
+          <TreeView key={tree.specId} tree={tree} cols={cols} points={points} allocation={allocation} />
         ))}
       </div>
     </div>
@@ -74,10 +80,12 @@ export function TalentTrees({
 
 function TreeView({
   tree,
+  cols,
   points,
   allocation,
 }: {
   tree: TalentTree
+  cols: number
   points: number
   allocation: Allocation
 }) {
@@ -85,7 +93,7 @@ function TreeView({
   const [hover, setHover] = useState<number | null>(null)
   const byId = new Map(tree.nodes.map((n) => [n.id, n]))
 
-  const width = Math.max(1, tree.cols) * STEP_X - (STEP_X - ICON)
+  const width = cols * STEP_X - (STEP_X - ICON)
   const height = Math.max(1, tree.rows) * STEP_Y - (STEP_Y - ICON)
   const pos = (n: TalentNode) => ({ x: (n.col - 1) * STEP_X, y: (n.row - 1) * STEP_Y })
   // Je Farbe ein Pfeilkopf: `context-stroke` können nicht alle Browser
@@ -93,8 +101,8 @@ function TreeView({
   const markerOpen = `talent-arrow-open-${tree.specId}`
 
   return (
-    <section className="border-2 border-line">
-      <div className="flex items-baseline justify-between gap-3 border-b border-line px-4 py-2">
+    <section className="flex-none border-2 border-line" style={{ width: width + PAD * 2 + 4 }}>
+      <div className="flex items-baseline justify-between gap-3 border-b border-line px-3 py-2">
         <span className="font-heading text-[15px] font-extrabold">{tree.name}</span>
         <span className="font-heading text-[15px] font-extrabold" style={{ fontVariantNumeric: "tabular-nums" }}>
           {f.number(points)}
@@ -103,7 +111,7 @@ function TreeView({
 
       {/* Hintergrund des Baums, gedämpft – die Icons müssen lesbar bleiben */}
       <div
-        className="relative overflow-x-auto"
+        className="relative"
         style={{
           backgroundImage: tree.background
             ? `linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.55)), url(${tree.background})`
@@ -112,7 +120,7 @@ function TreeView({
           backgroundPosition: "center",
         }}
       >
-        <div className="relative mx-auto" style={{ width: width + PAD * 2, height: height + PAD * 2, padding: PAD }}>
+        <div style={{ padding: PAD }}>
           <div className="relative" style={{ width, height }}>
             {/* Voraussetzungen als Pfeile von unten am Vorgänger zu oben am Talent */}
             <svg className="pointer-events-none absolute inset-0 overflow-visible" width={width} height={height} aria-hidden>
@@ -162,7 +170,7 @@ function TreeView({
                 rank={allocation[node.id] ?? 0}
                 left={pos(node).x}
                 top={pos(node).y}
-                tooltipLeft={node.col > Math.ceil(tree.cols / 2)}
+                tooltipLeft={node.col > Math.ceil(cols / 2)}
                 open={hover === node.id}
                 onOpen={() => setHover(node.id)}
                 onClose={() => setHover((h) => (h === node.id ? null : h))}
