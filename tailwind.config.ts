@@ -6,14 +6,14 @@ const config: Config = {
   theme: {
     extend: {
       fontFamily: {
-        sans: ["Archivo", "system-ui", "sans-serif"],
-        heading: ["Archivo", "system-ui", "sans-serif"],
+        sans: ["Spectral", "Georgia", "serif"],
+        heading: ["Cinzel", "Georgia", "serif"],
       },
       borderRadius: {
         none: "0", sm: "0", DEFAULT: "0", md: "0", lg: "0", xl: "0", "2xl": "0", "3xl": "0", full: "0",
       },
       colors: {
-        // Modernist-Rollen — lesen die CSS-Variablen aus globals.css
+        // Rollen – lesen die CSS-Variablen aus globals.css (Warband-Tokens dahinter)
         ground: "var(--color-bg)",
         surface: "var(--color-surface)",
         ink: "var(--color-text)",
@@ -34,6 +34,22 @@ const config: Config = {
         faction: {
           horde: "var(--faction-horde)",
           alliance: "var(--faction-alliance)",
+        },
+        // Warband-Töne für neue Bausteine
+        wb: {
+          gold: "var(--wb-gold)",
+          "gold-lit": "var(--wb-gold-lit)",
+          "gold-faint": "var(--wb-gold-faint)",
+          ink: "var(--wb-ink)",
+          "ink-dim": "var(--wb-ink-dim)",
+          panel: "var(--wb-panel)",
+          deep: "var(--wb-deep)",
+          stone: "var(--wb-stone)",
+          plate: "var(--wb-plate)",
+          "plate-2": "var(--wb-plate-2)",
+          "plate-3": "var(--wb-plate-3)",
+          horde: "var(--wb-horde)",
+          ally: "var(--wb-ally)",
         },
 
         // WoW Klassen-Farben — nur als Marker (Punkt/Quadrat), nicht als Textfarbe

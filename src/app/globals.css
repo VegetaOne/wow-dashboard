@@ -1,69 +1,126 @@
-@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;800&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* ── Modernist-Tokens ─────────────────────────────────────────────── */
+/*
+ * Warband Ledger – Design-Tokens (Übergabe aus Claude Design, 2026-09).
+ *
+ * Zwei Themen: „Nacht" (data-theme="dark") und „Pergament" (data-theme="light").
+ * Die `--wb-*`-Werte stehen 1:1 aus der Übergabe. Die bisherigen Rollen
+ * (`--color-bg`, `--color-accent` …) bleiben als Namen bestehen und zeigen
+ * darauf – so trägt jede vorhandene Ansicht den neuen Stil, ohne dass jede
+ * Komponente umgeschrieben werden muss.
+ *
+ * Regel aus der Übergabe: Flächen, Vignetten und Textschatten laufen über
+ * `--wb-plate*`, `--wb-scrim`, `--wb-deep`, `--wb-emboss` – ein hart kodiertes
+ * rgba(0,0,0,…) macht das Pergament unlesbar.
+ */
 
 :root,
 [data-theme="dark"] {
   color-scheme: dark;
-  --color-bg: #171615;
-  --color-surface: #211f1e;
-  --color-text: #f2efed;
-  --color-divider: rgba(242, 239, 237, 0.34);
 
-  --color-neutral-100: #2e2b2a;
-  --color-neutral-300: #3d3a38;
-  --color-neutral-700: #b8b3b0;
-  --color-neutral-800: #e8e4e1;
+  --wb-void: #0b0705;
+  --wb-stone: #171009;
+  --wb-panel: #22180f;
+  --wb-panel-2: #2c2014;
+  --wb-ink: #efe2c4;
+  --wb-ink-dim: #b9a884;
+  --wb-gold: #c9a14b;
+  --wb-gold-lit: #f0d38a;
+  --wb-gold-faint: rgba(201, 161, 75, 0.28);
+  --wb-horde: #c8321f;
+  --wb-horde-lit: #f0674a;
+  --wb-ally: #3f6fb4;
+  --wb-ally-lit: #86b1e8;
+  --wb-plate: rgba(0, 0, 0, 0.42);
+  --wb-plate-2: rgba(0, 0, 0, 0.62);
+  --wb-plate-3: rgba(0, 0, 0, 0.25);
+  --wb-scrim: rgba(0, 0, 0, 0.85);
+  --wb-deep: #120c07;
+  --wb-emboss: #000;
+  /* Schrift auf goldener Fläche */
+  --wb-on-gold: #1a1207;
 
-  --color-accent: #ff563c;
-  --color-accent-100: #3a1a13;
-  --color-accent-600: #ff7b66;
-  --color-accent-700: #ff9783;
-  --color-accent-800: #ffc4b8;
+  --color-bg: var(--wb-stone);
+  --color-surface: var(--wb-panel);
+  --color-text: var(--wb-ink);
+  --color-divider: var(--wb-gold-faint);
 
-  --faction-horde: #ff563c;
-  --faction-alliance: #6aa0e0;
+  --color-neutral-100: var(--wb-panel-2);
+  --color-neutral-300: #3a2b1a;
+  --color-neutral-700: var(--wb-ink-dim);
+  --color-neutral-800: #e3d4b2;
+
+  --color-accent: var(--wb-gold);
+  --color-accent-100: #2e2312;
+  --color-accent-600: #d9b462;
+  --color-accent-700: var(--wb-gold-lit);
+  --color-accent-800: #f6e3b4;
+
+  /* Fraktion als Text: die hellen Töne; Kanten und Balken: --wb-horde/--wb-ally */
+  --faction-horde: var(--wb-horde-lit);
+  --faction-alliance: var(--wb-ally-lit);
 
   /* Gewinn und Verlust – nie allein: das Vorzeichen bleibt dabei */
-  --color-gain: #5ccf7a;
-  --color-loss: #ff6b6b;
+  --color-gain: #6fd08a;
+  --color-loss: #f0674a;
   /* Voll ausgebautes Talent – wie im Spiel golden */
-  --color-gold: #e5b23a;
+  --color-gold: var(--wb-gold-lit);
 }
 
 [data-theme="light"] {
   color-scheme: light;
-  --color-bg: #f3f2f2;
-  --color-surface: #eae9e9;
-  --color-text: #201e1d;
-  --color-divider: color-mix(in srgb, #201e1d 40%, transparent);
 
-  --color-neutral-100: #f8f4f4;
-  --color-neutral-300: #d7d3d3;
-  --color-neutral-700: #605d5d;
-  --color-neutral-800: #444141;
+  --wb-void: #cdbe9f;
+  --wb-stone: #dfd2b4;
+  --wb-panel: #ebe0c6;
+  --wb-panel-2: #f2e9d4;
+  --wb-ink: #2a1e12;
+  --wb-ink-dim: #6b563a;
+  --wb-gold: #8a6a22;
+  --wb-gold-lit: #5c4413;
+  --wb-gold-faint: rgba(92, 68, 19, 0.34);
+  --wb-horde: #8f1f16;
+  --wb-horde-lit: #7d1a12;
+  --wb-ally: #23497e;
+  --wb-ally-lit: #1d3c68;
+  --wb-plate: rgba(255, 250, 235, 0.62);
+  --wb-plate-2: rgba(255, 250, 235, 0.34);
+  --wb-plate-3: rgba(255, 250, 235, 0.5);
+  --wb-scrim: rgba(240, 231, 209, 0.88);
+  --wb-deep: #c2b294;
+  --wb-emboss: rgba(255, 250, 235, 0.7);
+  --wb-on-gold: #f7efdc;
 
-  --color-accent: #ec3013;
-  --color-accent-100: #fff2ef;
-  --color-accent-600: #dd2b0f;
-  --color-accent-700: #ae1800;
-  --color-accent-800: #7c1405;
+  --color-bg: var(--wb-stone);
+  --color-surface: var(--wb-panel);
+  --color-text: var(--wb-ink);
+  --color-divider: var(--wb-gold-faint);
 
-  --faction-horde: #c0270f;
-  --faction-alliance: #22497e;
+  --color-neutral-100: var(--wb-panel-2);
+  --color-neutral-300: #cdbe9f;
+  --color-neutral-700: var(--wb-ink-dim);
+  --color-neutral-800: #3a2a18;
+
+  --color-accent: var(--wb-gold);
+  --color-accent-100: #f2e9d4;
+  --color-accent-600: #7a5c1c;
+  --color-accent-700: var(--wb-gold-lit);
+  --color-accent-800: #3f2e0b;
+
+  --faction-horde: var(--wb-horde-lit);
+  --faction-alliance: var(--wb-ally-lit);
 
   --color-gain: #1d7a3a;
-  --color-loss: #c4221f;
-  --color-gold: #a87a00;
+  --color-loss: #8f1f16;
+  --color-gold: var(--wb-gold);
 }
 
 :root {
-  --font-heading: "Archivo", system-ui, sans-serif;
-  --font-body: "Archivo", system-ui, sans-serif;
+  /* Selbst gehostet über @fontsource (src/app/layout.tsx) – kein Abruf bei Google */
+  --font-heading: "Cinzel", Georgia, serif;
+  --font-body: "Spectral", Georgia, serif;
 }
 
 /* ── Basis ────────────────────────────────────────────────────────── */
@@ -73,7 +130,7 @@
 
   body {
     margin: 0;
-    background: var(--color-bg);
+    background: linear-gradient(180deg, var(--wb-stone) 0%, var(--wb-deep) 100%) fixed;
     color: var(--color-text);
     font-family: var(--font-body);
     font-size: 15px;
@@ -82,18 +139,20 @@
 
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-heading);
-    font-weight: 800;
-    line-height: 1.12;
-    letter-spacing: -0.015em;
+    font-weight: 900;
+    line-height: 1.15;
+    letter-spacing: 0.08em;
     margin: 0;
+    color: var(--wb-gold-lit);
+    text-shadow: 0 1px 0 var(--wb-emboss);
   }
-  h1 { font-size: 42px; }
-  h2 { font-size: 32px; }
-  h3 { font-size: 25px; }
-  h4 { font-size: 20px; }
+  h1 { font-size: 36px; }
+  h2 { font-size: 26px; }
+  h3 { font-size: 22px; }
+  h4 { font-size: 17px; }
 
-  a { color: var(--color-accent); text-underline-offset: 3px; }
-  a:hover { color: var(--color-accent-600); }
+  a { color: var(--wb-gold-lit); text-underline-offset: 3px; }
+  a:hover { color: var(--wb-gold); }
 
   :focus { outline: none; }
   :focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
@@ -101,7 +160,7 @@
 
   ::-webkit-scrollbar { width: 8px; height: 8px; }
   ::-webkit-scrollbar-track { background: var(--color-surface); }
-  ::-webkit-scrollbar-thumb { background: var(--color-neutral-300); }
+  ::-webkit-scrollbar-thumb { background: var(--wb-gold-faint); }
   ::-webkit-scrollbar-thumb:hover { background: var(--color-accent); }
 }
 
@@ -111,11 +170,14 @@
   .rule { height: 2px; border: 0; background: var(--color-divider); }
   .rule-thin { height: 1px; border: 0; background: var(--color-divider); }
 
+  /* Mikrolabel: Cinzel, gesperrt, gedämpfte Tinte statt Transparenz */
   .eyebrow {
+    font-family: var(--font-heading);
     font-size: 10px;
-    letter-spacing: 0.12em;
+    font-weight: 700;
+    letter-spacing: 0.2em;
     text-transform: uppercase;
-    opacity: 0.55;
+    color: var(--wb-ink-dim);
   }
 
   .btn {
@@ -125,24 +187,32 @@
     gap: 6px;
     cursor: pointer;
     font-family: var(--font-heading);
-    font-weight: 800;
-    font-size: 14px;
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
     line-height: 1.2;
-    color: var(--color-text);
+    color: var(--wb-ink);
     background: transparent;
     border: 1px solid transparent;
-    padding: 8px 14px;
+    padding: 9px 16px;
     border-radius: 0;
   }
   .btn:disabled { opacity: 0.45; cursor: not-allowed; }
-  .btn-primary { background: var(--color-accent); color: var(--color-bg); }
-  .btn-primary:hover { background: var(--color-accent-600); }
-  .btn-primary:active { background: var(--color-accent-700); }
-  .btn-secondary { border-color: var(--color-divider); }
-  .btn-secondary:hover { background: color-mix(in srgb, var(--color-text) 7%, transparent); }
-  .btn-secondary:active { background: color-mix(in srgb, var(--color-text) 14%, transparent); }
-  .btn-ghost { color: var(--color-accent); padding-inline: 4px; }
-  .btn-ghost:hover { background: color-mix(in srgb, var(--color-accent) 10%, transparent); }
+  /* Aktiv-Reiter der Übergabe: Goldverlauf, innerer Schein */
+  .btn-primary {
+    border-color: var(--wb-gold);
+    background: linear-gradient(180deg, rgba(201, 161, 75, 0.32), rgba(201, 161, 75, 0.08));
+    color: var(--wb-gold-lit);
+    box-shadow: inset 0 0 18px rgba(201, 161, 75, 0.28);
+  }
+  .btn-primary:hover { background: linear-gradient(180deg, rgba(201, 161, 75, 0.42), rgba(201, 161, 75, 0.14)); }
+  .btn-primary:active { background: rgba(201, 161, 75, 0.3); }
+  .btn-secondary { border-color: var(--wb-gold-faint); background: var(--wb-plate-3); color: var(--wb-ink); }
+  .btn-secondary:hover { background: rgba(201, 161, 75, 0.12); color: var(--wb-gold-lit); }
+  .btn-secondary:active { background: rgba(201, 161, 75, 0.2); }
+  .btn-ghost { color: var(--wb-gold-lit); padding-inline: 4px; }
+  .btn-ghost:hover { background: rgba(201, 161, 75, 0.12); }
 
   .tag {
     display: inline-flex;
@@ -163,11 +233,11 @@
     font-size: 14px;
     color: var(--color-text);
     caret-color: var(--color-accent);
-    background: var(--color-surface);
-    border: 1px solid var(--color-divider);
+    background: var(--wb-plate);
+    border: 1px solid var(--wb-gold-faint);
     border-radius: 0;
   }
-  .input:hover { border-color: color-mix(in srgb, var(--color-text) 45%, transparent); }
+  .input:hover { border-color: var(--wb-gold); }
   .input:focus-visible { border-color: var(--color-accent); outline-offset: 0; }
 
   .table { width: 100%; border-collapse: collapse; font-size: 14px; }
@@ -176,12 +246,14 @@
     font-size: 11px;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: color-mix(in srgb, var(--color-text) 60%, transparent);
+    font-family: var(--font-heading);
+    font-weight: 700;
+    color: var(--wb-ink-dim);
     padding: 8px;
     border-bottom: 2px solid var(--color-divider);
   }
   .table td { padding: 8px; border-bottom: 1px solid var(--color-divider); }
-  .table tbody tr:hover { background: color-mix(in srgb, var(--color-text) 4%, transparent); }
+  .table tbody tr:hover { background: rgba(201, 161, 75, 0.1); }
 
   /* Klassen-Kürzelkästchen der Charakterzeile */
   .class-code {
@@ -192,8 +264,44 @@
     place-items: center;
     border: 1px solid var(--color-divider);
     font-family: var(--font-heading);
-    font-weight: 800;
-    font-size: 11px;
+    font-weight: 700;
+    font-size: 12px;
     letter-spacing: 0.04em;
+    background: var(--wb-plate);
   }
+
+  /*
+   * Platte: die Grundfläche der Übergabe für Kästen und Tafeln – Verlauf
+   * von --wb-panel nach --wb-deep, goldene Haarlinie, innerer Schatten.
+   */
+  .wb-plate {
+    border: 1px solid var(--wb-gold-faint);
+    background: linear-gradient(180deg, var(--wb-panel) 0%, var(--wb-deep) 100%);
+    box-shadow: inset 0 0 44px var(--wb-plate), 0 14px 34px var(--wb-plate-2);
+  }
+
+  /* Band-Überschrift: Linie – Titel – Linie */
+  .wb-band-title {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 0.42em;
+    text-transform: uppercase;
+    color: var(--wb-gold);
+  }
+  .wb-band-title::before,
+  .wb-band-title::after {
+    content: "";
+    flex: 1;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--wb-gold-faint));
+  }
+  .wb-band-title::after { background: linear-gradient(270deg, transparent, var(--wb-gold-faint)); }
 }
+
+@keyframes wbEmber { 0%, 100% { opacity: 0.55; } 50% { opacity: 1; } }
+@keyframes wbBob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(7px); } }
+@keyframes wbRise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
