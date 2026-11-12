@@ -17,6 +17,60 @@ import {
 } from "./talent-tree"
 
 const TREE_REVALIDATE = 60 * 60 * 24
+/** Bilder ändern sich praktisch nie – eine Woche */
+const MEDIA_REVALIDATE = 60 * 60 * 24 * 7
+
+type RawMedia = { assets?: { key?: string; value?: string }[] }
+
+/**
+ * Bild aus einer Medien-Antwort. Bevorzugt der genannte Schlüssel, sonst das
+ * erste Bild – die Schlüssel der Baum-Medien sind für Forever nicht belegt.
+ */
+function assetOf(media: RawMedia | null, preferred: string): string | null {
+  const assets = media?.assets ?? []
+  const hit = assets.find((a) => a.key === preferred) ?? assets[0]
+  return typeof hit?.value === "string" ? hit.value : null
+}
+
+/** Pfad aus einem `href` der API, ohne Host und Query. */
+function pathFromHref(href: unknown): string | null {
+  if (typeof href !== "string") return null
+  try {
+    return new URL(href).pathname
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Icons der Talente und Hintergründe der Bäume nachtragen. Fehlt ein Bild,
+ * bleibt `null` – die Anzeige zeigt dann den Namen. Ein Bild ist nie ein
+ * Grund, die Bäume scheitern zu lassen.
+ */
+async function attachMedia(trees: TalentTree[], raws: (RawSpecTree | null)[], token: string) {
+  const spellIds = Array.from(
+    new Set(trees.flatMap((t) => t.nodes.map((n) => n.spellId)).filter((id): id is number => id !== null))
+  )
+  const icons = new Map<number, string | null>()
+  const fetched = await mapLimit(spellIds, 8, (id) =>
+    bnetGet<RawMedia>(`/data/wow/media/spell/${id}`, token, "static", MEDIA_REVALIDATE).catch(() => null)
+  )
+  spellIds.forEach((id, i) => icons.set(id, assetOf(fetched[i], "icon")))
+
+  const backgrounds = await mapLimit(raws, 3, (raw) => {
+    const path = pathFromHref(raw?.media?.key?.href)
+    return path
+      ? bnetGet<RawMedia>(path, token, "static", MEDIA_REVALIDATE).catch(() => null)
+      : Promise.resolve(null)
+  })
+
+  trees.forEach((tree, i) => {
+    tree.background = assetOf(backgrounds[i], "background")
+    for (const node of tree.nodes) {
+      node.icon = node.spellId !== null ? icons.get(node.spellId) ?? null : null
+    }
+  })
+}
 
 function fetchTree(treeId: number, specId: number, token: string): Promise<RawSpecTree> {
   return bnetGet<RawSpecTree>(
@@ -73,9 +127,10 @@ export async function getClassTalents(
 
   const entries = groups.get(treeId) ?? []
   const raws = await mapLimit(entries, 3, (e) => fetchTree(treeId!, e.specId, token).catch(() => null))
-  const trees = entries
-    .map((e, i) => parseSpecTree(raws[i], treeId!, e.specId))
-    .filter((t): t is TalentTree => t !== null)
+  const parsed = entries.map((e, i) => ({ tree: parseSpecTree(raws[i], treeId!, e.specId), raw: raws[i] }))
+  const kept = parsed.filter((p): p is { tree: TalentTree; raw: RawSpecTree | null } => p.tree !== null)
+  const trees = kept.map((p) => p.tree)
+  await attachMedia(trees, kept.map((p) => p.raw), token)
 
   const first = raws.find((r) => r?.playable_class)
   return {
