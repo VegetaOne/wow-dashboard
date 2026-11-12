@@ -3,7 +3,7 @@ import { getAuthOptions } from "@/lib/auth"
 import { redirect } from "next/navigation"
 import Link from "next/link"
 import { Header } from "@/components/Header"
-import { ActiveSectionLabel, CharacterTabs, SectionCount } from "@/components/CharacterTabs"
+import { SectionCount, SectionMenu, SectionStepper } from "@/components/CharacterTabs"
 import { FactionMedallion } from "@/components/FactionMedallion"
 import { NoDataYet } from "@/components/NoDataYet"
 import { displayNameFromSlug } from "@/lib/battlenet"
@@ -13,9 +13,13 @@ import { region } from "@/lib/runtime"
 
 /**
  * Rahmen aller Charakter-Unterseiten als Heldenakte (Warband-Übergabe,
- * Band 3): Bandkopf mit Titel und Reitern, Aktenrahmen mit Kopf (Medaillon,
- * Name in Fraktionsfarbe, Unterzeile, aktiver Bereich), Inhalt, Aktenfuss
- * mit der Quelle. Die Unterseiten liefern nur noch Inhalt.
+ * Band 3): Bandkopf mit Titel, Aktenrahmen mit Kopf (Bereichsmenü,
+ * Medaillon, Name in Fraktionsfarbe, Unterzeile, ‹ Bereich ›), Inhalt,
+ * Aktenfuss mit der Quelle. Die Unterseiten liefern nur noch Inhalt.
+ *
+ * Der Aktenkopf klebt beim Scrollen unter der Kopfzeile (Wunsch
+ * 2026-11-12): auf langen Seiten wie Erfolgen oder Talenten soll immer
+ * zu sehen sein, wessen Akte offen ist.
  *
  * Seit WoW Forever ist ein Charakter `{name}-{surname}` – kein Realm, kein
  * Spielmodus im Pfad. Statt des Realms steht das Ruleset im Kopf, wenn das
@@ -82,8 +86,8 @@ export default async function CharacterLayout({
         }}
       >
         {/* Bandkopf */}
-        <div className="flex flex-wrap items-end gap-x-6 gap-y-3 px-[34px] pb-4 pt-5">
-          <div className="mr-auto">
+        <div className="px-[34px] pb-4 pt-5">
+          <div>
             <Link href="/dashboard" className="eyebrow no-underline hover:underline">
               {t("weekly.back")}
             </Link>
@@ -94,26 +98,30 @@ export default async function CharacterLayout({
               <SectionCount slug={ref.slug} />
             </p>
           </div>
-          <CharacterTabs slug={ref.slug} />
         </div>
 
         {/* Aktenrahmen */}
         <div className="wb-plate mx-[34px]">
           {/* Aktenkopf */}
+          {/* Klebt unter der Kopfzeile; deren Höhe setzt Header.tsx als
+              --wb-header-h. Deckender Grund, sonst scheint der Inhalt durch. */}
           <div
-            className="flex flex-wrap items-center gap-x-4 gap-y-2 border-b px-[22px] py-3"
+            className="sticky z-30 flex flex-wrap items-center gap-x-4 gap-y-2 border-b px-[22px] py-3"
             style={{
+              top: "var(--wb-header-h, 0px)",
               borderColor: "var(--wb-gold-faint)",
-              background: "linear-gradient(180deg, rgba(201,161,75,0.12), transparent)",
+              background: "linear-gradient(180deg, rgba(201,161,75,0.12), transparent), var(--wb-panel)",
+              boxShadow: "0 8px 18px var(--wb-plate)",
             }}
           >
+            <SectionMenu slug={ref.slug} characterName={characterName} nameColor={factionText} />
             {faction ? (
               <FactionMedallion faction={faction} size={32} />
             ) : avatar ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={avatar} alt="" className="h-9 w-9 flex-none border" style={{ borderColor: "var(--wb-gold-faint)" }} />
             ) : null}
-            <div className="mr-auto min-w-0">
+            <div className="min-w-[10rem] flex-1">
               <h2
                 className="truncate"
                 style={{ fontSize: 19, letterSpacing: "0.06em", color: factionText }}
@@ -124,7 +132,7 @@ export default async function CharacterLayout({
                 {subline}
               </span>
             </div>
-            <ActiveSectionLabel slug={ref.slug} />
+            <SectionStepper slug={ref.slug} />
           </div>
 
           {/* Offen sagen, wenn die Werte aus dem Speicher kommen, weil die API

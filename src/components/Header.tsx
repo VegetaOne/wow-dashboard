@@ -3,7 +3,7 @@
 import { signOut } from "next-auth/react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { ThemeToggle } from "./ThemeToggle"
 import { LanguageToggle } from "./LanguageToggle"
 import { useT } from "./I18nProvider"
@@ -45,6 +45,29 @@ export function Header({
     return () => clearInterval(id)
   }, [lastSync])
 
+  // Höhe der Kopfzeile als --wb-header-h: der Aktenkopf klebt darunter.
+  // Gemessen statt fest, weil die Zeile je nach Breite umbricht. Auf
+  // schmalen Bildschirmen klebt sie nicht (drei Zeilen hoch, zu viel vom
+  // Bild) – dann 0, und nur der Aktenkopf bleibt oben.
+  const headerRef = useRef<HTMLElement>(null)
+  useEffect(() => {
+    const el = headerRef.current
+    if (!el) return
+    const root = document.documentElement
+    const set = () => {
+      const sticks = getComputedStyle(el).position === "sticky"
+      root.style.setProperty("--wb-header-h", `${sticks ? el.offsetHeight : 0}px`)
+    }
+    set()
+    const observer = new ResizeObserver(set)
+    observer.observe(el)
+    window.addEventListener("resize", set)
+    return () => {
+      observer.disconnect()
+      window.removeEventListener("resize", set)
+    }
+  }, [])
+
   const ago = lastSync ? Math.max(0, Math.round((now - lastSync.getTime()) / 1000)) : null
   const showStatus = lastSync !== undefined
 
@@ -56,9 +79,11 @@ export function Header({
 
   return (
     <header
-      className="sticky top-0 z-40 flex flex-wrap items-center gap-x-4 gap-y-3 px-[26px] py-2.5"
+      ref={headerRef}
+      className="relative top-0 z-40 sm:sticky flex flex-wrap items-center gap-x-4 gap-y-3 px-[26px] py-2.5"
       style={{
-        background: "linear-gradient(180deg, var(--wb-stone) 0%, var(--wb-scrim) 100%)",
+        // Deckender Grund darunter: der Aktenkopf und der Inhalt scrollen hinter der Zeile durch
+        background: "linear-gradient(180deg, var(--wb-stone) 0%, var(--wb-scrim) 100%), var(--wb-stone)",
         borderBottom: "2px solid var(--wb-gold-faint)",
         boxShadow: "0 10px 26px var(--wb-plate)",
       }}
