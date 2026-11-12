@@ -44,11 +44,26 @@ test("Baum: Raster, Ränge sortiert, Knoten ohne Position verworfen", () => {
   assert.equal(tree.name, "Balance")
   assert.equal(tree.nodes.length, 3)
   assert.equal(tree.rows, 3)
-  assert.equal(tree.cols, 3)
+  // Spalten 2–3 im Rohformat → 1–2 nach dem Ausgleich
+  assert.equal(tree.cols, 2)
   const wrath = tree.nodes.find((n) => n.id === 104923)
   assert.equal(wrath.maxRank, 2)
   assert.deepEqual(wrath.ranks.map((r) => r.description), ["a", "b"])
   assert.equal(wrath.talentId, 134384)
+})
+
+test("Spalten beginnen je Baum bei 1", () => {
+  const shifted = {
+    playable_specialization: { id: 39, name: "Subtlety" },
+    spec_talent_nodes: [
+      { id: 1, display_row: 1, display_col: 5, ranks: [rank(10, "A", 1, "a")] },
+      { id: 2, display_row: 2, display_col: 7, ranks: [rank(11, "B", 1, "b")] },
+    ],
+  }
+  const tree = parseSpecTree(shifted, 1111, 39)
+  assert.deepEqual(tree.nodes.map((n) => [n.row, n.col]), [[1, 1], [2, 3]])
+  assert.equal(tree.cols, 3)
+  assert.equal(tree.rows, 2)
 })
 
 test("Voraussetzung nur nach oben – gegenseitiges locked_by wird aufgelöst", () => {
