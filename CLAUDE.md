@@ -39,6 +39,8 @@ src/app/                    App Router
   api/setup/, api/settings/  Konfiguration
   dashboard/[character]/<tab>/   Charakterseiten (`{name}-{surname}`), ein Ordner je Tab
   dashboard/woche/          Wochenübersicht (Account-Ebene, kein Charakter-Tab)
+  dashboard/talentplaner/   Talentplaner je Klasse (Account-Ebene, in der Kopfzeile)
+  api/talent-builds/, api/talent-targets/   Builds und Ziel-Build je Charakter (Nutzerdaten)
 src/components/             UI
 src/lib/                    alles Fachliche
   battlenet.ts              API-Zugriff (bnetGet), Namespaces, Slugs, Slots, Farben
@@ -47,6 +49,7 @@ src/lib/                    alles Fachliche
   config.ts / config-cache.ts / secrets.ts / runtime.ts   Konfiguration
   i18n.ts / t.ts / dict/    Übersetzung
   trend.ts (rein) / history.ts (DB)
+  talent-tree.ts (rein: Einlesen, Regeln, Vergleich, JSON) / talents.ts (API) / talent-builds.ts (DB)
   format.ts, money.ts       Zahlen und Daten ohne toLocaleString
 prisma/schema.prisma        + migrations/
 docs/                       Konzept und Reihenfolge

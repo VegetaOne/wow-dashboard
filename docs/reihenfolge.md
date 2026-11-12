@@ -18,13 +18,13 @@
 | **Sprache** | Umschalter Englisch/Deutsch, **Englisch als Standard**. |
 | **Setup-Modus** | Die `.env` soll nicht mehr von Hand gefüllt werden: beim ersten Start fragt die Website die Werte ab. |
 | **Warcraft Logs** | Zurückgestellt, bis geklärt ist, ob Warcraft Logs WoW Forever führt. |
-| **Talentbuilds** | War zurückgestellt, bis die Talentbaum-Daten für Forever bestätigt sind. **Bestätigt 2026-11-11**: Bäume, Talente und die gesetzten Talente eines Charakters kommen. Die Knoten tragen Zeile, Spalte und Voraussetzungen (`display_row`, `display_col`, `locked_by`). Anzeige gebaut (Reiter „Talente"); Planer, gespeicherte Builds und JSON als Nächstes. Siehe eigenen Abschnitt unten. |
+| **Talentbuilds** | War zurückgestellt, bis die Talentbaum-Daten für Forever bestätigt sind. **Bestätigt 2026-11-11**: Bäume, Talente und die gesetzten Talente eines Charakters kommen. Die Knoten tragen Zeile, Spalte und Voraussetzungen (`display_row`, `display_col`, `locked_by`). Anzeige und **Talentplaner gebaut (2026-11-12)**: eigene Seite in der Kopfzeile, Builds je Klasse, Ziel-Build je Charakter und Talentverteilung (Dualspec), JSON-Export und -Import. Siehe eigenen Abschnitt unten. |
 | **Snapshot-Historie** | Behalten, ein Stand je Tag. Grundlage für alles Verlaufsbezogene. |
 | **Loot-Bereich** | **Entfernt** (2026-11-11). Die Journal-API liefert für WoW Forever keine Instanzen; ein Loot-Index ohne Inhalt bringt nichts. Tabellen mit Migration `0008_loot_entfernen` gelöscht. Kommt die Journal-API, steht der Code in der Git-Historie. |
 | **Hintergrund-Auffrischung** | **Verworfen** (2026-11-11). Der Companion läuft, während gespielt wird; und ohne Spielen ändert sich an den Profilen nichts, weil sie erst beim Ausloggen nachziehen. Ein täglicher Timer hätte höchstens den genauen Tag einer Änderung festgehalten. Kurz gebaut (PR #7) und wieder entfernt; Tabelle mit Migration `0010_auffrischer_entfernen` gelöscht. Der Verlauf bleibt: er entsteht aus den Ständen, die beim Öffnen der Seiten gespeichert werden. |
 | **Absicherung des Setups** | **Einrichtungscode im Log des Containers** (2026-11-11). Stufe 1 verlangt ihn, Stufe 2 den Nachweis daraus per Cookie. Gilt bis zum Neustart. |
 | **Design** | **Warband Ledger** aus Claude Design (Artifact „Azeroth Ledger Charakter-Manager", Übergabe `design_handoff_warband_ledger`), umgesetzt 2026-11-12 in vier Schritten: Tokens Nacht/Pergament und Schriften Cinzel/Spectral (selbst gehostet), Kopfzeile, Startseite mit Kriegsschar-Bühne und übrigen Charakteren, Charakterseite als Heldenakte. **Abweichungen:** Charakterbilder aus der API statt Upload, keine Wappen-Uploads, kein Spielmodus-Reiter; die Heldenakte blättert über eigene Seiten je Bereich statt eines Schiebereglers, damit jeder Bereich seine Daten erst beim Öffnen lädt; Gold, Währungen, Schatzkammer und Wochenziele entfallen (API liefert sie nicht). **Nachgebessert 2026-11-12:** statt römischer Reiter ein Bereichsmenü, das von links hereingleitet (Name und Kurzhinweis je Bereich, schliesst nach der Wahl); ‹ › bleiben. Der Aktenkopf mit Name und aktuellem Bereich klebt beim Scrollen unter der Kopfzeile; auf schmalen Bildschirmen klebt nur er. |
-| **Wochenübersicht** | Eigene Account-Seite, Status aus `last_kill_timestamp` statt aus Snapshot-Diffs, Lockout-Längen als gepflegte Tabelle. Siehe [Wochenübersicht](./wochenuebersicht.md). |
+| **Wochenübersicht** | Seit 2026-11-12 **nicht mehr in der Navigation** (Lockouts vorerst zurückgestellt); die Seite bleibt unter `/dashboard/woche`. Eigene Account-Seite, Status aus `last_kill_timestamp` statt aus Snapshot-Diffs, Lockout-Längen als gepflegte Tabelle. Siehe [Wochenübersicht](./wochenuebersicht.md). |
 
 ## Fertig – für die alten Spielmodi
 
@@ -64,9 +64,9 @@ Erledigt am 2026-11-11, in dieser Reihenfolge:
 
 Offen als Nächstes:
 
-1. **Talentplaner** — Punkte setzen nach den angenommenen Regeln, mehrere Builds je
-   Klasse speichern, Export und Import als JSON. Danach die Diagnose-Route
-   `/api/wow/probe/talents` entfernen.
+1. ~~**Talentplaner**~~ — gebaut 2026-11-12, siehe Abschnitt „Talentbuilds". Ungeprüft
+   mit echten Daten. Die Diagnose-Route `/api/wow/probe/talents` steht noch: sie ist
+   ausgeliefert, und ausgelieferte Dateien werden nur auf Zuruf gelöscht.
 2. **Einrichtungscode im echten Setup durchlaufen** — mit frischem Volume.
 
 Nachzuziehen, wenn die Wochenübersicht im Betrieb steht: wöchentliche Quests und
@@ -133,10 +133,29 @@ Zeilen bleiben, weil sie die Stufe tragen.
 Zeile verlangt 5 Punkte mehr im selben Baum, Voraussetzungen voll ausgebaut. Die API
 liefert keine dieser Regeln; die Oberfläche schreibt „angenommen" dazu.
 
-**Export:** JSON (Entscheid 2026-11-11).
+**Export:** JSON (Entscheid 2026-11-11). Format `wow-dashboard/talent-build`, Version 1:
+Klasse, Name und Ränge je Talent-ID. Die Oberfläche sagt dazu, dass es kein Code des Spiels ist.
 
-**Nützlich obendrein, sobald der Baum steht:** den aktuell im Spiel gesetzten Build eines
-Charakters aus `specializations` einlesen und als Ausgangspunkt anbieten.
+**Planer (gebaut 2026-11-12, Wünsche des Nutzers):**
+
+- **Ort:** eigene Seite „Talentplaner" in der Kopfzeile (`/dashboard/talentplaner`), Klasse
+  frei wählbar – auch ohne eigenen Charakter dieser Klasse. „Woche" ist dafür aus der
+  Navigation genommen.
+- **Punkte:** immer für die Höchststufe, 51 Punkte (Stufe 60 angenommen).
+- **Neuer Build:** vorgewählt ist der Build im Spiel des ersten Charakters der Klasse;
+  „Leer" ist die Alternative. Aus dem Bereich „Talente" führt „Als neuen Build
+  speichern" mit dem Charakter und der Verteilung vorbelegt in den Planer.
+- **Speichern** per Knopf, nicht je Klick; ungespeicherte Änderungen warnen beim Verlassen.
+- **Regelwidrige Builds** (aus dem Spiel oder importiert) werden gemeldet, nicht korrigiert.
+  Entfernen geht dort, solange es nichts Neues bricht.
+- **Ziel-Build:** im Bereich „Talente" eines Charakters je Talentverteilung ein Build der
+  Klasse aktivierbar (Tabelle `TalentTarget`). Die Bäume zeigen dann, was noch zu setzen
+  ist (gestrichelt), was passt (grün) und was anders sitzt (rot).
+- **Dualspec:** die API nennt die Verteilungen nicht mit Nummer, nur in Reihenfolge und mit
+  `is_active`. Gezählt wird in der Reihenfolge der Antwort ab 1 – **angenommen**, dass sie
+  stabil bleibt, auch wenn die aktive wechselt. Mit echten Daten zu prüfen.
+- **Ablage:** Tabellen `TalentBuild` (je Nutzer, Region, Klasse; Ränge als JSON je
+  Talent-ID) und `TalentTarget`, Migration `0011_talentbuilds`.
 
 ---
 

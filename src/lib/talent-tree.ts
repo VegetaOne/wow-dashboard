@@ -168,48 +168,321 @@ export function parseSpecTree(raw: RawSpecTree | null, treeId: number, specId: n
   }
 }
 
+/** Ränge je Talent-ID – so speichert ein Build, so liefert das Profil. */
+export type TalentRanks = Record<number, number>
+
+/** Ein gespeicherter Build, wie Server und Oberfläche ihn austauschen. */
+export interface SavedBuild {
+  id: string
+  classId: number
+  name: string
+  ranks: TalentRanks
+  updatedAt: string
+}
+
 /**
- * Gesetzte Ränge des Charakters, auf Knoten gelegt. Nur die aktive Gruppe –
- * eine zweite Talentverteilung (falls Forever sie kennt) kommt später.
- * Talente, die keinem Knoten zuzuordnen sind, werden gezählt statt verschluckt.
+ * Eine Talentverteilung des Charakters. Forever kennt zwei (Dualspec);
+ * die API nennt keine Nummer, nur die Reihenfolge und `is_active`. Gezählt
+ * wird darum in der Reihenfolge der Antwort ab 1 – angenommen, dass sie
+ * stabil ist (für Forever nicht belegt).
  */
-export function allocationFromCharacter(
-  raw: RawSpecializations | null,
-  trees: TalentTree[]
-): { allocation: Allocation; unmatched: number; spentByTree: Record<number, number> } {
+export interface TalentGroup {
+  index: number
+  active: boolean
+  ranks: TalentRanks
+  spentBySpec: Record<number, number>
+}
+
+export function groupsFromCharacter(raw: RawSpecializations | null): TalentGroup[] {
+  return (raw?.specialization_groups ?? []).map((group, i) => {
+    const ranks: TalentRanks = {}
+    const spentBySpec: Record<number, number> = {}
+    for (const spec of group.specializations ?? []) {
+      const specId = spec.specialization?.id
+      if (typeof specId === "number" && typeof spec.spent_points === "number") {
+        spentBySpec[specId] = spec.spent_points
+      }
+      for (const entry of spec.talents ?? []) {
+        const id = entry.talent?.id
+        const rank = entry.talent_rank
+        if (typeof id === "number" && typeof rank === "number" && rank > 0) {
+          ranks[id] = Math.max(ranks[id] ?? 0, rank)
+        }
+      }
+    }
+    return { index: i + 1, active: group.is_active === true, ranks, spentBySpec }
+  })
+}
+
+/**
+ * Ränge je Talent-ID auf Knoten legen. Talente, die keinem Knoten zuzuordnen
+ * sind, werden gezählt statt verschluckt; Ränge über dem Höchstrang gekappt.
+ */
+export function allocationFromRanks(
+  trees: TalentTree[],
+  ranks: TalentRanks
+): { allocation: Allocation; unmatched: number } {
   const byTalent = new Map<number, TalentNode>()
   for (const tree of trees) {
     for (const node of tree.nodes) {
       if (node.talentId !== null) byTalent.set(node.talentId, node)
     }
   }
-
-  const groups = raw?.specialization_groups ?? []
-  const active = groups.find((g) => g.is_active) ?? groups[0]
   const allocation: Allocation = {}
-  const spentByTree: Record<number, number> = {}
   let unmatched = 0
-
-  for (const spec of active?.specializations ?? []) {
-    const specId = spec.specialization?.id
-    if (typeof specId === "number" && typeof spec.spent_points === "number") {
-      spentByTree[specId] = spec.spent_points
+  for (const [key, rank] of Object.entries(ranks)) {
+    if (!(rank > 0)) continue
+    const node = byTalent.get(Number(key))
+    if (!node) {
+      unmatched++
+      continue
     }
-    for (const entry of spec.talents ?? []) {
-      const node = typeof entry.talent?.id === "number" ? byTalent.get(entry.talent.id) : undefined
-      const rank = typeof entry.talent_rank === "number" ? entry.talent_rank : 0
-      if (!node || rank <= 0) {
-        if (rank > 0) unmatched++
-        continue
-      }
-      allocation[node.id] = Math.min(rank, node.maxRank)
+    allocation[node.id] = Math.min(rank, node.maxRank)
+  }
+  return { allocation, unmatched }
+}
+
+/** Umkehrung: Knoten-Ränge als Talent-IDs, wie ein Build sie speichert. */
+export function ranksFromAllocation(trees: TalentTree[], allocation: Allocation): TalentRanks {
+  const ranks: TalentRanks = {}
+  for (const tree of trees) {
+    for (const node of tree.nodes) {
+      const rank = allocation[node.id] ?? 0
+      if (rank > 0 && node.talentId !== null) ranks[node.talentId] = rank
     }
   }
+  return ranks
+}
 
-  return { allocation, unmatched, spentByTree }
+/**
+ * Gesetzte Ränge des Charakters, auf Knoten gelegt. Ohne `groupIndex` die
+ * aktive Talentverteilung, sonst die genannte (ab 1).
+ */
+export function allocationFromCharacter(
+  raw: RawSpecializations | null,
+  trees: TalentTree[],
+  groupIndex?: number
+): { allocation: Allocation; unmatched: number; spentByTree: Record<number, number> } {
+  const groups = groupsFromCharacter(raw)
+  const group =
+    (groupIndex !== undefined ? groups.find((g) => g.index === groupIndex) : groups.find((g) => g.active)) ??
+    groups[0]
+  if (!group) return { allocation: {}, unmatched: 0, spentByTree: {} }
+  const { allocation, unmatched } = allocationFromRanks(trees, group.ranks)
+  return { allocation, unmatched, spentByTree: group.spentBySpec }
 }
 
 /** Punkte in einem Baum nach Zuteilung. */
 export function pointsInTree(tree: TalentTree, allocation: Allocation): number {
   return tree.nodes.reduce((sum, n) => sum + (allocation[n.id] ?? 0), 0)
+}
+
+export function totalPoints(trees: TalentTree[], allocation: Allocation): number {
+  return trees.reduce((sum, tree) => sum + pointsInTree(tree, allocation), 0)
+}
+
+// ─── Regeln ───────────────────────────────────────────────────────────────────
+//
+// Die API liefert keine dieser Regeln. Angenommen nach dem klassischen Spiel
+// und vom Nutzer so bestätigt (2026-11-11): ein Punkt je Stufe ab Stufe 10,
+// geplant wird immer für die Höchststufe 60 (Entscheid 2026-11-12), jede Zeile
+// verlangt 5 Punkte mehr in den Zeilen darüber desselben Baums, und eine
+// Voraussetzung muss voll ausgebaut sein. Die Oberfläche schreibt
+// „angenommen" dazu.
+
+export const MAX_LEVEL = 60
+export const MAX_POINTS = MAX_LEVEL - 9
+export const POINTS_PER_ROW = 5
+
+/** Punkte im Baum in Zeilen oberhalb von `row`. */
+function pointsAbove(tree: TalentTree, allocation: Allocation, row: number): number {
+  return tree.nodes.reduce((sum, n) => sum + (n.row < row ? allocation[n.id] ?? 0 : 0), 0)
+}
+
+/** Warum ein Punkt nicht gesetzt werden kann – `null`, wenn er es kann. */
+export type AddBlock = "maxRank" | "noPoints" | "rowLocked" | "requires"
+
+export function addBlock(
+  trees: TalentTree[],
+  tree: TalentTree,
+  allocation: Allocation,
+  node: TalentNode
+): AddBlock | null {
+  if ((allocation[node.id] ?? 0) >= node.maxRank) return "maxRank"
+  if (totalPoints(trees, allocation) >= MAX_POINTS) return "noPoints"
+  if (pointsAbove(tree, allocation, node.row) < (node.row - 1) * POINTS_PER_ROW) return "rowLocked"
+  const byId = new Map(tree.nodes.map((n) => [n.id, n]))
+  for (const id of node.requires) {
+    const req = byId.get(id)
+    if (req && (allocation[req.id] ?? 0) < req.maxRank) return "requires"
+  }
+  return null
+}
+
+/** Knoten im Baum, die nach den Regeln nicht stehen dürften. */
+function brokenNodes(tree: TalentTree, allocation: Allocation): number[] {
+  const byId = new Map(tree.nodes.map((n) => [n.id, n]))
+  return tree.nodes
+    .filter((n) => (allocation[n.id] ?? 0) > 0)
+    .filter(
+      (n) =>
+        pointsAbove(tree, allocation, n.row) < (n.row - 1) * POINTS_PER_ROW ||
+        n.requires.some((id) => {
+          const req = byId.get(id)
+          return req !== undefined && (allocation[req.id] ?? 0) < req.maxRank
+        })
+    )
+    .map((n) => n.id)
+}
+
+/**
+ * Darf ein Punkt weg? Nur, wenn danach nichts mehr in der Luft hängt: keine
+ * Zeile verliert ihre Freischaltung, keine Voraussetzung fällt unter voll.
+ * War der Baum vorher schon regelwidrig (Build aus dem Spiel oder Import),
+ * zählt nur, dass das Entfernen nichts Neues bricht.
+ */
+export function canRemove(tree: TalentTree, allocation: Allocation, node: TalentNode): boolean {
+  const rank = allocation[node.id] ?? 0
+  if (rank <= 0) return false
+  const before = new Set(brokenNodes(tree, allocation))
+  const next = { ...allocation, [node.id]: rank - 1 }
+  return brokenNodes(tree, next).every((id) => id === node.id || before.has(id))
+}
+
+/** Was an einer Verteilung nicht zu den angenommenen Regeln passt. */
+export function ruleIssues(
+  trees: TalentTree[],
+  allocation: Allocation
+): { overBudget: number; broken: number[] } {
+  return {
+    overBudget: Math.max(0, totalPoints(trees, allocation) - MAX_POINTS),
+    broken: trees.flatMap((tree) => brokenNodes(tree, allocation)),
+  }
+}
+
+// ─── Vergleich mit dem Build im Spiel ─────────────────────────────────────────
+
+/**
+ * - `done`: der Charakter hat mindestens den Rang des Builds
+ * - `todo`: der Build verlangt mehr, als gesetzt ist
+ * - `extra`: gesetzt, aber im Build nicht (oder niedriger) vorgesehen
+ * - `none`: weder noch
+ */
+export type NodeStatus = "done" | "todo" | "extra" | "none"
+
+export function nodeStatus(current: number, target: number): NodeStatus {
+  if (target > 0 && current >= target) return current > target ? "extra" : "done"
+  if (target > current) return "todo"
+  if (current > target) return "extra"
+  return "none"
+}
+
+/** Punkte, die noch fehlen, und Punkte, die anders sitzen als im Build. */
+export function compareAllocations(
+  trees: TalentTree[],
+  current: Allocation,
+  target: Allocation
+): { missing: number; extra: number } {
+  let missing = 0
+  let extra = 0
+  for (const tree of trees) {
+    for (const node of tree.nodes) {
+      const c = current[node.id] ?? 0
+      const t = target[node.id] ?? 0
+      if (t > c) missing += t - c
+      if (c > t) extra += c - t
+    }
+  }
+  return { missing, extra }
+}
+
+// ─── Austausch als JSON ───────────────────────────────────────────────────────
+//
+// Ein eigenes Format dieser App (Entscheid 2026-11-11): für Forever ist kein
+// Build-Code des Spiels bekannt, und ein Code, der wie einer aussieht, es aber
+// nicht ist, wäre schlimmer als keiner. Die Oberfläche sagt das.
+
+export const EXPORT_FORMAT = "wow-dashboard/talent-build"
+export const EXPORT_VERSION = 1
+const MAX_NAME = 60
+const MAX_ENTRIES = 300
+const MAX_RANK = 10
+
+export interface BuildExport {
+  format: typeof EXPORT_FORMAT
+  version: typeof EXPORT_VERSION
+  classId: number
+  className: string | null
+  name: string
+  talents: { talentId: number; rank: number }[]
+}
+
+export function exportBuild(build: {
+  classId: number
+  className: string | null
+  name: string
+  ranks: TalentRanks
+}): BuildExport {
+  return {
+    format: EXPORT_FORMAT,
+    version: EXPORT_VERSION,
+    classId: build.classId,
+    className: build.className,
+    name: build.name,
+    talents: Object.entries(build.ranks)
+      .map(([id, rank]) => ({ talentId: Number(id), rank }))
+      .sort((a, b) => a.talentId - b.talentId),
+  }
+}
+
+/** Name eines Builds: getrimmt, gekürzt; leer heisst ungültig. */
+export function cleanBuildName(input: unknown): string | null {
+  if (typeof input !== "string") return null
+  const name = input.trim().replace(/\s+/g, " ").slice(0, MAX_NAME)
+  return name.length > 0 ? name : null
+}
+
+/**
+ * Ränge auf Form prüfen – Schlüssel positive ganze Talent-IDs, Ränge 1–10.
+ * Gegen die Bäume prüft das nicht; das tut die Oberfläche, die sie kennt.
+ */
+export function cleanRanks(input: unknown): TalentRanks | null {
+  if (!input || typeof input !== "object" || Array.isArray(input)) return null
+  const entries = Object.entries(input as Record<string, unknown>)
+  if (entries.length > MAX_ENTRIES) return null
+  const ranks: TalentRanks = {}
+  for (const [key, value] of entries) {
+    const id = Number(key)
+    if (!Number.isInteger(id) || id <= 0) return null
+    if (typeof value !== "number" || !Number.isInteger(value) || value < 1 || value > MAX_RANK) return null
+    ranks[id] = value
+  }
+  return ranks
+}
+
+export type ImportError = "json" | "format" | "version" | "content"
+
+export function parseBuildImport(
+  text: string
+): { ok: true; classId: number; name: string; ranks: TalentRanks } | { ok: false; error: ImportError } {
+  let data: unknown
+  try {
+    data = JSON.parse(text)
+  } catch {
+    return { ok: false, error: "json" }
+  }
+  const obj = data as Partial<BuildExport> | null
+  if (!obj || typeof obj !== "object" || obj.format !== EXPORT_FORMAT) return { ok: false, error: "format" }
+  if (obj.version !== EXPORT_VERSION) return { ok: false, error: "version" }
+  if (typeof obj.classId !== "number" || !Array.isArray(obj.talents)) return { ok: false, error: "content" }
+
+  const raw: Record<string, unknown> = {}
+  for (const entry of obj.talents) {
+    if (!entry || typeof entry !== "object") return { ok: false, error: "content" }
+    raw[String((entry as { talentId?: unknown }).talentId)] = (entry as { rank?: unknown }).rank
+  }
+  const ranks = cleanRanks(raw)
+  const name = cleanBuildName(obj.name)
+  if (!ranks || !name) return { ok: false, error: "content" }
+  return { ok: true, classId: obj.classId, name, ranks }
 }

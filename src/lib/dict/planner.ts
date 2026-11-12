@@ -1,0 +1,175 @@
+/**
+ * Wörterbuch: Bereich `planner` – Talentplaner und Ziel-Builds im Bereich
+ * „Talente".
+ *
+ * Englisch definiert die Schlüssel, Deutsch muss sie vollständig bedienen –
+ * das erzwingt der Typ unten. Platzhalter stehen in geschweiften Klammern.
+ */
+
+export const en = {
+  // ─── Seite ────────────────────────────────────────────────────────────────
+  "planner.title": "Talent planner",
+  "planner.intro":
+    "Plan talent builds per class, save several, exchange them as JSON. Activate a build for a character in its Talents section to see what is still to pick.",
+  "planner.classes": "Class",
+  "planner.unavailableText": "The talent trees of this class could not be loaded.",
+  "planner.builds": "Builds",
+  "planner.newBuild": "+ New build",
+  "planner.import": "Import",
+  "planner.defaultName": "Build {n}",
+
+  // ─── Bearbeiten ───────────────────────────────────────────────────────────
+  "planner.name": "Name",
+  "planner.save": "Save",
+  "planner.discard": "Discard changes",
+  "planner.reset": "Clear all points",
+  "planner.export": "Export",
+  "planner.exportHint": "JSON format of this app — not a game build code",
+  "planner.delete": "Delete",
+  "planner.deleteConfirm": "Really delete?",
+  "planner.unsaved": "Unsaved changes",
+  "planner.discardConfirm": "Discard the unsaved changes to this build?",
+  "planner.saved": "Saved.",
+  "planner.created": "Build created.",
+  "planner.deleted": "Build deleted.",
+  "planner.saveFailed": "Could not save.",
+  "planner.nameMissing": "The build needs a name.",
+  "planner.rulesNote":
+    "Assumed rules — the API provides none: {points} points (level {level}), each row needs {perRow} more points in the rows above in the same tree, prerequisites at full rank.",
+  "planner.rulesBroken":
+    "{count} talents do not follow the assumed rules (taken from the game or imported). They stay as they are.",
+
+  // ─── Punkte und Bedienung ─────────────────────────────────────────────────
+  "planner.pointsUsed": "{used} of {max} points",
+  "planner.pointsLeft": "{count} left",
+  "planner.pointsOver": "{count} points over the limit",
+  "planner.modeAdd": "+ Add",
+  "planner.modeRemove": "− Remove",
+  "planner.clickHint": "Right-click or Shift+click removes a point.",
+  "planner.tipRowLocked": "Needs {points} points in the rows above",
+  "planner.tipNoPoints": "All points are spent",
+
+  // ─── Neuer Build ──────────────────────────────────────────────────────────
+  "planner.startFrom": "Start from",
+  "planner.startEmpty": "Empty",
+  "planner.startCharacter": "{name} (level {level}) — build in game",
+  "planner.create": "Create",
+  "planner.cancel": "Cancel",
+  "planner.sourceLoading": "Loading the talents of this character …",
+  "planner.sourceFailed": "The talents of this character could not be loaded.",
+  "planner.sourceEmpty": "This character has no talent data yet — the build starts empty.",
+  "planner.sourcePoints": "{count} points will be taken over",
+  "planner.noSources": "No character of this class on the account — new builds start empty.",
+  "planner.group": "Spec {n}",
+  "planner.groupActive": "Spec {n} · active",
+
+  // ─── Import ───────────────────────────────────────────────────────────────
+  "planner.importErrorJson": "The file is not valid JSON.",
+  "planner.importErrorFormat": "This is not a build exported from this app.",
+  "planner.importErrorVersion": "This build was exported in a newer format.",
+  "planner.importErrorContent": "The build in the file is incomplete or damaged.",
+  "planner.importWrongClass": "This build belongs to another class. Open that class first.",
+  "planner.tooManyBuilds": "Too many builds for this class — delete some first.",
+  "planner.buildNotFound": "Build not found.",
+
+  // ─── Im Bereich Talente ───────────────────────────────────────────────────
+  "planner.groups": "Talent specs",
+  "planner.target": "Active build",
+  "planner.targetNone": "— none —",
+  "planner.targetSet": "Build activated.",
+  "planner.targetCleared": "No build active.",
+  "planner.editTarget": "Edit in planner",
+  "planner.saveAsBuild": "Save as new build",
+  "planner.noBuildsYet": "No builds for this class yet. Create one in the",
+  "planner.comparing": "Spec {n} compared with “{name}”",
+  "planner.compareMissing": "{count} points still to pick",
+  "planner.compareComplete": "Build complete",
+  "planner.compareExtra": "{count} points placed differently",
+  "planner.legendTodo": "Still to pick",
+  "planner.legendDone": "As in the build",
+  "planner.legendExtra": "Not in the build",
+  "planner.tipTodo": "Build: rank {rank}",
+  "planner.tipDone": "As in the build",
+  "planner.tipExtra": "Build: rank {rank} — placed differently",
+}
+
+export const de: Record<keyof typeof en, string> = {
+  "planner.title": "Talentplaner",
+  "planner.intro":
+    "Talentbuilds je Klasse planen, mehrere speichern, als JSON austauschen. Im Bereich „Talente“ eines Charakters einen Build aktivieren, um zu sehen, was noch zu wählen ist.",
+  "planner.classes": "Klasse",
+  "planner.unavailableText": "Die Talentbäume dieser Klasse liessen sich nicht laden.",
+  "planner.builds": "Builds",
+  "planner.newBuild": "+ Neuer Build",
+  "planner.import": "Importieren",
+  "planner.defaultName": "Build {n}",
+
+  "planner.name": "Name",
+  "planner.save": "Speichern",
+  "planner.discard": "Änderungen verwerfen",
+  "planner.reset": "Alle Punkte entfernen",
+  "planner.export": "Exportieren",
+  "planner.exportHint": "JSON-Format dieser App – kein Build-Code des Spiels",
+  "planner.delete": "Löschen",
+  "planner.deleteConfirm": "Wirklich löschen?",
+  "planner.unsaved": "Ungespeicherte Änderungen",
+  "planner.discardConfirm": "Ungespeicherte Änderungen an diesem Build verwerfen?",
+  "planner.saved": "Gespeichert.",
+  "planner.created": "Build angelegt.",
+  "planner.deleted": "Build gelöscht.",
+  "planner.saveFailed": "Speichern fehlgeschlagen.",
+  "planner.nameMissing": "Der Build braucht einen Namen.",
+  "planner.rulesNote":
+    "Angenommene Regeln – die API liefert keine: {points} Punkte (Stufe {level}), jede Zeile verlangt {perRow} Punkte mehr in den Zeilen darüber im selben Baum, Voraussetzungen voll ausgebaut.",
+  "planner.rulesBroken":
+    "{count} Talente folgen nicht den angenommenen Regeln (aus dem Spiel übernommen oder importiert). Sie bleiben, wie sie sind.",
+
+  "planner.pointsUsed": "{used} von {max} Punkten",
+  "planner.pointsLeft": "{count} übrig",
+  "planner.pointsOver": "{count} Punkte über der Grenze",
+  "planner.modeAdd": "+ Setzen",
+  "planner.modeRemove": "− Entfernen",
+  "planner.clickHint": "Rechtsklick oder Umschalt+Klick nimmt einen Punkt weg.",
+  "planner.tipRowLocked": "Braucht {points} Punkte in den Zeilen darüber",
+  "planner.tipNoPoints": "Alle Punkte sind verteilt",
+
+  "planner.startFrom": "Ausgangspunkt",
+  "planner.startEmpty": "Leer",
+  "planner.startCharacter": "{name} (Stufe {level}) – Build im Spiel",
+  "planner.create": "Anlegen",
+  "planner.cancel": "Abbrechen",
+  "planner.sourceLoading": "Talente dieses Charakters werden geladen …",
+  "planner.sourceFailed": "Die Talente dieses Charakters liessen sich nicht laden.",
+  "planner.sourceEmpty": "Für diesen Charakter gibt es noch keine Talentdaten – der Build beginnt leer.",
+  "planner.sourcePoints": "{count} Punkte werden übernommen",
+  "planner.noSources": "Kein Charakter dieser Klasse auf dem Account – neue Builds beginnen leer.",
+  "planner.group": "Verteilung {n}",
+  "planner.groupActive": "Verteilung {n} · aktiv",
+
+  "planner.importErrorJson": "Die Datei ist kein gültiges JSON.",
+  "planner.importErrorFormat": "Das ist kein Build, der aus dieser App exportiert wurde.",
+  "planner.importErrorVersion": "Dieser Build wurde in einem neueren Format exportiert.",
+  "planner.importErrorContent": "Der Build in der Datei ist unvollständig oder beschädigt.",
+  "planner.importWrongClass": "Dieser Build gehört zu einer anderen Klasse. Zuerst diese Klasse öffnen.",
+  "planner.tooManyBuilds": "Zu viele Builds für diese Klasse – zuerst welche löschen.",
+  "planner.buildNotFound": "Build nicht gefunden.",
+
+  "planner.groups": "Talentverteilungen",
+  "planner.target": "Aktiver Build",
+  "planner.targetNone": "– keiner –",
+  "planner.targetSet": "Build aktiviert.",
+  "planner.targetCleared": "Kein Build aktiv.",
+  "planner.editTarget": "Im Planer bearbeiten",
+  "planner.saveAsBuild": "Als neuen Build speichern",
+  "planner.noBuildsYet": "Noch keine Builds für diese Klasse. Anlegen im",
+  "planner.comparing": "Verteilung {n} im Vergleich mit „{name}“",
+  "planner.compareMissing": "Noch {count} Punkte zu setzen",
+  "planner.compareComplete": "Build vollständig",
+  "planner.compareExtra": "{count} Punkte sitzen anders",
+  "planner.legendTodo": "Noch zu setzen",
+  "planner.legendDone": "Wie im Build",
+  "planner.legendExtra": "Nicht im Build",
+  "planner.tipTodo": "Build: Rang {rank}",
+  "planner.tipDone": "Wie im Build",
+  "planner.tipExtra": "Build: Rang {rank} – sitzt anders",
+}

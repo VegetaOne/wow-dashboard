@@ -19,6 +19,7 @@ export const en = {
   "header.settings": "Settings",
   "header.signOut": "Sign out",
   "header.weekly": "Week",
+  "header.talentPlanner": "Talent planner",
   "header.nav": "Navigation",
 
   "theme.label": "Colour scheme",
@@ -194,6 +195,7 @@ export const de: Record<keyof typeof en, string> = {
   "header.settings": "Einstellungen",
   "header.signOut": "Abmelden",
   "header.weekly": "Woche",
+  "header.talentPlanner": "Talentplaner",
   "header.nav": "Navigation",
 
   "theme.label": "Farbschema",
