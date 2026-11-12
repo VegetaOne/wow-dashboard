@@ -3,7 +3,6 @@
 import { Suspense, useCallback, useState } from "react"
 import { Header } from "./Header"
 import { CharacterGrid, POLL_MS } from "./CharacterGrid"
-import { WeeklyLink } from "./WeeklyLink"
 import { useT } from "./I18nProvider"
 
 /**
@@ -30,7 +29,7 @@ export function DashboardShell({
   }, [])
 
   return (
-    <div className="min-h-screen bg-ground">
+    <div className="min-h-screen">
       <Header
         battleTag={battleTag}
         lastSync={sync.at}
@@ -39,31 +38,16 @@ export function DashboardShell({
         canChangeLanguage={isOwner}
       />
 
+      {/* Bühne und übrige Charaktere – die Wochenübersicht steht in der Kopfzeile */}
       <main>
-        <div className="flex flex-wrap items-center gap-4 border-b-2 border-line px-6 py-5">
-          <div>
-            <h2>{t("dashboard.myCharacters")}</h2>
-            <p className="mt-1 text-[13px] opacity-60">
-              {t("dashboard.myCharactersHint")}
-            </p>
-          </div>
-
-          <div className="ml-auto">
-            <WeeklyLink />
-          </div>
-        </div>
-
         <Suspense
           fallback={
-            <div className="px-6 py-12 text-[13px] opacity-55">
+            <div className="px-6 py-12 text-[13px]" style={{ color: "var(--wb-ink-dim)" }}>
               {t("dashboard.loading")}
             </div>
           }
         >
-          <CharacterGrid
-            onSync={handleSync}
-            pollMs={pollSeconds * 1000}
-          />
+          <CharacterGrid onSync={handleSync} pollMs={pollSeconds * 1000} />
         </Suspense>
       </main>
     </div>

@@ -2,8 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { CharacterCard } from "./CharacterCard"
+import { STAGE_SLOTS, WarbandStage } from "./WarbandStage"
 import type { WoWCharacter, CharacterDetails } from "@/lib/battlenet"
-import type { TranslationKey } from "@/lib/i18n"
 import { useT } from "./I18nProvider"
 
 interface CharacterWithMeta extends WoWCharacter {
@@ -55,7 +55,6 @@ export function CharacterGrid({
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [faction, setFaction] = useState<FactionFilter>("all")
-  const [favoritesOnly, setFavoritesOnly] = useState(false)
   const [query, setQuery] = useState("")
 
   // onSync in einer Ref halten: Der Aufrufer übergibt oft eine Inline-Funktion,
@@ -138,67 +137,28 @@ export function CharacterGrid({
     []
   )
 
-  const stats = useMemo(() => {
-    const loadedLevels = characters
-      .map((c) => details[c.slug]?.equippedItemLevel)
-      .filter((v): v is number => typeof v === "number")
+  // Bühne: die Favoriten, höchste Stufe zuerst, höchstens fünf. Wer
+  // darüber hinaus markiert ist, bleibt mit goldenem ★ in der Liste.
+  const { stage, others } = useMemo(() => {
+    const favorites = characters
+      .filter((c) => c.isFavorite)
+      .sort((a, b) => b.level - a.level || a.name.localeCompare(b.name))
+    const stage = favorites.slice(0, STAGE_SLOTS)
+    const onStage = new Set(stage.map((c) => c.slug))
+    return { stage, others: characters.filter((c) => !onStage.has(c.slug)) }
+  }, [characters])
 
-    const avg = loadedLevels.length
-      ? Math.round(loadedLevels.reduce((a, b) => a + b, 0) / loadedLevels.length)
-      : null
-    const maxLevel = Math.max(0, ...characters.map((c) => c.level))
+  // Die Bühne ist sofort sichtbar – ihre Bilder und Werte gleich holen
+  useEffect(() => {
+    if (stage.length > 0) loadDetails(stage)
+  }, [stage, loadDetails])
 
-    const stat = (
-      key: TranslationKey,
-      value: number | string,
-      note: string
-    ) => ({ key, label: t(key), value, note })
-
-    return [
-      stat(
-        "grid.statCharacters",
-        characters.length,
-        t("grid.factionSplit", {
-          horde: characters.filter((c) => c.faction.type === "HORDE").length,
-          alliance: characters.filter((c) => c.faction.type === "ALLIANCE").length,
-        })
-      ),
-      stat(
-        "grid.statHighestLevel",
-        maxLevel,
-        t("grid.atMaxLevel", {
-          count: characters.filter((c) => c.level >= maxLevel).length,
-        })
-      ),
-      // Ob Forever eine Gegenstandsstufe führt, ist nicht belegt. Ohne einen
-      // einzigen geladenen Wert steht „—", nie 0.
-      stat(
-        "grid.statAvgItemLevel",
-        avg ?? "—",
-        // Ehrlich bleiben: der Schnitt gilt nur für das bisher Geladene
-        loadedLevels.length
-          ? t("grid.avgNote", {
-              loaded: loadedLevels.length,
-              total: characters.length,
-              max: Math.max(...loadedLevels),
-            })
-          : t("grid.avgPending")
-      ),
-      stat(
-        "grid.statFavorites",
-        characters.filter((c) => c.isFavorite).length,
-        t("grid.favoritesNote")
-      ),
-    ]
-  }, [characters, details, t])
-
-  const displayed = characters
+  const displayed = others
     .filter((c) => (faction === "all" ? true : c.faction.type === faction))
-    .filter((c) => (favoritesOnly ? c.isFavorite : true))
     .filter((c) =>
       !query.trim()
         ? true
-        : (c.name + " " + (c.surname ?? "") + c.playable_class.name)
+        : (c.name + " " + (c.surname ?? "") + " " + c.playable_class.name)
             .toLowerCase()
             .includes(query.trim().toLowerCase())
     )
@@ -207,8 +167,10 @@ export function CharacterGrid({
 
   if (error) {
     return (
-      <div className="border-2 border-accent p-6 text-[14px]">
-        <span className="eyebrow block">{t("grid.apiError")}</span>
+      <div className="wb-plate m-6 p-6 text-[14px]">
+        <span className="eyebrow block" style={{ color: "var(--wb-horde-lit)" }}>
+          {t("grid.apiError")}
+        </span>
         {error}
       </div>
     )
@@ -216,115 +178,111 @@ export function CharacterGrid({
 
   return (
     <div>
-      {/* Kennzahlen-Leiste */}
-      <div className="grid grid-cols-2 border-b-2 border-line lg:grid-cols-4">
-        {stats.map((s) => (
-          <div key={s.key} className="flex flex-col gap-0.5 border-r border-line px-6 py-4">
-            <span className="eyebrow">{s.label}</span>
-            <span className="font-heading text-[30px] font-extrabold leading-none tracking-[-0.02em]">
-              {loading ? "—" : s.value}
-            </span>
-            <span className="text-[11px] opacity-50">{s.note}</span>
+      <WarbandStage
+        characters={stage}
+        details={details}
+        total={characters.length}
+        favoriteCount={characters.filter((c) => c.isFavorite).length}
+      />
+
+      {/* Übrige Charaktere */}
+      <section
+        className="px-[26px] pb-8 pt-6"
+        style={{
+          background: "linear-gradient(180deg, var(--wb-deep), var(--wb-void))",
+          borderTop: "2px solid var(--wb-gold-faint)",
+        }}
+      >
+        <div className="mx-auto max-w-[1100px]">
+          <div className="mb-4 flex flex-wrap items-end gap-x-6 gap-y-3">
+            <div className="mr-auto">
+              <h2 style={{ fontSize: 21 }}>{t("list.title")}</h2>
+              <p className="mt-1 text-[12px] uppercase" style={{ letterSpacing: "0.1em", color: "var(--wb-ink-dim)" }}>
+                {t("list.count", {
+                  shown: displayed.length,
+                  total: others.length,
+                  horde: others.filter((c) => c.faction.type === "HORDE").length,
+                  alliance: others.filter((c) => c.faction.type === "ALLIANCE").length,
+                })}
+              </p>
+            </div>
+
+            <div className="flex">
+              {([
+                { id: "all", labelKey: "grid.filterAll", color: "var(--wb-gold)" },
+                { id: "HORDE", labelKey: "card.horde", color: "var(--wb-horde)" },
+                { id: "ALLIANCE", labelKey: "card.alliance", color: "var(--wb-ally)" },
+              ] as const).map((f) => {
+                const active = faction === f.id
+                return (
+                  <button
+                    key={f.id}
+                    onClick={() => setFaction(f.id)}
+                    aria-pressed={active}
+                    className="wb-tab"
+                    style={{
+                      padding: "9px 15px",
+                      fontSize: 11,
+                      letterSpacing: "0.16em",
+                      ...(active
+                        ? { background: f.color, borderColor: f.color, color: "var(--wb-on-gold)", boxShadow: "none" }
+                        : {}),
+                    }}
+                  >
+                    <span
+                      className="h-2 w-2"
+                      style={{ background: active ? "var(--wb-on-gold)" : f.color }}
+                      aria-hidden
+                    />
+                    {t(f.labelKey)}
+                  </button>
+                )
+              })}
+            </div>
+
+            <input
+              className="input"
+              style={{ width: 210 }}
+              placeholder={t("grid.searchPlaceholder")}
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+            />
           </div>
-        ))}
-      </div>
 
-      {/* Filterzeile */}
-      <div className="flex flex-wrap items-center gap-4 border-b border-line px-6 py-3">
-        <div className="flex">
-          {([
-            { id: "all", labelKey: "grid.filterAll", color: "var(--color-neutral-700)" },
-            { id: "HORDE", labelKey: "card.horde", color: "var(--faction-horde)" },
-            { id: "ALLIANCE", labelKey: "card.alliance", color: "var(--faction-alliance)" },
-          ] as const).map((f) => {
-            const active = faction === f.id
-            return (
-              <button
-                key={f.id}
-                onClick={() => setFaction(f.id)}
-                className="-ml-px inline-flex items-center gap-2 border border-line px-3.5 py-1.5 font-heading text-[12px] font-extrabold uppercase tracking-[0.06em]"
-                style={{
-                  background: active ? f.color : "transparent",
-                  color: active ? "var(--color-bg)" : "var(--color-text)",
-                }}
-              >
-                <span
-                  className="h-2 w-2"
-                  style={{ background: active ? "var(--color-bg)" : f.color }}
-                  aria-hidden
-                />
-                {t(f.labelKey)}
-              </button>
-            )
-          })}
+          {loading ? (
+            <div>
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="mb-[5px] h-[56px] animate-pulse" style={{ background: "var(--wb-plate)" }} />
+              ))}
+            </div>
+          ) : groups.length === 0 ? (
+            <div
+              className="border border-dashed px-6 py-8 text-center text-[13px] italic"
+              style={{ borderColor: "var(--wb-gold-faint)", color: "var(--wb-ink-dim)" }}
+            >
+              {characters.length === 0 ? t("grid.noCharacters") : t("list.empty")}
+            </div>
+          ) : (
+            groups.map((group) => (
+              <CharacterSection
+                key={group.faction}
+                group={group}
+                details={details}
+                onVisible={loadDetails}
+                onToggleFavorite={toggleFavorite}
+              />
+            ))
+          )}
         </div>
 
-        <button
-          onClick={() => setFavoritesOnly((v) => !v)}
-          aria-pressed={favoritesOnly}
-          className="btn btn-secondary"
-          style={
-            favoritesOnly
-              ? { background: "var(--color-accent)", color: "var(--color-bg)", borderColor: "transparent" }
-              : undefined
-          }
+        <footer
+          className="mx-auto mt-8 flex max-w-[1100px] flex-wrap justify-between gap-3 pt-4 text-[11px] uppercase"
+          style={{ letterSpacing: "0.16em", color: "var(--wb-ink-dim)", borderTop: "2px solid var(--wb-gold-faint)" }}
         >
-          ★ {t("grid.favorites")}
-        </button>
-
-        <input
-          className="input max-w-[220px]"
-          placeholder={t("grid.searchPlaceholder")}
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-        />
-
-        <span className="ml-auto text-[11px] uppercase tracking-[0.08em] opacity-55">
-          {t("grid.shownOf", {
-            shown: displayed.length,
-            total: characters.length,
-          })}
-        </span>
-      </div>
-
-      {/* Spaltenköpfe */}
-      <div className="flex items-center gap-4 border-b-2 border-line pr-6 text-[10px] uppercase tracking-[0.1em] opacity-55">
-        <span className="w-1 flex-none" />
-        <span className="w-[34px] flex-none">{t("grid.colClass")}</span>
-        <span className="w-3 flex-none" />
-        <span className="min-w-0 flex-1 basis-[150px] py-2">
-          {t("grid.colCharacter")}
-        </span>
-        <span className="w-14 flex-none text-right">{t("card.level")}</span>
-        <span className="hidden w-14 flex-none text-right sm:block">
-          {t("card.itemLevel")}
-        </span>
-        <span className="hidden w-24 flex-none sm:block">{t("card.faction")}</span>
-        <span className="w-9 flex-none">★</span>
-        <span className="hidden w-[104px] flex-none lg:block" />
-      </div>
-
-      {loading ? (
-        <div className="divide-y divide-line">
-          {Array.from({ length: 8 }).map((_, i) => (
-            <div key={i} className="h-[54px] animate-pulse bg-surface" />
-          ))}
-        </div>
-      ) : groups.length === 0 ? (
-        <div className="px-6 py-12 text-[13px] opacity-55">
-          {favoritesOnly ? t("grid.noFavorites") : t("grid.noCharacters")}
-        </div>
-      ) : (
-        groups.map((group) => (
-          <CharacterSection
-            key={group.faction}
-            group={group}
-            details={details}
-            onVisible={loadDetails}
-            onToggleFavorite={toggleFavorite}
-          />
-        ))
-      )}
+          <span>{t("list.footer")}</span>
+          <span>{t("list.footerNote")}</span>
+        </footer>
+      </section>
     </div>
   )
 }
@@ -381,8 +339,11 @@ function CharacterSection({
   return (
     <section ref={sectionRef}>
       {/* Zwischenüberschrift je Fraktion */}
-      <div className="flex items-baseline gap-3 border-b border-line bg-surface px-6 py-2">
-        <span className="font-heading text-[13px] font-extrabold uppercase tracking-[0.06em]">
+      <div className="mb-2 mt-4 flex items-baseline gap-3 first:mt-0">
+        <span
+          className="font-heading text-[12px] font-bold uppercase"
+          style={{ letterSpacing: "0.2em", color: group.faction === "HORDE" ? "var(--wb-horde-lit)" : "var(--wb-ally-lit)" }}
+        >
           {group.faction === "HORDE" ? t("card.horde") : t("card.alliance")}
         </span>
         <span className="eyebrow">
