@@ -8,8 +8,8 @@
 export const en = {
   "app.title": "WoW Dashboard",
   "app.description": "World of Warcraft account overview",
-  "app.brand": "WOW DASHBOARD",
-  "app.tagline": "Roster / local",
+  "app.brand": "WARBAND LEDGER",
+  "app.tagline": "Warband archive",
 
   "header.apiConnected": "Dev API connected",
   "header.firstFetch": "First fetch running…",
@@ -19,6 +19,8 @@ export const en = {
   "header.collections": "Collections",
   "header.settings": "Settings",
   "header.signOut": "Sign out",
+  "header.weekly": "Week",
+  "header.nav": "Navigation",
 
   "theme.label": "Colour scheme",
   "theme.light": "Parchment",
@@ -178,8 +180,8 @@ export const de: Record<keyof typeof en, string> = {
 
   "app.title": "WoW Dashboard",
   "app.description": "World-of-Warcraft-Account-Übersicht",
-  "app.brand": "WOW DASHBOARD",
-  "app.tagline": "Kaderliste / lokal",
+  "app.brand": "WARBAND LEDGER",
+  "app.tagline": "Kriegsschar-Archiv",
 
   "header.apiConnected": "Dev-API verbunden",
   "header.firstFetch": "Erster Abruf läuft…",
@@ -189,6 +191,8 @@ export const de: Record<keyof typeof en, string> = {
   "header.collections": "Sammlungen",
   "header.settings": "Einstellungen",
   "header.signOut": "Abmelden",
+  "header.weekly": "Woche",
+  "header.nav": "Navigation",
 
   "theme.label": "Farbschema",
   "theme.light": "Pergament",
