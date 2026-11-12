@@ -18,7 +18,7 @@
 | **Sprache** | Umschalter Englisch/Deutsch, **Englisch als Standard**. |
 | **Setup-Modus** | Die `.env` soll nicht mehr von Hand gefüllt werden: beim ersten Start fragt die Website die Werte ab. |
 | **Warcraft Logs** | Zurückgestellt, bis geklärt ist, ob Warcraft Logs WoW Forever führt. |
-| **Talentbuilds** | War zurückgestellt, bis die Talentbaum-Daten für Forever bestätigt sind. **Bestätigt 2026-11-11**: Bäume, Talente und die gesetzten Talente eines Charakters kommen. Offen nur noch, ob die Knoten Position und Voraussetzungen tragen; die Einordnung in die Reihenfolge folgt danach. Siehe eigenen Abschnitt unten. |
+| **Talentbuilds** | War zurückgestellt, bis die Talentbaum-Daten für Forever bestätigt sind. **Bestätigt 2026-11-11**: Bäume, Talente und die gesetzten Talente eines Charakters kommen. Die Knoten tragen Zeile, Spalte und Voraussetzungen (`display_row`, `display_col`, `locked_by`). Anzeige gebaut (Reiter „Talente"); Planer, gespeicherte Builds und JSON als Nächstes. Siehe eigenen Abschnitt unten. |
 | **Snapshot-Historie** | Behalten, ein Stand je Tag. Grundlage für alles Verlaufsbezogene. |
 | **Loot-Bereich** | **Entfernt** (2026-11-11). Die Journal-API liefert für WoW Forever keine Instanzen; ein Loot-Index ohne Inhalt bringt nichts. Tabellen mit Migration `0008_loot_entfernen` gelöscht. Kommt die Journal-API, steht der Code in der Git-Historie. |
 | **Hintergrund-Auffrischung** | **Verworfen** (2026-11-11). Der Companion läuft, während gespielt wird; und ohne Spielen ändert sich an den Profilen nichts, weil sie erst beim Ausloggen nachziehen. Ein täglicher Timer hätte höchstens den genauen Tag einer Änderung festgehalten. Kurz gebaut (PR #7) und wieder entfernt; Tabelle mit Migration `0010_auffrischer_entfernen` gelöscht. Der Verlauf bleibt: er entsteht aus den Ständen, die beim Öffnen der Seiten gespeichert werden. |
@@ -64,7 +64,10 @@ Erledigt am 2026-11-11, in dieser Reihenfolge:
 
 Offen als Nächstes:
 
-1. **Einrichtungscode im echten Setup durchlaufen** — mit frischem Volume.
+1. **Talentplaner** — Punkte setzen nach den angenommenen Regeln, mehrere Builds je
+   Klasse speichern, Export und Import als JSON. Danach die Diagnose-Route
+   `/api/wow/probe/talents` entfernen.
+2. **Einrichtungscode im echten Setup durchlaufen** — mit frischem Volume.
 
 Nachzuziehen, wenn die Wochenübersicht im Betrieb steht: wöchentliche Quests und
 Belohnungen, und die offenen Punkte aus [Wochenübersicht](./wochenuebersicht.md).
@@ -77,11 +80,6 @@ sie keinen Platz besetzen, den sie nicht verdienen.
 
 **Warcraft Logs** — zurückgestellt am 2026-11-11. Braucht eine eigene App-Registrierung
 bei warcraftlogs.com; vorher zu klären, ob Warcraft Logs Forever-Kämpfe überhaupt führt.
-
-**Talentbuilds** — zurückgestellt am 2026-11-11, bis die Talentbaum-Daten für Forever
-bestätigt sind. **Die Daten kommen (geprüft 2026-11-11)**; die Einordnung folgt, sobald
-klar ist, ob die Knoten Position und Voraussetzungen tragen. Die Vorüberlegungen stehen
-unten im eigenen Abschnitt.
 
 **Charaktervergleich** — zwei Charaktere nebeneinander. Zurückgestellt am 2026-09-19.
 Vor einer Umsetzung ist zu klären, was verglichen wird: nur Ausrüstung und
@@ -105,8 +103,10 @@ Verbindungen, Ränge, Voraussetzungen. Ein Community-SDK nennt Talentbäume im N
 die Bäume – je Spezialisierung `/data/wow/talent-tree/{id}/playable-specialization/{specId}`
 mit `spec_talent_nodes`, je Knoten Ränge mit Talent, Zauber und Beschreibung. Was ein
 Charakter gesetzt hat, steht in `/profile/wow/character/{slug}/specializations`
-(`talent_rank` je Talent, `spent_points` je Baum). Ob die Knoten Zeile, Spalte und
-Voraussetzungen tragen, wird mit der Diagnose-Route `/api/wow/probe/talents` geprüft.
+(`talent_rank` je Talent, `spent_points` je Baum). Die Knoten tragen
+`display_row`, `display_col` und `locked_by` (geprüft 2026-11-11 mit der Diagnose-Route
+`/api/wow/probe/talents`). `locked_by` steht in beide Richtungen; als Voraussetzung zählt
+nur ein Knoten aus einer höheren Zeile.
 
 **2. Welches Exportformat?** Für Forever ist kein offizieller Build-Code des Spiels
 bekannt. Damit bleibt ein **eigenes JSON**: sofort machbar, verlustfrei, aber nur

@@ -104,7 +104,7 @@ Für Forever nicht belegt. Nicht eingeplant, bis ein Test mit echten Daten sie b
 
 | Quelle | Hängt daran | Stand |
 |---|---|---|
-| `/data/wow/talent-tree/index`, `/data/wow/talent-tree/{id}/playable-specialization/{specId}`, `/data/wow/talent/index`, `/data/wow/playable-specialization/index` | Talentbuilds | **200, 2026-11-11** (static, versionierter Namespace). Ein Baum je Spezialisierung, klassisch drei je Klasse; Knoten in `spec_talent_nodes` mit Rängen und Tooltips. Ob Position und Voraussetzungen dabei sind, wird noch geprüft. |
+| `/data/wow/talent-tree/index`, `/data/wow/talent-tree/{id}/playable-specialization/{specId}`, `/data/wow/talent/index`, `/data/wow/playable-specialization/index` | Talentbuilds | **200, 2026-11-11** (static, versionierter Namespace). Ein Baum je Spezialisierung, klassisch drei je Klasse; Knoten in `spec_talent_nodes` mit Rängen und Tooltips. Die Knoten tragen `display_row`, `display_col` und `locked_by`; die Spalten liegen in einem gemeinsamen Raster der Bäume einer Klasse. |
 | `/profile/wow/character/{slug}/specializations` | Talentbuilds, Übersicht | **200, 2026-11-11.** `specialization_groups` mit aktiver Gruppe, je Baum `talents` (mit `talent_rank`) und `spent_points`. |
 
 ### Nicht verfügbar – unabhängig vom Aufwand
