@@ -64,7 +64,7 @@ export const en = {
 
   // ─── Charakter-Tabs ──────────────────────────────────────────────────────
   "tab.equipment": "Gear",
-  "tab.equipment.note": "Equipped items and loot candidates",
+  "tab.equipment.note": "Equipped items and upgrade hints",
   "tab.professions": "Professions",
   "tab.professions.note": "Skill levels and recipes",
   "tab.progress": "Progress",
@@ -149,6 +149,8 @@ export const en = {
   "akte.prev": "Previous section",
   "akte.next": "Next section",
   "akte.sections": "Sections",
+  "akte.menuOpen": "Open the list of sections",
+  "akte.menuClose": "Close",
   "akte.source": "Source",
   "akte.sourceText": "Battle.net · WoW Forever · {region}",
   "akte.sourceNote": "Values update when the character logs out.",
@@ -225,7 +227,7 @@ export const de: Record<keyof typeof en, string> = {
 
 
   "tab.equipment": "Ausrüstung",
-  "tab.equipment.note": "Angelegte Gegenstände und Loot-Kandidaten",
+  "tab.equipment.note": "Angelegte Gegenstände und Upgrade-Hinweise",
   "tab.professions": "Berufe",
   "tab.professions.note": "Fertigkeitsstufen und Rezepte",
   "tab.progress": "Fortschritt",
@@ -307,6 +309,8 @@ export const de: Record<keyof typeof en, string> = {
   "akte.prev": "Vorheriger Bereich",
   "akte.next": "Nächster Bereich",
   "akte.sections": "Bereiche",
+  "akte.menuOpen": "Liste der Bereiche öffnen",
+  "akte.menuClose": "Schliessen",
   "akte.source": "Quelle",
   "akte.sourceText": "Battle.net · WoW Forever · {region}",
   "akte.sourceNote": "Die Werte ziehen nach, wenn der Charakter sich ausloggt.",
