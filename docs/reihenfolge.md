@@ -117,6 +117,19 @@ Tabelle mit `userId`, nicht in den Snapshots. Die App ist mehrbenutzerfähig; je
 nur seine eigenen Builds. Ein Build hängt an Klasse und Spezialisierung, nicht an einem
 Charakter, damit er sich auf mehrere Charaktere anwenden lässt.
 
+**Darstellung (2026-11-11, Wunsch des Nutzers):** angelehnt an den Client – Icons im
+Raster, Rang unten rechts, Pfeile für Voraussetzungen, Tooltip am Icon. Die drei Bäume
+**untereinander, absteigend nach gesetzten Punkten**. Ungesetzt grau, gesetzt mit grünem,
+voll ausgebaut mit goldenem Rand. Icons aus `/data/wow/media/spell/{id}`, Hintergrund aus
+dem `media`-Verweis des Baums – beides für Forever unbelegt, darum mit Rückfall (Name im
+Feld, schlichter Grund).
+
+**Regeln (angenommen, vom Nutzer so bestätigt):** ein Punkt je Stufe ab Stufe 10, jede
+Zeile verlangt 5 Punkte mehr im selben Baum, Voraussetzungen voll ausgebaut. Die API
+liefert keine dieser Regeln; die Oberfläche schreibt „angenommen" dazu.
+
+**Export:** JSON (Entscheid 2026-11-11).
+
 **Nützlich obendrein, sobald der Baum steht:** den aktuell im Spiel gesetzten Build eines
 Charakters aus `specializations` einlesen und als Ausgangspunkt anbieten.
 

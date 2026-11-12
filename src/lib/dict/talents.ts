@@ -22,7 +22,6 @@ export const en = {
   "talents.rank": "Rank {rank}/{max}",
   "talents.requires": "Requires {name} at full rank",
   "talents.nextRank": "Next rank",
-  "talents.hoverHint": "Point at a talent to see its description.",
 }
 
 export const de: Record<keyof typeof en, string> = {
@@ -40,5 +39,4 @@ export const de: Record<keyof typeof en, string> = {
   "talents.rank": "Rang {rank}/{max}",
   "talents.requires": "Setzt {name} auf vollem Rang voraus",
   "talents.nextRank": "Nächster Rang",
-  "talents.hoverHint": "Zeig auf ein Talent, um seine Beschreibung zu sehen.",
 }

@@ -11,20 +11,20 @@ import {
 } from "@/lib/talent-tree"
 
 /**
- * Die drei Talentbäume einer Klasse.
+ * Die drei Talentbäume einer Klasse, angelehnt an den Client: quadratische
+ * Icons im Raster der API (`display_row`/`display_col`), Rang unten rechts,
+ * Pfeile für Voraussetzungen, Beschreibung als Tooltip am Icon.
  *
- * Gezeichnet wird nach `display_row`/`display_col` der API, nicht nach den
- * Pixelkoordinaten: das Raster ist das, was man im Spiel sieht, und bleibt
- * auf jeder Breite gleich. Voraussetzungen als Linien von oben nach unten.
- *
- * Bewusst ohne Icons: die Zauber-Medien sind für Forever nicht belegt, und
- * je Knoten ein Abruf wären rund fünfzig pro Seite.
+ * - Untereinander, sortiert nach gesetzten Punkten – der Hauptbaum oben.
+ * - Ungesetzt grau, gesetzt farbig mit grünem Rand, voll ausgebaut golden.
+ * - Fehlt ein Icon oder Hintergrund (für Forever nicht belegt), steht der
+ *   Name im Feld bzw. bleibt der Grund schlicht.
  */
 
-const STEP_X = 78
-const STEP_Y = 66
-const NODE_W = 66
-const NODE_H = 52
+const ICON = 44
+const STEP_X = 72
+const STEP_Y = 64
+const PAD = 16
 
 export function TalentTrees({
   talents,
@@ -39,6 +39,11 @@ export function TalentTrees({
   const f = useFormat()
   const total = talents.trees.reduce((sum, tree) => sum + pointsInTree(tree, allocation), 0)
 
+  // Absteigend nach Punkten; bei Gleichstand die Reihenfolge der API
+  const ordered = talents.trees
+    .map((tree, index) => ({ tree, index, points: pointsInTree(tree, allocation) }))
+    .sort((a, b) => b.points - a.points || a.index - b.index)
+
   return (
     <div>
       <div className="mb-4 flex flex-wrap items-baseline gap-x-4 gap-y-1 text-[13px]">
@@ -46,10 +51,8 @@ export function TalentTrees({
           {total > 0 ? t("talents.spentTotal", { points: f.number(total) }) : t("talents.noneSpent")}
         </span>
         {total > 0 && (
-          <span className="opacity-60">
-            {talents.trees
-              .map((tree) => t("talents.inTree", { points: f.number(pointsInTree(tree, allocation)), tree: tree.name }))
-              .join(" · ")}
+          <span className="opacity-60" style={{ fontVariantNumeric: "tabular-nums" }}>
+            {ordered.map(({ points }) => f.number(points)).join(" / ")}
           </span>
         )}
       </div>
@@ -60,146 +63,230 @@ export function TalentTrees({
         </div>
       )}
 
-      <div className="flex flex-wrap gap-6">
-        {talents.trees.map((tree) => (
-          <TreeView key={tree.specId} tree={tree} allocation={allocation} />
+      <div className="flex flex-col gap-6">
+        {ordered.map(({ tree, points }) => (
+          <TreeView key={tree.specId} tree={tree} points={points} allocation={allocation} />
         ))}
       </div>
     </div>
   )
 }
 
-function TreeView({ tree, allocation }: { tree: TalentTree; allocation: Allocation }) {
-  const t = useT()
+function TreeView({
+  tree,
+  points,
+  allocation,
+}: {
+  tree: TalentTree
+  points: number
+  allocation: Allocation
+}) {
   const f = useFormat()
-  const [focus, setFocus] = useState<TalentNode | null>(null)
+  const [hover, setHover] = useState<number | null>(null)
   const byId = new Map(tree.nodes.map((n) => [n.id, n]))
 
-  const width = Math.max(1, tree.cols) * STEP_X
-  const height = Math.max(1, tree.rows) * STEP_Y
-  const center = (n: TalentNode) => ({
-    x: (n.col - 1) * STEP_X + NODE_W / 2,
-    y: (n.row - 1) * STEP_Y + NODE_H / 2,
-  })
+  const width = Math.max(1, tree.cols) * STEP_X - (STEP_X - ICON)
+  const height = Math.max(1, tree.rows) * STEP_Y - (STEP_Y - ICON)
+  const pos = (n: TalentNode) => ({ x: (n.col - 1) * STEP_X, y: (n.row - 1) * STEP_Y })
+  // Je Farbe ein Pfeilkopf: `context-stroke` können nicht alle Browser
+  const markerMet = `talent-arrow-met-${tree.specId}`
+  const markerOpen = `talent-arrow-open-${tree.specId}`
 
   return (
-    <div className="border-2 border-line">
-      <div className="flex items-baseline justify-between gap-3 border-b border-line px-3 py-2">
-        <span className="font-heading text-[14px] font-extrabold">{tree.name}</span>
-        <span className="eyebrow" style={{ fontVariantNumeric: "tabular-nums" }}>
-          {f.number(pointsInTree(tree, allocation))}
+    <section className="border-2 border-line">
+      <div className="flex items-baseline justify-between gap-3 border-b border-line px-4 py-2">
+        <span className="font-heading text-[15px] font-extrabold">{tree.name}</span>
+        <span className="font-heading text-[15px] font-extrabold" style={{ fontVariantNumeric: "tabular-nums" }}>
+          {f.number(points)}
         </span>
       </div>
 
-      <div className="p-3">
-        <div className="relative" style={{ width, height }}>
-          {/* Voraussetzungen */}
-          <svg className="pointer-events-none absolute inset-0" width={width} height={height} aria-hidden>
-            {tree.nodes.flatMap((node) =>
-              node.requires
-                .map((id) => byId.get(id))
-                .filter((req): req is TalentNode => req !== undefined)
-                .map((req) => {
-                  const a = center(req)
-                  const b = center(node)
-                  const met = (allocation[req.id] ?? 0) >= req.maxRank
-                  return (
-                    <line
-                      key={`${req.id}-${node.id}`}
-                      x1={a.x}
-                      y1={a.y + NODE_H / 2}
-                      x2={b.x}
-                      y2={b.y - NODE_H / 2}
-                      stroke={met ? "var(--color-accent)" : "var(--color-divider)"}
-                      strokeWidth={2}
-                    />
-                  )
-                })
-            )}
-          </svg>
+      {/* Hintergrund des Baums, gedämpft – die Icons müssen lesbar bleiben */}
+      <div
+        className="relative overflow-x-auto"
+        style={{
+          backgroundImage: tree.background
+            ? `linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.55)), url(${tree.background})`
+            : undefined,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+        }}
+      >
+        <div className="relative mx-auto" style={{ width: width + PAD * 2, height: height + PAD * 2, padding: PAD }}>
+          <div className="relative" style={{ width, height }}>
+            {/* Voraussetzungen als Pfeile von unten am Vorgänger zu oben am Talent */}
+            <svg className="pointer-events-none absolute inset-0 overflow-visible" width={width} height={height} aria-hidden>
+              <defs>
+                {[
+                  [markerMet, "var(--color-gold)"],
+                  [markerOpen, "var(--color-divider)"],
+                ].map(([id, color]) => (
+                  <marker key={id} id={id} viewBox="0 0 8 8" refX="7" refY="4" markerWidth="5" markerHeight="5" orient="auto">
+                    {/* Farbe über style: var() greift in SVG-Attributen nicht überall */}
+                    <path d="M0,0 L8,4 L0,8 z" style={{ fill: color }} />
+                  </marker>
+                ))}
+              </defs>
+              {tree.nodes.flatMap((node) =>
+                node.requires
+                  .map((id) => byId.get(id))
+                  .filter((req): req is TalentNode => req !== undefined)
+                  .map((req) => {
+                    const a = pos(req)
+                    const b = pos(node)
+                    const met = (allocation[req.id] ?? 0) >= req.maxRank
+                    const color = met ? "var(--color-gold)" : "var(--color-divider)"
+                    // Gleiche Spalte: senkrecht. Sonst erst waagrecht, dann hinunter.
+                    const path =
+                      a.x === b.x
+                        ? `M${a.x + ICON / 2},${a.y + ICON} L${b.x + ICON / 2},${b.y - 2}`
+                        : `M${a.x + (b.x > a.x ? ICON : 0)},${a.y + ICON / 2} L${b.x + ICON / 2},${a.y + ICON / 2} L${b.x + ICON / 2},${b.y - 2}`
+                    return (
+                      <path
+                        key={`${req.id}-${node.id}`}
+                        d={path}
+                        fill="none"
+                        style={{ stroke: color }}
+                        strokeWidth={3}
+                        markerEnd={`url(#${met ? markerMet : markerOpen})`}
+                      />
+                    )
+                  })
+              )}
+            </svg>
 
-          {tree.nodes.map((node) => {
-            const rank = allocation[node.id] ?? 0
-            const maxed = rank >= node.maxRank
-            return (
-              <button
+            {tree.nodes.map((node) => (
+              <TalentIcon
                 key={node.id}
-                type="button"
-                onMouseEnter={() => setFocus(node)}
-                onFocus={() => setFocus(node)}
-                className="absolute flex flex-col justify-between border-2 px-1 py-0.5 text-left"
-                style={{
-                  left: (node.col - 1) * STEP_X,
-                  top: (node.row - 1) * STEP_Y,
-                  width: NODE_W,
-                  height: NODE_H,
-                  borderColor: rank > 0 ? "var(--color-accent)" : "var(--color-divider)",
-                  background: maxed ? "var(--color-accent-100)" : "var(--color-surface)",
-                  opacity: rank > 0 ? 1 : 0.6,
-                }}
-                aria-label={`${node.name}, ${t("talents.rank", { rank, max: node.maxRank })}`}
-              >
-                <span className="line-clamp-2 text-[10px] leading-[1.15]">{node.name}</span>
-                <span
-                  className="self-end text-[10px] font-extrabold"
-                  style={{ fontVariantNumeric: "tabular-nums" }}
-                >
-                  {`${rank}/${node.maxRank}`}
-                </span>
-              </button>
-            )
-          })}
+                node={node}
+                rank={allocation[node.id] ?? 0}
+                left={pos(node).x}
+                top={pos(node).y}
+                tooltipLeft={node.col > Math.ceil(tree.cols / 2)}
+                open={hover === node.id}
+                onOpen={() => setHover(node.id)}
+                onClose={() => setHover((h) => (h === node.id ? null : h))}
+                byId={byId}
+                allocation={allocation}
+              />
+            ))}
+          </div>
         </div>
       </div>
+    </section>
+  )
+}
 
-      <NodeDetails node={focus} allocation={allocation} byId={byId} />
+function TalentIcon({
+  node,
+  rank,
+  left,
+  top,
+  tooltipLeft,
+  open,
+  onOpen,
+  onClose,
+  byId,
+  allocation,
+}: {
+  node: TalentNode
+  rank: number
+  left: number
+  top: number
+  tooltipLeft: boolean
+  open: boolean
+  onOpen: () => void
+  onClose: () => void
+  byId: Map<number, TalentNode>
+  allocation: Allocation
+}) {
+  const t = useT()
+  const maxed = rank >= node.maxRank
+  const border = maxed ? "var(--color-gold)" : rank > 0 ? "var(--color-gain)" : "var(--color-divider)"
+
+  return (
+    <div className="absolute" style={{ left, top, width: ICON, height: ICON, zIndex: open ? 20 : 1 }}>
+      <button
+        type="button"
+        onMouseEnter={onOpen}
+        onMouseLeave={onClose}
+        onFocus={onOpen}
+        onBlur={onClose}
+        className="relative block h-full w-full overflow-hidden border-2 bg-surface"
+        style={{
+          borderColor: border,
+          filter: rank > 0 ? undefined : "grayscale(1)",
+          opacity: rank > 0 ? 1 : 0.5,
+        }}
+        aria-label={`${node.name}, ${t("talents.rank", { rank, max: node.maxRank })}`}
+      >
+        {node.icon ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={node.icon} alt="" className="h-full w-full object-cover" loading="lazy" />
+        ) : (
+          <span className="line-clamp-3 px-0.5 text-[8px] leading-[1.1]">{node.name}</span>
+        )}
+      </button>
+
+      {/* Rang unten rechts, ausserhalb des Graufilters */}
+      <span
+        className="pointer-events-none absolute -bottom-1.5 -right-1.5 border bg-ground px-1 text-[10px] font-extrabold leading-[14px]"
+        style={{ borderColor: border, color: maxed ? "var(--color-gold)" : rank > 0 ? "var(--color-gain)" : undefined, fontVariantNumeric: "tabular-nums" }}
+      >
+        {`${rank}/${node.maxRank}`}
+      </span>
+
+      {open && (
+        <Tooltip
+          node={node}
+          rank={rank}
+          left={tooltipLeft}
+          // Nur unerfüllte Voraussetzungen – wie im Client
+          missing={node.requires
+            .map((id) => byId.get(id))
+            .filter((req): req is TalentNode => req !== undefined && (allocation[req.id] ?? 0) < req.maxRank)}
+        />
+      )}
     </div>
   )
 }
 
-function NodeDetails({
+function Tooltip({
   node,
-  allocation,
-  byId,
+  rank,
+  left,
+  missing,
 }: {
-  node: TalentNode | null
-  allocation: Allocation
-  byId: Map<number, TalentNode>
+  node: TalentNode
+  rank: number
+  left: boolean
+  missing: TalentNode[]
 }) {
   const t = useT()
-  if (!node) {
-    return (
-      <div className="border-t border-line px-3 py-2 text-[12px] opacity-50">
-        {t("talents.hoverHint")}
-      </div>
-    )
-  }
-
-  const rank = allocation[node.id] ?? 0
-  const current = node.ranks.find((r) => r.rank === rank) ?? null
-  const next = node.ranks.find((r) => r.rank === rank + 1) ?? null
+  // Ohne Punkt zeigt der Tooltip Rang 1 – das, was man bekäme
+  const current = node.ranks.find((r) => r.rank === Math.max(1, rank)) ?? null
+  const next = rank > 0 ? node.ranks.find((r) => r.rank === rank + 1) ?? null : null
 
   return (
-    <div className="border-t border-line px-3 py-2 text-[12px]" style={{ maxWidth: Math.max(240, STEP_X * 4) }}>
-      <div className="flex items-baseline justify-between gap-2">
-        <span className="font-heading font-extrabold">{node.name}</span>
-        <span className="eyebrow">{t("talents.rank", { rank, max: node.maxRank })}</span>
-      </div>
-      {current?.description && <p className="mt-1 opacity-80">{current.description}</p>}
+    <div
+      role="tooltip"
+      className="absolute top-0 w-64 border-2 border-line bg-ground px-3 py-2 text-[12px] shadow-lg"
+      style={left ? { right: ICON + 10 } : { left: ICON + 10 }}
+    >
+      <div className="font-heading text-[13px] font-extrabold">{node.name}</div>
+      <div className="eyebrow mt-0.5">{t("talents.rank", { rank, max: node.maxRank })}</div>
+      {current?.description && <p className="mt-1.5 opacity-85">{current.description}</p>}
       {next?.description && (
-        <p className="mt-1 opacity-60">
+        <p className="mt-1.5 opacity-65">
           <span className="eyebrow mr-1">{t("talents.nextRank")}</span>
           {next.description}
         </p>
       )}
-      {node.requires.map((id) => {
-        const req = byId.get(id)
-        return req ? (
-          <p key={id} className="mt-1 opacity-60">
-            {t("talents.requires", { name: req.name })}
-          </p>
-        ) : null
-      })}
+      {missing.map((req) => (
+        <p key={req.id} className="mt-1.5" style={{ color: "var(--color-loss)" }}>
+          {t("talents.requires", { name: req.name })}
+        </p>
+      ))}
     </div>
   )
 }

@@ -29,6 +29,8 @@ export interface TalentNode {
   talentId: number | null
   name: string
   spellId: number | null
+  /** Icon-URL aus den Zauber-Medien; `null`, wenn die API keins liefert */
+  icon: string | null
   /** Zeile und Spalte, ab 1 */
   row: number
   col: number
@@ -42,6 +44,8 @@ export interface TalentTree {
   treeId: number
   specId: number
   name: string
+  /** Hintergrundbild des Baums; `null`, wenn die API keins liefert */
+  background: string | null
   nodes: TalentNode[]
   rows: number
   cols: number
@@ -77,6 +81,7 @@ export interface RawTalentNode {
 export interface RawSpecTree {
   id?: number
   name?: string
+  media?: { key?: { href?: string } }
   playable_class?: { id?: number; name?: string }
   playable_specialization?: { id?: number; name?: string }
   spec_talent_nodes?: RawTalentNode[]
@@ -129,6 +134,8 @@ export function parseSpecTree(raw: RawSpecTree | null, treeId: number, specId: n
         talentId: first?.talent?.id ?? null,
         name: first?.talent?.name ?? first?.spell_tooltip?.spell?.name ?? `#${n.id}`,
         spellId: first?.spell_tooltip?.spell?.id ?? null,
+        // Bilder kommen getrennt (talents.ts) – das Einlesen bleibt ohne Abruf
+        icon: null,
         row,
         col: n.display_col!,
         maxRank: Math.max(1, ranks.length),
@@ -145,6 +152,7 @@ export function parseSpecTree(raw: RawSpecTree | null, treeId: number, specId: n
     treeId,
     specId,
     name: raw.playable_specialization?.name ?? raw.name ?? `#${specId}`,
+    background: null,
     nodes,
     rows: nodes.reduce((max, n) => Math.max(max, n.row), 0),
     cols: nodes.reduce((max, n) => Math.max(max, n.col), 0),

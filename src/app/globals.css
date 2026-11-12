@@ -31,6 +31,8 @@
   /* Gewinn und Verlust – nie allein: das Vorzeichen bleibt dabei */
   --color-gain: #5ccf7a;
   --color-loss: #ff6b6b;
+  /* Voll ausgebautes Talent – wie im Spiel golden */
+  --color-gold: #e5b23a;
 }
 
 [data-theme="light"] {
@@ -56,6 +58,7 @@
 
   --color-gain: #1d7a3a;
   --color-loss: #c4221f;
+  --color-gold: #a87a00;
 }
 
 :root {
