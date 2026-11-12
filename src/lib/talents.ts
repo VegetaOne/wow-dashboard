@@ -81,6 +81,48 @@ function fetchTree(treeId: number, specId: number, token: string): Promise<RawSp
   )
 }
 
+type IndexEntry = { treeId: number; specId: number; name: string }
+
+/** Index der Bäume, nach `treeId` gruppiert – eine Gruppe ist eine Klasse. */
+async function treeGroups(token: string): Promise<Map<number, IndexEntry[]>> {
+  const index = parseTreeIndex(
+    await bnetGet("/data/wow/talent-tree/index", token, "static", TREE_REVALIDATE)
+  )
+  const groups = new Map<number, IndexEntry[]>()
+  for (const entry of index) {
+    const list = groups.get(entry.treeId) ?? []
+    list.push(entry)
+    groups.set(entry.treeId, list)
+  }
+  return groups
+}
+
+export interface TalentClass {
+  classId: number
+  className: string
+}
+
+/**
+ * Alle Klassen mit Talentbäumen, für den Planer. Der Index nennt keine
+ * Klasse; je Gruppe wird darum ein Baum gelesen (`playable_class`) – einmal
+ * am Tag, danach aus dem Zwischenspeicher. Sortiert nach Klassen-ID, wie
+ * das Spiel sie zählt.
+ */
+export async function listTalentClasses(token: string): Promise<TalentClass[]> {
+  const groups = Array.from((await treeGroups(token)).entries())
+  const raws = await mapLimit(groups, 4, ([treeId, entries]) =>
+    fetchTree(treeId, entries[0].specId, token).catch(() => null)
+  )
+  const classes = new Map<number, TalentClass>()
+  for (const raw of raws) {
+    const id = raw?.playable_class?.id
+    if (typeof id === "number" && !classes.has(id)) {
+      classes.set(id, { classId: id, className: raw?.playable_class?.name ?? `#${id}` })
+    }
+  }
+  return Array.from(classes.values()).sort((a, b) => a.classId - b.classId)
+}
+
 /**
  * Die drei Bäume der Klasse eines Charakters.
  *
@@ -93,16 +135,7 @@ export async function getClassTalents(
   token: string,
   hint: { classId?: number | null; specIds?: number[] }
 ): Promise<ClassTalents | null> {
-  const index = parseTreeIndex(
-    await bnetGet("/data/wow/talent-tree/index", token, "static", TREE_REVALIDATE)
-  )
-
-  const groups = new Map<number, { treeId: number; specId: number; name: string }[]>()
-  for (const entry of index) {
-    const list = groups.get(entry.treeId) ?? []
-    list.push(entry)
-    groups.set(entry.treeId, list)
-  }
+  const groups = await treeGroups(token)
 
   let treeId: number | null = null
   const specIds = new Set(hint.specIds ?? [])

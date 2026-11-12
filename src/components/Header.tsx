@@ -72,7 +72,9 @@ export function Header({
   const showStatus = lastSync !== undefined
 
   const nav = [
-    { href: "/dashboard/woche", label: t("header.weekly") },
+    // Woche vorerst nicht in der Navigation (Wunsch 2026-11-12, Lockouts
+    // zurückgestellt); die Seite bleibt unter /dashboard/woche erreichbar.
+    { href: "/dashboard/talentplaner", label: t("header.talentPlanner") },
     { href: "/dashboard/account", label: t("header.collections") },
     { href: "/dashboard/einstellungen", label: t("header.settings") },
   ]

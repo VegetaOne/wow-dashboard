@@ -336,7 +336,7 @@ Two splits are deliberate:
 
 ## 🗺 Roadmap
 
-**Done:** character overview, gear with paperdoll and tooltips, upgrades, professions, progression, collections, achievements, reputation, PvP, history.
+**Done:** character overview, gear with paperdoll and tooltips, upgrades, professions, progression, collections, achievements, reputation, PvP, history, talent trees and a talent planner (builds per class, dual spec, JSON export/import).
 
 | Next | What it needs |
 | --- | --- |
@@ -551,7 +551,7 @@ angezeigt. Die Region ist standardmässig EU und im Setup wie in den Einstellung
 
 ### Offen
 
-Charaktervergleich · Warcraft Logs (eigene App-Registrierung) · Talentbuilds. Einen
+Charaktervergleich · Warcraft Logs (eigene App-Registrierung). Einen
 Hintergrund-Auffrischer gibt es bewusst nicht: der Companion läuft, während gespielt
 wird, und die Profile ziehen erst beim Ausloggen nach.
 

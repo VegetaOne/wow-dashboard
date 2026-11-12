@@ -14,8 +14,10 @@ model User {
   region      String          @default("eu")
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt
-  favorites   Favorite[]
-  preferences UserPreference?
+  favorites    Favorite[]
+  preferences  UserPreference?
+  talentBuilds TalentBuild[]
+  talentTargets TalentTarget[]
 }
 
 /// Favorit eines Nutzers. Forever-Charaktere sind `{name}-{surname}` ohne
@@ -29,6 +31,43 @@ model Favorite {
   user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, region, charSlug])
+}
+
+/// Gespeicherter Talentbuild. Nutzerdaten, keine API-Daten – darum eine
+/// eigene Tabelle statt Snapshots. Ein Build gehört zu einer Klasse, nicht zu
+/// einem Charakter, damit er sich auf mehrere anwenden lässt.
+model TalentBuild {
+  id        String         @id @default(cuid())
+  userId    String
+  /// Die Bäume kommen aus dem Namespace der Region – Builds gelten je Region
+  region    String
+  classId   Int
+  name      String
+  /// JSON: Rang je Talent-ID (`{"134384": 2}`), wie das Profil sie liefert
+  ranks     String
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  targets   TalentTarget[]
+
+  @@index([userId, region, classId])
+}
+
+/// Welcher Build für eine Talentverteilung eines Charakters gerade das Ziel
+/// ist. Forever hat Dualspec: je Charakter bis zu zwei Einträge.
+model TalentTarget {
+  id          String      @id @default(cuid())
+  userId      String
+  region      String
+  /// `{name}-{surname}`, klein
+  charSlug    String
+  /// Talentverteilung ab 1, in der Reihenfolge der API (`specialization_groups`)
+  talentGroup Int
+  buildId     String
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  build       TalentBuild @relation(fields: [buildId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, region, charSlug, talentGroup])
 }
 
 model UserPreference {
