@@ -119,10 +119,14 @@ Charakter, damit er sich auf mehrere Charaktere anwenden lässt.
 
 **Darstellung (2026-11-11, Wunsch des Nutzers):** angelehnt an den Client – Icons im
 Raster, Rang unten rechts, Pfeile für Voraussetzungen, Tooltip am Icon. Die drei Bäume
-**untereinander, absteigend nach gesetzten Punkten**. Ungesetzt grau, gesetzt mit grünem,
+**nebeneinander in der Reihenfolge des Spiels**, gleich breit, zusammen mittig; auf
+schmalen Bildschirmen brechen sie um. (Zuerst untereinander nach Punkten – mit dem engen
+Rahmen war genug Platz für die Anordnung wie im Spiel.) Ungesetzt grau, gesetzt mit grünem,
 voll ausgebaut mit goldenem Rand. Icons aus `/data/wow/media/spell/{id}`, Hintergrund aus
 dem `media`-Verweis des Baums – beides für Forever unbelegt, darum mit Rückfall (Name im
-Feld, schlichter Grund).
+Feld, schlichter Grund). **`display_col` liegt in einem gemeinsamen Raster** der drei
+Bäume (einer begann rechts, einer links); die Spalten werden je Baum auf 1 gesetzt, die
+Zeilen bleiben, weil sie die Stufe tragen.
 
 **Regeln (angenommen, vom Nutzer so bestätigt):** ein Punkt je Stufe ab Stufe 10, jede
 Zeile verlangt 5 Punkte mehr im selben Baum, Voraussetzungen voll ausgebaut. Die API

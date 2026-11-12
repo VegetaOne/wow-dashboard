@@ -15,7 +15,8 @@ import {
  * Icons im Raster der API (`display_row`/`display_col`), Rang unten rechts,
  * Pfeile für Voraussetzungen, Beschreibung als Tooltip am Icon.
  *
- * - Untereinander, sortiert nach gesetzten Punkten – der Hauptbaum oben.
+ * - Nebeneinander in der Reihenfolge des Spiels (der API); auf schmalen
+ *   Bildschirmen brechen sie um, statt seitlich zu scrollen.
  * - Ungesetzt grau, gesetzt farbig mit grünem Rand, voll ausgebaut golden.
  * - Fehlt ein Icon oder Hintergrund (für Forever nicht belegt), steht der
  *   Name im Feld bzw. bleibt der Grund schlicht.
@@ -39,10 +40,8 @@ export function TalentTrees({
   const f = useFormat()
   const total = talents.trees.reduce((sum, tree) => sum + pointsInTree(tree, allocation), 0)
 
-  // Absteigend nach Punkten; bei Gleichstand die Reihenfolge der API
-  const ordered = talents.trees
-    .map((tree, index) => ({ tree, index, points: pointsInTree(tree, allocation) }))
-    .sort((a, b) => b.points - a.points || a.index - b.index)
+  // Reihenfolge wie im Spiel – die der API
+  const ordered = talents.trees.map((tree) => ({ tree, points: pointsInTree(tree, allocation) }))
 
   // Gemeinsame Breite: die Spalten des breitesten Baums. Schmalere Bäume
   // werden darin mittig gesetzt (Spalten beginnen je Baum bei 1, talent-tree.ts)
@@ -67,9 +66,9 @@ export function TalentTrees({
         </div>
       )}
 
-      {/* Alle Bäume gleich breit wie im Client (Raster der breitesten), jeder
-          so schmal wie sein Inhalt und mittig – kein Rahmen weit draussen */}
-      <div className="flex flex-col items-center gap-6">
+      {/* Alle Bäume gleich breit wie im Client (Raster des breitesten), jeder
+          so schmal wie sein Inhalt, zusammen mittig */}
+      <div className="flex flex-wrap items-start justify-center gap-6">
         {ordered.map(({ tree, points }) => (
           <TreeView key={tree.specId} tree={tree} cols={cols} points={points} allocation={allocation} />
         ))}
