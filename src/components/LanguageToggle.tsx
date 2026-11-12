@@ -52,11 +52,8 @@ export function LanguageToggle() {
             onClick={() => pick(item.id)}
             aria-pressed={active}
             disabled={pending || saving !== null}
-            className="-ml-px border border-line px-3 py-2 font-heading text-[11px] font-extrabold uppercase tracking-[0.08em] disabled:opacity-50"
-            style={{
-              background: active ? "var(--color-text)" : "transparent",
-              color: active ? "var(--color-bg)" : "var(--color-text)",
-            }}
+            className="wb-tab"
+            style={{ padding: "9px 12px" }}
           >
             {item.id}
           </button>

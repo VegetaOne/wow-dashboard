@@ -280,6 +280,45 @@
     box-shadow: inset 0 0 44px var(--wb-plate), 0 14px 34px var(--wb-plate-2);
   }
 
+  /*
+   * Reiter der Übergabe (Modus, Thema, Navigation): geteilte Kanten über
+   * margin-left:-1px, aktiv mit Goldverlauf. Aktiv ist, was aria-pressed
+   * oder aria-current trägt – so bleibt der Zustand auch für Screenreader.
+   */
+  .wb-tab {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    margin-left: -1px;
+    padding: 9px 16px;
+    border: 1px solid var(--wb-gold-faint);
+    background: var(--wb-plate-3);
+    color: var(--wb-ink-dim);
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    line-height: 1.2;
+    text-decoration: none;
+    cursor: pointer;
+  }
+  .wb-tab:first-child { margin-left: 0; }
+  .wb-tab:hover { color: var(--wb-gold-lit); }
+  .wb-tab[aria-pressed="true"],
+  .wb-tab[aria-current="page"] {
+    position: relative;
+    border-color: var(--wb-gold);
+    background: linear-gradient(180deg, rgba(201, 161, 75, 0.32), rgba(201, 161, 75, 0.08));
+    color: var(--wb-gold-lit);
+    box-shadow: inset 0 0 18px rgba(201, 161, 75, 0.28);
+  }
+  .wb-tab:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* Sechseck – Wortmarke, Wappen */
+  .wb-hex { clip-path: polygon(50% 0, 100% 22%, 100% 74%, 50% 100%, 0 74%, 0 22%); }
+
   /* Band-Überschrift: Linie – Titel – Linie */
   .wb-band-title {
     display: flex;
