@@ -35,6 +35,19 @@ export const CHARACTER_TABS: CharacterTab[] = [
   { slug: "verlauf", labelKey: "tab.history", enabled: true, noteKey: "tab.history.note" },
 ]
 
+/** Römische Ziffer für die Reiter der Heldenakte (1–39 genügt). */
+export function roman(n: number): string {
+  const parts: [number, string][] = [[10, "X"], [9, "IX"], [5, "V"], [4, "IV"], [1, "I"]]
+  let out = ""
+  for (const [value, sign] of parts) {
+    while (n >= value) {
+      out += sign
+      n -= value
+    }
+  }
+  return out
+}
+
 export function visibleTabs(): CharacterTab[] {
   return CHARACTER_TABS.filter((t) => t.enabled)
 }
