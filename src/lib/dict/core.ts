@@ -21,8 +21,8 @@ export const en = {
   "header.signOut": "Sign out",
 
   "theme.label": "Colour scheme",
-  "theme.light": "Light",
-  "theme.dark": "Dark",
+  "theme.light": "Parchment",
+  "theme.dark": "Night",
 
   "language.label": "Language",
 
@@ -191,8 +191,8 @@ export const de: Record<keyof typeof en, string> = {
   "header.signOut": "Abmelden",
 
   "theme.label": "Farbschema",
-  "theme.light": "Hell",
-  "theme.dark": "Dunkel",
+  "theme.light": "Pergament",
+  "theme.dark": "Nacht",
 
   "language.label": "Sprache",
 

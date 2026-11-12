@@ -1,4 +1,12 @@
 import type { Metadata } from "next"
+// Schriften der Warband-Übergabe, selbst gehostet – kein Abruf bei Google
+import "@fontsource/cinzel/500.css"
+import "@fontsource/cinzel/700.css"
+import "@fontsource/cinzel/800.css"
+import "@fontsource/cinzel/900.css"
+import "@fontsource/spectral/400.css"
+import "@fontsource/spectral/400-italic.css"
+import "@fontsource/spectral/600.css"
 import "./globals.css"
 import { Providers } from "./providers"
 import { loadConfig } from "@/lib/config"
