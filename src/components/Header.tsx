@@ -93,7 +93,7 @@ export function Header({
       {/* Abrufstatus */}
       {showStatus && (
         <div
-          className="flex items-center gap-2.5 px-3 py-[5px]"
+          className="hidden items-center gap-2.5 px-3 py-[5px] xl:flex"
           style={{ border: "1px solid var(--wb-gold-faint)", background: "var(--wb-plate-3)" }}
         >
           <span

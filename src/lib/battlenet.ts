@@ -381,6 +381,8 @@ export interface CharacterDetails {
   equippedItemLevel?: number
   averageItemLevel?: number
   avatarUrl?: string | null
+  /** Ganzkörper-Render für die Kriegsschar-Bühne (main-raw, sonst main) */
+  renderUrl?: string | null
 }
 
 /** Gegenstandsstufe eines Charakters – fehlt sie, bleibt sie leer. */
@@ -402,17 +404,25 @@ async function fetchProfileDetails(
   }
 }
 
-/** Avatar-URL eines Charakters */
-async function fetchAvatar(slug: string, token: string): Promise<string | null> {
+/**
+ * Avatar und Ganzkörper-Render eines Charakters – eine Anfrage für beides.
+ * Der Render steht auf der Kriegsschar-Bühne; die Übergabe sah dort
+ * hochgeladene Bilder vor, entschieden ist das API-Bild (2026-11-12).
+ */
+async function fetchMediaUrls(
+  slug: string,
+  token: string
+): Promise<{ avatarUrl: string | null; renderUrl: string | null }> {
   try {
     const data = await bnetGet<{ assets?: { key: string; value: string }[] }>(
       characterPath(slug, "character-media"),
       token,
       "profile"
     )
-    return data.assets?.find((a) => a.key === "avatar")?.value ?? null
+    const pick = (key: string) => data.assets?.find((a) => a.key === key)?.value ?? null
+    return { avatarUrl: pick("avatar"), renderUrl: pick("main-raw") ?? pick("main") }
   } catch {
-    return null
+    return { avatarUrl: null, renderUrl: null }
   }
 }
 
@@ -429,11 +439,11 @@ export async function getCharacterDetails(
 ): Promise<Record<string, CharacterDetails>> {
   const results = await mapLimit(slugs, CONCURRENCY, async (slug) => {
     try {
-      const [details, avatarUrl] = await Promise.all([
+      const [details, media] = await Promise.all([
         fetchProfileDetails(slug, token),
-        fetchAvatar(slug, token),
+        fetchMediaUrls(slug, token),
       ])
-      return [slug, { ...details, avatarUrl }] as const
+      return [slug, { ...details, ...media }] as const
     } catch {
       return [slug, {} as CharacterDetails] as const
     }

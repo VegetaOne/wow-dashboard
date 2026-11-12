@@ -2,149 +2,129 @@
 
 import Link from "next/link"
 import type { WoWCharacter, CharacterDetails } from "@/lib/battlenet"
-import { CLASS_COLORS } from "@/lib/battlenet"
 import { characterBase } from "@/lib/characterTabs"
 import { classCode } from "@/lib/i18n"
-import { useLanguage, useT } from "./I18nProvider"
+import { useFormat, useLanguage, useT } from "./I18nProvider"
 
 interface CharacterCardProps {
   character: WoWCharacter & { isFavorite?: boolean }
   onToggleFavorite: () => void
-  /** Gegenstandsstufe und Avatar – werden nachgeladen, sobald der Abschnitt sichtbar ist */
+  /** Gegenstandsstufe und Bilder – werden nachgeladen, sobald der Abschnitt sichtbar ist */
   details?: CharacterDetails
   /** true, solange die Werte noch unterwegs sind */
   detailsPending?: boolean
-  /** "Kante" färbt nur die linke Kante, "Fläche" tönt die ganze Zeile */
-  tint?: "edge" | "fill"
 }
 
+/**
+ * Zeile der übrigen Charaktere (Warband-Übergabe, Band 4): Fraktionsband,
+ * Klassenkürzel in Fraktionsfarbe, Name, zwei Kennzahlen, ★ zum Aufnehmen
+ * in die Kriegsschar.
+ *
+ * Klassenfarben nur als Marker, nie als Text – Weiss und Gelb fallen auf
+ * Pergament unter die Lesbarkeitsgrenze (Übergabe, „Fraktionsfarben").
+ * Die Schatzkammer-Marker der Übergabe entfallen: Forever führt keine.
+ */
 export function CharacterCard({
   character,
   onToggleFavorite,
   details,
   detailsPending = false,
-  tint = "edge",
 }: CharacterCardProps) {
   const t = useT()
+  const f = useFormat()
   const language = useLanguage()
 
-  const isAlliance = character.faction.type === "ALLIANCE"
-  const band = isAlliance ? "var(--faction-alliance)" : "var(--faction-horde)"
-  const classColor = CLASS_COLORS[character.playable_class.id] ?? "#FFFFFF"
-  const code = classCode(language, character.playable_class.id)
+  const horde = character.faction.type === "HORDE"
+  const band = horde ? "var(--wb-horde)" : "var(--wb-ally)"
+  const factionText = horde ? "var(--wb-horde-lit)" : "var(--wb-ally-lit)"
   const href = characterBase(character.slug)
-
-  // Hauptkennzahl ist die Stufe – sie kommt mit der Account-Liste. Ob Forever
-  // eine Gegenstandsstufe im Profil führt, ist nicht belegt; sie steht darum
-  // daneben und bleibt „—", wenn sie fehlt.
-  const fullName = character.surname
-    ? `${character.name} ${character.surname}`
-    : character.name
+  const fullName = character.surname ? `${character.name} ${character.surname}` : character.name
 
   return (
     <div
-      className="flex items-center gap-4 border-b border-line pr-6 hover:bg-ink/5"
+      className="group mb-[5px] flex items-stretch gap-3.5 border transition-colors hover:bg-[rgba(201,161,75,0.12)]"
       style={{
-        background:
-          tint === "fill"
-            ? `color-mix(in srgb, ${band} 12%, transparent)`
-            : "transparent",
+        borderColor: character.isFavorite ? "var(--wb-gold)" : "var(--wb-gold-faint)",
+        background: "linear-gradient(90deg, var(--wb-plate), var(--wb-plate-3))",
       }}
     >
-      <span className="w-1 self-stretch" style={{ background: band }} aria-hidden />
+      <span className="w-[5px] flex-none" style={{ background: band }} aria-hidden />
 
-      <span className="class-code" title={character.playable_class.name}>
-        {code}
-      </span>
-
-      <span className="h-3 w-3 flex-none" style={{ background: classColor }} aria-hidden />
-
-      <Link href={href} className="flex min-w-0 flex-1 basis-[150px] flex-col py-2.5 no-underline">
-        <span className="font-heading text-[15px] font-extrabold leading-tight text-ink">
-          {fullName}
+      <Link href={href} className="flex min-w-0 flex-1 items-center gap-3.5 py-2 no-underline">
+        <span
+          className="grid h-[38px] w-[38px] flex-none place-items-center border font-heading text-[12px] font-bold"
+          style={{ borderColor: "var(--wb-gold-faint)", background: "var(--wb-plate)", color: factionText }}
+          title={character.playable_class.name}
+        >
+          {classCode(language, character.playable_class.id)}
         </span>
-        <span className="text-[11px] uppercase tracking-[0.05em] opacity-55">
-          {character.playable_race.name} {character.playable_class.name}
+
+        <span className="flex min-w-0 flex-col" style={{ flex: "1 1 170px" }}>
+          <span className="truncate font-heading text-[15px] font-bold" style={{ color: factionText }}>
+            {fullName}
+          </span>
+          <span className="truncate text-[11px] uppercase" style={{ letterSpacing: "0.06em", color: "var(--wb-ink-dim)" }}>
+            {character.playable_race.name} {character.playable_class.name}
+          </span>
+        </span>
+
+        <Metric label={t("card.level")} value={character.level || undefined} pending={false} />
+        <span className="hidden sm:block">
+          <Metric
+            label={t("card.itemLevel")}
+            value={details?.equippedItemLevel}
+            pending={detailsPending}
+            format={f.number}
+          />
         </span>
       </Link>
 
-      <span className="w-14 flex-none text-right">
-        <span className="block eyebrow">{t("card.level")}</span>
-        <Metric
-          value={character.level || undefined}
-          pending={false}
-          loadingLabel={t("card.loading")}
-        />
+      <span className="flex items-center pr-2">
+        <button
+          onClick={onToggleFavorite}
+          aria-pressed={!!character.isFavorite}
+          title={character.isFavorite ? t("card.favoriteRemove") : t("card.favoriteAdd")}
+          aria-label={character.isFavorite ? t("card.favoriteRemove") : t("card.favoriteAdd")}
+          className="grid h-[38px] w-[38px] place-items-center border text-[15px]"
+          style={{
+            borderColor: character.isFavorite ? "var(--wb-gold)" : "var(--wb-gold-faint)",
+            background: character.isFavorite ? "var(--wb-gold)" : "var(--wb-plate-3)",
+            color: character.isFavorite ? "var(--wb-on-gold)" : "var(--wb-gold-lit)",
+          }}
+        >
+          ★
+        </button>
       </span>
-
-      <span className="hidden w-14 flex-none text-right text-[13px] opacity-75 sm:block">
-        <span className="block eyebrow">{t("card.itemLevel")}</span>
-        <Metric
-          value={details?.equippedItemLevel}
-          pending={detailsPending}
-          loadingLabel={t("card.loading")}
-          small
-        />
-      </span>
-
-      <span className="hidden w-24 flex-none sm:block">
-        <span className="block eyebrow">{t("card.faction")}</span>
-        <span className="text-[12px]">
-          {isAlliance ? t("card.alliance") : t("card.horde")}
-        </span>
-      </span>
-
-      <button
-        onClick={onToggleFavorite}
-        aria-pressed={!!character.isFavorite}
-        title={
-          character.isFavorite ? t("card.favoriteRemove") : t("card.favoriteAdd")
-        }
-        className="w-9 flex-none border border-line py-1.5 text-[13px]"
-        style={{
-          background: character.isFavorite ? "var(--color-accent)" : "transparent",
-          color: character.isFavorite ? "var(--color-bg)" : "var(--color-text)",
-        }}
-      >
-        ★
-      </button>
-
-      <Link href={href} className="btn btn-secondary hidden lg:inline-flex">
-        {t("card.gear")}
-      </Link>
     </div>
   )
 }
 
-/** Zeigt einen Wert, einen Platzhalter-Puls oder einen Strich. */
+/** Kennzahl mit Mikrolabel: Wert, Platzhalter-Puls oder Strich. */
 function Metric({
+  label,
   value,
   pending,
-  loadingLabel,
-  small = false,
+  format = String,
 }: {
+  label: string
   value?: number
   pending: boolean
-  loadingLabel: string
-  small?: boolean
+  format?: (n: number) => string
 }) {
-  if (typeof value === "number") {
-    return small ? (
-      <>{value}</>
-    ) : (
-      <span className="font-heading text-[16px] font-extrabold">{value}</span>
-    )
-  }
-
-  if (pending) {
-    return (
-      <span
-        className="ml-auto block animate-pulse bg-neutral-300"
-        style={{ height: small ? 12 : 16, width: small ? 24 : 32 }}
-        aria-label={loadingLabel}
-      />
-    )
-  }
-
-  return small ? <>—</> : <span className="font-heading text-[16px] font-extrabold">—</span>
+  return (
+    <span className="flex w-[58px] flex-none flex-col items-end">
+      <span className="font-heading text-[15px] font-bold" style={{ color: "var(--wb-gold-lit)" }}>
+        {typeof value === "number" ? (
+          format(value)
+        ) : pending ? (
+          <span className="mt-1 block h-3.5 w-7 animate-pulse" style={{ background: "var(--wb-gold-faint)" }} />
+        ) : (
+          "—"
+        )}
+      </span>
+      <span className="text-[9px] uppercase" style={{ letterSpacing: "0.14em", color: "var(--wb-ink-dim)" }}>
+        {label}
+      </span>
+    </span>
+  )
 }
