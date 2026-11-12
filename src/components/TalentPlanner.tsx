@@ -1,21 +1,20 @@
 "use client"
 
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useRouter } from "next/navigation"
+import { useEffect, useMemo, useState } from "react"
 import { useFormat, useT } from "./I18nProvider"
 import { TalentTrees } from "./TalentTrees"
-import type { TranslationKey } from "@/lib/i18n"
+import { ExportDialog, ImportDialog } from "./BuildExchange"
 import {
   MAX_LEVEL,
   MAX_POINTS,
   POINTS_PER_ROW,
   allocationFromRanks,
   exportBuild,
-  parseBuildImport,
   ranksFromAllocation,
   ruleIssues,
   type Allocation,
   type ClassTalents,
-  type ImportError,
   type SavedBuild,
   type TalentRanks,
 } from "@/lib/talent-tree"
@@ -30,13 +29,6 @@ interface Group {
   index: number
   active: boolean
   ranks: TalentRanks
-}
-
-const IMPORT_ERROR: Record<ImportError, TranslationKey> = {
-  json: "planner.importErrorJson",
-  format: "planner.importErrorFormat",
-  version: "planner.importErrorVersion",
-  content: "planner.importErrorContent",
 }
 
 /** Ränge gleich? Reihenfolge der Schlüssel egal. */
@@ -61,6 +53,7 @@ export function TalentPlanner({
   talents,
   classId,
   className,
+  classes,
   initialBuilds,
   initialBuildId,
   sources,
@@ -69,6 +62,7 @@ export function TalentPlanner({
   talents: ClassTalents
   classId: number
   className: string | null
+  classes: { classId: number; className: string }[]
   initialBuilds: SavedBuild[]
   initialBuildId: string | null
   sources: PlannerSource[]
@@ -76,6 +70,7 @@ export function TalentPlanner({
 }) {
   const t = useT()
   const f = useFormat()
+  const router = useRouter()
   const trees = talents.trees
 
   const [builds, setBuilds] = useState(initialBuilds)
@@ -92,7 +87,7 @@ export function TalentPlanner({
   const [busy, setBusy] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [creating, setCreating] = useState(startFrom !== null || initialBuilds.length === 0)
-  const fileRef = useRef<HTMLInputElement>(null)
+  const [dialog, setDialog] = useState<"export" | "import" | null>(null)
 
   const ranks = useMemo(() => ranksFromAllocation(trees, allocation), [trees, allocation])
   const dirty = selected !== null && (name.trim() !== selected.name || !sameRanks(ranks, selected.ranks))
@@ -137,22 +132,28 @@ export function TalentPlanner({
     })
   }
 
+  /** Anlegen auf dem Server: der Build oder die Fehlermeldung. */
+  const post = async (cid: number, buildName: string, buildRanks: TalentRanks): Promise<SavedBuild | string> => {
+    const res = await fetch("/api/talent-builds", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ classId: cid, name: buildName, ranks: buildRanks }),
+    })
+    const data = await res.json().catch(() => null)
+    if (!res.ok || !data?.build) return data?.error ?? t("planner.saveFailed")
+    return data.build as SavedBuild
+  }
+
   const create = async (buildName: string, buildRanks: TalentRanks): Promise<boolean> => {
     if (dirty && !window.confirm(t("planner.discardConfirm"))) return false
     setBusy(true)
     setMessage(null)
     try {
-      const res = await fetch("/api/talent-builds", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ classId, name: buildName, ranks: buildRanks }),
-      })
-      const data = await res.json().catch(() => null)
-      if (!res.ok || !data?.build) {
-        setMessage({ text: data?.error ?? t("planner.saveFailed"), error: true })
+      const build = await post(classId, buildName, buildRanks)
+      if (typeof build === "string") {
+        setMessage({ text: build, error: true })
         return false
       }
-      const build = data.build as SavedBuild
       remember(build)
       setSelectedId(build.id)
       setName(build.name)
@@ -217,30 +218,38 @@ export function TalentPlanner({
     }
   }
 
-  const download = () => {
-    const data = exportBuild({ classId, className, name: name.trim() || (selected?.name ?? ""), ranks })
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement("a")
-    a.href = url
-    const safe = (data.name || "build").toLowerCase().replace(/[^\p{L}\p{N}]+/gu, "-").replace(/^-+|-+$/g, "")
-    a.download = `talentbuild-${safe || "build"}.json`
-    a.click()
-    URL.revokeObjectURL(url)
-  }
+  // Export zeigt den Stand im Editor, auch ungespeichert – das, was man sieht
+  const exportName = name.trim() || (selected?.name ?? "")
+  const exportJson = JSON.stringify(exportBuild({ classId, className, name: exportName, ranks }), null, 2)
+  const exportFile = `talentbuild-${
+    exportName.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, "-").replace(/^-+|-+$/g, "") || "build"
+  }.json`
 
-  const importFile = async (file: File) => {
+  /**
+   * Import aus dem Popup. Gehört der Build zu einer anderen Klasse, wird er
+   * dort angelegt und der Planer wechselt hin (Entscheid 2026-11-12).
+   */
+  const importBuild = async (build: { classId: number; name: string; ranks: TalentRanks }): Promise<true | string> => {
+    if (dirty && !window.confirm(t("planner.discardConfirm"))) return t("planner.importCancelled")
+    setBusy(true)
     setMessage(null)
-    const result = parseBuildImport(await file.text())
-    if (!result.ok) {
-      setMessage({ text: t(IMPORT_ERROR[result.error]), error: true })
-      return
+    try {
+      const saved = await post(build.classId, build.name, build.ranks)
+      if (typeof saved === "string") return saved
+      if (build.classId !== classId) {
+        router.push(`/dashboard/talentplaner?class=${build.classId}&build=${encodeURIComponent(saved.id)}`)
+        return true
+      }
+      remember(saved)
+      setSelectedId(saved.id)
+      setName(saved.name)
+      setAllocation(allocationFromRanks(trees, saved.ranks).allocation)
+      setCreating(false)
+      setMessage({ text: t("planner.imported"), error: false })
+      return true
+    } finally {
+      setBusy(false)
     }
-    if (result.classId !== classId) {
-      setMessage({ text: t("planner.importWrongClass"), error: true })
-      return
-    }
-    await create(result.name, result.ranks)
   }
 
   return (
@@ -267,21 +276,21 @@ export function TalentPlanner({
         <button type="button" className="wb-tab" aria-pressed={creating} onClick={() => setCreating(true)}>
           {t("planner.newBuild")}
         </button>
-        <button type="button" className="wb-tab" onClick={() => fileRef.current?.click()} disabled={busy}>
+        <button type="button" className="wb-tab" onClick={() => setDialog("import")} disabled={busy}>
           {t("planner.import")}
         </button>
-        <input
-          ref={fileRef}
-          type="file"
-          accept="application/json,.json"
-          className="hidden"
-          onChange={(e) => {
-            const file = e.target.files?.[0]
-            e.target.value = ""
-            if (file) void importFile(file)
-          }}
-        />
       </div>
+
+      <ImportDialog
+        open={dialog === "import"}
+        onClose={() => setDialog(null)}
+        classId={classId}
+        classes={classes}
+        trees={trees}
+        busy={busy}
+        onImport={importBuild}
+      />
+      <ExportDialog open={dialog === "export"} onClose={() => setDialog(null)} json={exportJson} fileName={exportFile} />
 
       {message && (
         <div className="border-b px-[22px] py-2 text-[13px]" style={{ borderColor: "var(--wb-gold-faint)", color: message.error ? "var(--color-loss)" : "var(--color-gain)" }} role="status">
@@ -316,7 +325,7 @@ export function TalentPlanner({
             <button type="button" className="btn btn-secondary" onClick={() => setAllocation({})} disabled={busy || Object.keys(allocation).length === 0}>
               {t("planner.reset")}
             </button>
-            <button type="button" className="btn btn-secondary" onClick={download} title={t("planner.exportHint")}>
+            <button type="button" className="btn btn-secondary" onClick={() => setDialog("export")} title={t("planner.exportHint")}>
               {t("planner.export")}
             </button>
             {confirmDelete ? (

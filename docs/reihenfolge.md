@@ -135,6 +135,11 @@ liefert keine dieser Regeln; die Oberfläche schreibt „angenommen" dazu.
 
 **Export:** JSON (Entscheid 2026-11-11). Format `wow-dashboard/talent-build`, Version 1:
 Klasse, Name und Ränge je Talent-ID. Die Oberfläche sagt dazu, dass es kein Code des Spiels ist.
+Seit 2026-11-12 als **Popup statt Datei**: Export zeigt das JSON mit „Kopieren" (im Heimnetz
+über `http://<IP>` gibt es `navigator.clipboard` nicht – dann kopiert die App über die
+markierte Textarea), „Als Datei speichern" bleibt Option. Import nimmt eingefügten Text
+oder eine Datei, prüft, lässt danach den Namen festlegen und speichert. Ein Build einer
+anderen Klasse wird bei seiner Klasse angelegt, und der Planer wechselt dorthin.
 
 **Planer (gebaut 2026-11-12, Wünsche des Nutzers):**
 

@@ -129,6 +129,7 @@ export default async function TalentPlannerPage({
               talents={talents}
               classId={classId}
               className={className}
+              classes={classes}
               initialBuilds={builds}
               initialBuildId={searchParams.build ?? null}
               sources={sources}
