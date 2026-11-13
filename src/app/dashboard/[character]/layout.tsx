@@ -6,10 +6,30 @@ import { Header } from "@/components/Header"
 import { SectionCount, SectionMenu, SectionStepper } from "@/components/CharacterTabs"
 import { FactionMedallion } from "@/components/FactionMedallion"
 import { NoDataYet } from "@/components/NoDataYet"
+import { CharacterNotes } from "@/components/CharacterNotes"
 import { displayNameFromSlug } from "@/lib/battlenet"
 import { attempt, characterFromParam, media, profile } from "@/lib/character"
+import { getOrCreateUser } from "@/lib/db"
+import { listNotes } from "@/lib/note-store"
+import type { CharacterNoteView } from "@/lib/notes"
 import { getT, getFormat } from "@/lib/t"
 import { region } from "@/lib/runtime"
+
+/**
+ * Notizen des Nutzers zu diesem Charakter. `null`, wenn sie sich nicht laden
+ * lassen – die Akte soll an einer Notiz nicht scheitern, aber auch keine
+ * leere Liste vortäuschen.
+ */
+async function loadNotes(battleTag: string | undefined, charSlug: string): Promise<CharacterNoteView[] | null> {
+  if (!battleTag) return null
+  try {
+    const user = await getOrCreateUser(battleTag)
+    return await listNotes(user.id, region(), charSlug)
+  } catch (error) {
+    console.warn("[notes] nicht ladbar:", error instanceof Error ? error.message : error)
+    return null
+  }
+}
 
 /**
  * Rahmen aller Charakter-Unterseiten als Heldenakte (Warband-Übergabe,
@@ -39,9 +59,10 @@ export default async function CharacterLayout({
   const f = await getFormat()
   const ref = characterFromParam(params.character)
 
-  const [mediaResult, profileResult] = await Promise.all([
+  const [mediaResult, profileResult, notes] = await Promise.all([
     attempt(() => media(ref, session.accessToken!)),
     attempt(() => profile(ref, session.accessToken!)),
+    loadNotes(session.battleTag, ref.slug),
   ])
 
   const avatar = mediaResult.value?.avatar ?? null
@@ -134,6 +155,11 @@ export default async function CharacterLayout({
             </div>
             <SectionStepper slug={ref.slug} />
           </div>
+
+          {/* Angeheftete Notizen – in jedem Bereich, gleich unter dem Kopf.
+              key: beim Wechsel zu einem anderen Charakter frisch beginnen,
+              das Layout selbst bleibt dabei bestehen. */}
+          <CharacterNotes key={ref.slug} slug={ref.slug} initialNotes={notes} />
 
           {/* Offen sagen, wenn die Werte aus dem Speicher kommen, weil die API
               gerade nicht erreichbar war – sonst wirken alte Zahlen wie aktuelle. */}

@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test": "node --test tools/secret-format.test.mjs tests/reset.test.mjs tests/talent-tree.test.mjs tests/talent-rules.test.mjs"
+    "test": "node --test tools/secret-format.test.mjs tests/reset.test.mjs tests/talent-tree.test.mjs tests/talent-rules.test.mjs tests/notes.test.mjs"
   },
   "dependencies": {
     "@fontsource/cinzel": "^5.3.0",

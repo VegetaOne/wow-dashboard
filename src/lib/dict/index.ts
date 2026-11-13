@@ -24,6 +24,7 @@ import * as economy from "./economy"
 import * as history from "./history"
 import * as talents from "./talents"
 import * as planner from "./planner"
+import * as notes from "./notes"
 
 export const EN = {
   ...core.en,
@@ -40,6 +41,7 @@ export const EN = {
   ...history.en,
   ...talents.en,
   ...planner.en,
+  ...notes.en,
 }
 
 export type TranslationKey = keyof typeof EN
@@ -59,4 +61,5 @@ export const DE: Record<TranslationKey, string> = {
   ...history.de,
   ...talents.de,
   ...planner.de,
+  ...notes.de,
 }

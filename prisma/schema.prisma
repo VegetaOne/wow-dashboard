@@ -18,6 +18,23 @@ model User {
   preferences  UserPreference?
   talentBuilds TalentBuild[]
   talentTargets TalentTarget[]
+  characterNotes CharacterNote[]
+}
+
+/// Angeheftete Notiz an einem Charakter – ein kurzer Merkzettel, abhakbar.
+/// Nutzerdaten wie die Ziel-Builds: je Nutzer, Region und Charakter.
+model CharacterNote {
+  id        String   @id @default(cuid())
+  userId    String
+  region    String
+  /// `{name}-{surname}`, klein
+  charSlug  String
+  text      String
+  done      Boolean  @default(false)
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, region, charSlug])
 }
 
 /// Favorit eines Nutzers. Forever-Charaktere sind `{name}-{surname}` ohne
