@@ -65,8 +65,8 @@ Erledigt am 2026-11-11, in dieser Reihenfolge:
 Offen als Nächstes:
 
 1. ~~**Talentplaner**~~ — gebaut 2026-11-12, siehe Abschnitt „Talentbuilds". Ungeprüft
-   mit echten Daten. Die Diagnose-Route `/api/wow/probe/talents` steht noch: sie ist
-   ausgeliefert, und ausgelieferte Dateien werden nur auf Zuruf gelöscht.
+   mit echten Daten. Die Diagnose-Route `/api/wow/probe/talents` ist am 2026-11-13 auf
+   Zuruf entfernt; sie steht in der Git-Historie.
 2. **Einrichtungscode im echten Setup durchlaufen** — mit frischem Volume.
 
 Nachzuziehen, wenn die Wochenübersicht im Betrieb steht: wöchentliche Quests und
