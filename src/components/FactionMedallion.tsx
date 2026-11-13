@@ -1,7 +1,15 @@
+"use client"
+
+import { factionIconUrl, hideIfBroken } from "@/lib/gameIcons"
+
 /**
- * Fraktionsmedaillon der Warband-Übergabe: Sechseck in Fraktionsfarbe mit
- * einem eigenen heraldischen Zeichen. Bewusst keine Blizzard-Wappen – das
- * sind geschützte Marken (siehe Übergabe, „Assets").
+ * Fraktionsmedaillon der Warband-Übergabe: Sechseck mit dem offiziellen
+ * Fraktionswappen (`ui_hordeicon`, `ui_allianceicon`, Herkunft siehe
+ * `gameIcons.ts`).
+ *
+ * Lädt das Bild nicht, wird es ausgeblendet und das Sechseck bleibt in
+ * Fraktionsfarbe stehen. Client-Komponente nur dafür (`ref`/`onError`, siehe
+ * `hideIfBroken`).
  *
  * `framed`: mit der goldenen Fahne dahinter, wie oben rechts auf den
  * Bühnenkarten.
@@ -9,10 +17,6 @@
 
 const MEDAL_CLIP = "polygon(50% 0, 100% 22%, 100% 70%, 50% 100%, 0 70%, 0 22%)"
 const FRAME_CLIP = "polygon(24% 0, 100% 0, 100% 76%, 50% 100%, 0 24%)"
-const GLYPH = {
-  HORDE: "polygon(50% 100%, 12% 62%, 0 18%, 24% 30%, 50% 0, 76% 30%, 100% 18%, 88% 62%)",
-  ALLIANCE: "polygon(50% 0, 100% 16%, 100% 54%, 50% 100%, 0 54%, 0 16%, 50% 34%)",
-}
 
 export function FactionMedallion({
   faction,
@@ -27,7 +31,7 @@ export function FactionMedallion({
   const horde = faction === "HORDE"
   const medal = (
     <span
-      className="grid place-items-center"
+      className="block overflow-hidden"
       style={{
         width: size,
         height: Math.round(size * 1.06),
@@ -38,12 +42,14 @@ export function FactionMedallion({
       }}
       aria-hidden
     >
-      <span
-        style={{
-          width: Math.round(size * 0.47),
-          height: Math.round(size * 0.47),
-          clipPath: GLYPH[faction],
-          background: horde ? "#f3a48c" : "#bcd6f4",
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={factionIconUrl(faction)}
+        alt=""
+        className="h-full w-full object-cover"
+        ref={hideIfBroken}
+        onError={(e) => {
+          e.currentTarget.style.display = "none"
         }}
       />
     </span>

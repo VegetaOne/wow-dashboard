@@ -3,7 +3,9 @@
 import Link from "next/link"
 import type { CharacterDetails, WoWCharacter } from "@/lib/battlenet"
 import { characterBase } from "@/lib/characterTabs"
-import { useFormat, useT } from "./I18nProvider"
+import { classIconUrl, hideIfBroken } from "@/lib/gameIcons"
+import { classCode } from "@/lib/i18n"
+import { useFormat, useLanguage, useT } from "./I18nProvider"
 import { FactionMedallion } from "./FactionMedallion"
 
 /** Plätze auf der Bühne – fest wie in der Übergabe, damit die Reihe nie umbricht. */
@@ -117,11 +119,12 @@ const CARD_CLIP = "polygon(0 12px, 12px 0, calc(100% - 12px) 0, 100% 12px, 100% 
 function StageCard({ character, details }: { character: StageCharacter; details?: CharacterDetails }) {
   const t = useT()
   const f = useFormat()
+  const language = useLanguage()
   const horde = character.faction.type === "HORDE"
   const factionText = horde ? "var(--wb-horde-lit)" : "var(--wb-ally-lit)"
   const render = details?.renderUrl ?? null
   const fullName = character.surname ? `${character.name} ${character.surname}` : character.name
-  const itemLevel = details?.equippedItemLevel
+  const classIcon = classIconUrl(character.playable_class.id)
 
   return (
     <Link
@@ -171,17 +174,31 @@ function StageCard({ character, details }: { character: StageCharacter; details?
           )}
         </span>
 
-        {/* Stufenplakette */}
+        {/* Klassenplakette. Das Kürzel liegt unter dem Bild: lädt das Icon
+            nicht, wird es ausgeblendet und das Kürzel bleibt lesbar stehen. */}
         <span
-          className="absolute left-[9px] top-[9px] grid h-[34px] w-[34px] place-items-center border font-heading text-[13px] font-bold"
+          className="absolute left-[9px] top-[9px] grid h-[38px] w-[38px] place-items-center overflow-hidden border font-heading text-[12px] font-bold"
           style={{
-            borderColor: "var(--wb-gold-faint)",
+            borderColor: "var(--wb-gold)",
             background: "linear-gradient(180deg, var(--wb-plate-2), var(--wb-plate))",
             color: factionText,
+            boxShadow: "0 2px 8px var(--wb-plate-2)",
           }}
-          title={t("card.level")}
+          title={character.playable_class.name}
         >
-          {character.level || "—"}
+          {classCode(language, character.playable_class.id)}
+          {classIcon && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={classIcon}
+              alt=""
+              className="absolute inset-0 h-full w-full object-cover"
+              ref={hideIfBroken}
+              onError={(e) => {
+                e.currentTarget.style.display = "none"
+              }}
+            />
+          )}
         </span>
 
         {/* Namensplatte */}
@@ -211,16 +228,17 @@ function StageCard({ character, details }: { character: StageCharacter; details?
           </span>
         </span>
 
-        {/* Kennzahl */}
+        {/* Kennzahl: die Stufe. Die Gegenstandsstufe ist beim Leveln noch
+            keine Aussage und gehört nicht auf die Bühne. */}
         <span
           className="mx-[5px] mb-[5px] flex flex-col items-center border-t px-1 py-[7px]"
           style={{ borderColor: "var(--wb-gold-faint)" }}
         >
           <span className="font-heading text-[15px] font-bold" style={{ color: "var(--wb-gold-lit)" }}>
-            {typeof itemLevel === "number" ? f.number(itemLevel) : "—"}
+            {character.level ? f.number(character.level) : "—"}
           </span>
           <span className="text-[9px] uppercase" style={{ letterSpacing: "0.14em", color: "var(--wb-ink-dim)" }}>
-            {t("equipment.itemLevel")}
+            {t("card.level")}
           </span>
         </span>
       </span>

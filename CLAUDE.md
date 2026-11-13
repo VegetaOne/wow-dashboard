@@ -50,6 +50,7 @@ src/lib/                    alles Fachliche
   i18n.ts / t.ts / dict/    Übersetzung
   trend.ts (rein) / history.ts (DB)
   talent-tree.ts (rein: Einlesen, Regeln, Vergleich, JSON) / talents.ts (API) / talent-builds.ts (DB)
+  gameIcons.ts              Fraktions- und Klassen-Icons vom Blizzard-CDN (rein)
   format.ts, money.ts       Zahlen und Daten ohne toLocaleString
 prisma/schema.prisma        + migrations/
 docs/                       Konzept und Reihenfolge
