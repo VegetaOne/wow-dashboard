@@ -25,11 +25,6 @@ export const en = {
 
   // ─── Einrichtung ─────────────────────────────────────────────────────────
   "setup.eyebrow": "Setup",
-  "setup.code": "Setup code",
-  "setup.codeHint": "Proves that you have access to the machine the container runs on. The container writes it to its log at start; this shows it:",
-  "setup.codeRestartHint": "After a restart of the container there is a new code.",
-  "setup.codeInvalid": "The setup code is wrong. It is in the container log; after a restart there is a new one.",
-  "setup.proofMissing": "Step 1 of this setup was not confirmed with the setup code – for instance because the container restarted in between. Go back to step 1.",
   "setup.firstStart": "First start",
   "setup.heading": "Setup",
   "setup.intro":
@@ -151,11 +146,6 @@ export const de: Record<keyof typeof en, string> = {
   "login.connecting": "Verbinde…",
 
   "setup.eyebrow": "Einrichtung",
-  "setup.code": "Einrichtungscode",
-  "setup.codeHint": "Beweist, dass du Zugriff auf die Maschine hast, auf der der Container läuft. Er schreibt ihn beim Start ins Log; so wird er angezeigt:",
-  "setup.codeRestartHint": "Nach einem Neustart des Containers gibt es einen neuen Code.",
-  "setup.codeInvalid": "Der Einrichtungscode stimmt nicht. Er steht im Log des Containers; nach einem Neustart gibt es einen neuen.",
-  "setup.proofMissing": "Stufe 1 dieses Setups wurde nicht mit dem Einrichtungscode bestätigt – etwa weil der Container dazwischen neu gestartet ist. Zurück zu Stufe 1.",
   "setup.firstStart": "Erster Start",
   "setup.heading": "Einrichtung",
   "setup.intro":

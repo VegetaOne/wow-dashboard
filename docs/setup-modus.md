@@ -1,7 +1,6 @@
 # WoW Dashboard – Setup-Modus
 
-> Stand: 2026-11-11 · Durchlauf im Container geprüft; Einrichtungscode neu, noch nicht
-> mit echten Daten geprüft
+> Stand: 2026-11-13 · Durchlauf im Container geprüft; Einrichtungscode wieder entfernt
 > Vorüberlegungen und Einordnung: [Reihenfolge und Entscheide](./reihenfolge.md)
 
 ## Entscheide
@@ -12,7 +11,7 @@
 | **Secret** | Verschlüsselt (AES-256-GCM), Schlüssel als `config.key` neben der Datenbank. |
 | **Rechte** | Eine Instanz, ein Besitzer: wer den Setup abschliesst, darf danach als Einziger ändern. |
 | **Migration** | Kein Rückfall auf die `.env`. Wer aktualisiert, durchläuft den Setup einmal. |
-| **Absicherung** | Einrichtungscode im Log des Containers (2026-11-11), siehe unten. |
+| **Absicherung** | Keine über „nur solange offen" hinaus. Der Einrichtungscode (2026-11-11) ist am 2026-11-13 wieder entfernt, siehe unten. |
 
 ## Warum zwei Stufen
 
@@ -107,29 +106,19 @@ rechnet Next nichts vor – darum fiel es dort nie auf.
 zwischen Seiten und Routen teilen will, legt es an `globalThis` (mit `Symbol.for`) oder
 liest es aus der Datenbank.
 
-## Einrichtungscode (seit 2026-11-11)
+## Einrichtungscode – wieder entfernt (2026-11-13)
 
-Stufe 1 ist ohne Anmeldung erreichbar. Ohne weiteren Schutz konnte jeder im Heimnetz,
-der die Seite vor dem Besitzer öffnet, eigene Zugangsdaten eintragen und sich in Stufe 2
-zum Besitzer machen.
+Vom 2026-11-11 bis 2026-11-13 verlangte Stufe 1 einen Code, den der Container beim Start
+ins Log schrieb, und Stufe 2 einen Nachweis daraus per Cookie. Gedacht gegen den Fall,
+dass jemand im Heimnetz die Setup-Seite vor dem Besitzer öffnet, eigene Zugangsdaten
+einträgt und sich in Stufe 2 zum Besitzer macht.
 
-- Beim Start schreibt der Container, solange der Setup offen ist, einen Code ins Log:
-  `docker compose logs app | grep setup` → `[setup] Einrichtungscode: ABCD-EFGH`.
-  Acht Zeichen ohne verwechselbare (0/O, 1/I/L), Gross-/Kleinschreibung und Bindestrich
-  egal.
-- **Stufe 1** (`/api/setup`) und die **Prüfung** (`/api/setup/verify`) verlangen ihn. Die
-  Prüfung auch, weil die Instanz sonst für jeden im Netz fremde Zugangsdaten testete.
-- **Stufe 2** (`/api/setup/complete`) verlangt den Nachweis daraus: Stufe 1 setzt nach
-  richtigem Code ein `httpOnly`-Cookie mit dem SHA-256-Hash des Codes. Nur wer es trägt,
-  wird Besitzer. Danach wird der Code verworfen.
-- Der Code lebt im Speicher des Prozesses (an `globalThis`) und **gilt bis zum Neustart**.
-  Startet der Container zwischen Stufe 1 und 2 neu, meldet Stufe 2 das und schickt
-  zurück zu Stufe 1.
-- **Bewusste Ausnahme** von „nichts Geheimes ins Log": der Code ist einmalig, nach dem
-  Setup wertlos, und das Log ist genau der Ort, an den nur kommt, wer die Maschine hat.
-
-Erzeugt wird er in `src/instrumentation.ts` → `src/lib/startup.ts`, und zur Sicherheit
-noch einmal, wenn jemand `/setup` öffnet und es noch keinen gibt.
+**Auf Wunsch entfernt:** für eine Instanz im eigenen Heimnetz unnötig, und beim Start
+mit `npm run dev` statt Docker verwirrte der Hinweis auf `docker compose logs`. Was
+bleibt, ist die bewusst in Kauf genommene Lücke: **solange der Setup offen ist, kann ihn
+jeder im Netz ausfüllen** und wird Besitzer. Nach dem Abschluss ist der Setup gesperrt
+wie zuvor. Der Code steht in der Git-Historie (`src/lib/setup-code.ts`), falls die
+Instanz einmal ausserhalb des Heimnetzes erreichbar sein soll.
 
 ## Hintergrund-Auffrischung – verworfen (2026-11-11)
 
@@ -144,9 +133,11 @@ ohne Spielen ändert sich an den Profilen nichts. Festgehalten, was dabei heraus
 - Der Code steht in der Git-Historie (PR #7), die Tabelle `RefreshRun` ist mit
   `0010_auffrischer_entfernen` gelöscht.
 
-**Falle, gilt weiter für den Einrichtungscode:** `src/instrumentation.ts` wird auch fürs Edge-Bündel übersetzt. Der Import der
-Node-Module muss in genau der Form `if (process.env.NEXT_RUNTIME === "nodejs") { await
-import(…) }` stehen; mit einem frühen `return` davor bricht der Bau an `crypto`.
+**Falle, falls `src/instrumentation.ts` wieder gebraucht wird** (2026-11-13 mit dem
+Einrichtungscode entfernt, samt `experimental.instrumentationHook` in `next.config.js`):
+die Datei wird auch fürs Edge-Bündel übersetzt. Der Import der Node-Module muss in genau
+der Form `if (process.env.NEXT_RUNTIME === "nodejs") { await import(…) }` stehen; mit
+einem frühen `return` davor bricht der Bau an `crypto`.
 
 **Ablauf der Sitzung (behoben 2026-11-11):** `src/lib/auth.ts` versuchte nach 24 Stunden
 einen Refresh-Token-Fluss, den Battle.net nicht anbietet. Die Sitzung lief dann mit einem
@@ -166,8 +157,6 @@ keine Schleife.
 - **Region umstellen** lässt alte Snapshots liegen. Sie sind nach Region getrennt und
   erscheinen erst wieder, wenn zurückgestellt wird; die Einstellungsseite sagt das. Kein
   Aufräumen dafür.
-- **Der Einrichtungscode** ist ohne echte Zugangsdaten gebaut; geprüft sind Typen, Bau
-  und die Ablehnung falscher Codes an der laufenden App.
 
 ## Dateien
 
@@ -183,8 +172,6 @@ keine Schleife.
 | `src/app/dashboard/einstellungen/` | Einstellungsseite |
 | `src/app/api/settings/` | Änderungen, nur für den Besitzer |
 | `src/app/dashboard/layout.tsx` | Schranke vor dem Dashboard |
-| `src/lib/setup-code.ts` | Einrichtungscode und Nachweis für Stufe 2 |
-| `src/instrumentation.ts`, `src/lib/startup.ts` | Was beim Start passiert |
 | `prisma/migrations/0009_auffrischer/`, `0010_auffrischer_entfernen/` | Tabelle `RefreshRun`, angelegt und wieder gelöscht |
 
 ## Geprüft

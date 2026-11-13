@@ -166,8 +166,9 @@ ihre Daten selbst und erst wenn sie sichtbar ist.
   meldet man sich neu an. Arbeit ohne Nutzer im Browser hätte nur ein App-Token – ein
   Hintergrund-Auffrischer ist darum gebaut und bewusst wieder verworfen worden
   (`docs/setup-modus.md`).
-- **Der Einrichtungscode steht absichtlich im Log** – die einzige Ausnahme von „Secrets nie
-  in Logs" (`setup-code.ts`). Keine weiteren.
+- **Der Setup ist ungeschützt, solange er offen ist** – bewusst, die Instanz läuft im
+  Heimnetz. Der Einrichtungscode im Log ist am 2026-11-13 entfernt worden
+  (`docs/setup-modus.md`); nicht ohne Rückfrage wieder einbauen.
 - **`config.key` gehört zur Datenbank.** Beides zusammen ins Backup, sonst ist das
   verschlüsselte Secret verloren.
 

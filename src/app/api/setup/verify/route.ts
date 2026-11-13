@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { loadConfig } from "@/lib/config"
 import { getT } from "@/lib/t"
-import { checkSetupCode } from "@/lib/setup-code"
 
 /**
  * Eingegebene Zugangsdaten sofort gegen Battle.net prüfen.
@@ -12,9 +11,7 @@ import { checkSetupCode } from "@/lib/setup-code"
  * Nutzer und sagt genau das, was hier interessiert – ob ID und Secret ein
  * gültiges Paar sind.
  *
- * Erreichbar ohne Anmeldung, aber nur solange der Setup offen ist und mit
- * dem Einrichtungscode – sonst prüfte die Instanz für jeden im Netz fremde
- * Zugangsdaten.
+ * Erreichbar ohne Anmeldung, aber nur solange der Setup offen ist.
  */
 export async function POST(req: NextRequest) {
   const t = await getT()
@@ -24,9 +21,6 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json().catch(() => null)
-  if (!checkSetupCode(body?.setupCode)) {
-    return NextResponse.json({ ok: false, error: t("setup.codeInvalid") }, { status: 403 })
-  }
 
   const clientId = String(body?.clientId ?? "").trim()
   const clientSecret = String(body?.clientSecret ?? "").trim()

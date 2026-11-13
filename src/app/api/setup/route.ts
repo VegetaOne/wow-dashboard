@@ -1,18 +1,19 @@
 import { NextRequest, NextResponse } from "next/server"
 import { loadConfig, saveConfig, REGIONS, type Language } from "@/lib/config"
 import { getT } from "@/lib/t"
-import { checkSetupCode, setupProof, SETUP_PROOF_COOKIE } from "@/lib/setup-code"
 
 /**
  * Stufe 1 des Setups: die Werte, die der Login selbst braucht.
  *
  * Diese Route ist **ohne Anmeldung** erreichbar – anders geht es nicht, denn
  * ohne Client ID und Secret gibt es keinen Battle.net-Login, hinter dem sie
- * liegen könnte. Abgesichert ist sie dadurch, dass sie nur antwortet,
- * solange der Setup offen ist: sobald Stufe 2 durch ist, gibt sie 403 und
- * Änderungen laufen über die Einstellungsseite hinter dem Login – und
- * dadurch, dass sie den Einrichtungscode aus dem Log verlangt
- * (`setup-code.ts`).
+ * liegen könnte. Sie antwortet nur, solange der Setup offen ist: sobald
+ * Stufe 2 durch ist, gibt sie 403 und Änderungen laufen über die
+ * Einstellungsseite hinter dem Login.
+ *
+ * Bewusst ohne Einrichtungscode (entfernt 2026-11-13): die Instanz läuft im
+ * eigenen Heimnetz, und solange der Setup offen ist, kann ihn jeder dort
+ * ausfüllen. Siehe `docs/setup-modus.md`.
  */
 export async function POST(req: NextRequest) {
   const t = await getT()
@@ -25,9 +26,6 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json().catch(() => null)
-  if (!checkSetupCode(body?.setupCode)) {
-    return NextResponse.json({ error: t("setup.codeInvalid") }, { status: 403 })
-  }
 
   const clientId = String(body?.clientId ?? "").trim()
   const clientSecret = String(body?.clientSecret ?? "").trim()
@@ -52,17 +50,5 @@ export async function POST(req: NextRequest) {
     language: language === "de" ? "de" : "en",
   })
 
-  // Nachweis für Stufe 2: dort ist der Code nicht mehr zur Hand, und ohne
-  // diesen Nachweis könnte sich ein anderer Account als Besitzer eintragen
-  const response = NextResponse.json({ ok: true })
-  const proof = setupProof()
-  if (proof) {
-    response.cookies.set(SETUP_PROOF_COOKIE, proof, {
-      httpOnly: true,
-      sameSite: "lax",
-      path: "/",
-      maxAge: 24 * 60 * 60,
-    })
-  }
-  return response
+  return NextResponse.json({ ok: true })
 }

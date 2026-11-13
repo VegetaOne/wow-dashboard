@@ -2,7 +2,6 @@ import { redirect } from "next/navigation"
 import { loadConfig } from "@/lib/config"
 import { getT } from "@/lib/t"
 import { SetupForm } from "@/components/SetupForm"
-import { ensureSetupCode } from "@/lib/setup-code"
 import { LanguageToggle } from "@/components/LanguageToggle"
 
 /**
@@ -19,9 +18,6 @@ import { LanguageToggle } from "@/components/LanguageToggle"
 export default async function SetupPage() {
   const config = await loadConfig()
   if (config.setupComplete) redirect("/dashboard")
-
-  // Steht im Log, falls der Start ihn nicht schon erzeugt hat
-  ensureSetupCode()
 
   const t = await getT()
 

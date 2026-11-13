@@ -22,7 +22,7 @@
 | **Snapshot-Historie** | Behalten, ein Stand je Tag. Grundlage für alles Verlaufsbezogene. |
 | **Loot-Bereich** | **Entfernt** (2026-11-11). Die Journal-API liefert für WoW Forever keine Instanzen; ein Loot-Index ohne Inhalt bringt nichts. Tabellen mit Migration `0008_loot_entfernen` gelöscht. Kommt die Journal-API, steht der Code in der Git-Historie. |
 | **Hintergrund-Auffrischung** | **Verworfen** (2026-11-11). Der Companion läuft, während gespielt wird; und ohne Spielen ändert sich an den Profilen nichts, weil sie erst beim Ausloggen nachziehen. Ein täglicher Timer hätte höchstens den genauen Tag einer Änderung festgehalten. Kurz gebaut (PR #7) und wieder entfernt; Tabelle mit Migration `0010_auffrischer_entfernen` gelöscht. Der Verlauf bleibt: er entsteht aus den Ständen, die beim Öffnen der Seiten gespeichert werden. |
-| **Absicherung des Setups** | **Einrichtungscode im Log des Containers** (2026-11-11). Stufe 1 verlangt ihn, Stufe 2 den Nachweis daraus per Cookie. Gilt bis zum Neustart. |
+| **Absicherung des Setups** | **Keine** über „nur solange offen" hinaus (2026-11-13). Der Einrichtungscode im Log (2026-11-11) ist auf Wunsch wieder entfernt: für eine Instanz im eigenen Heimnetz unnötig. Solange der Setup offen ist, kann ihn jeder im Netz ausfüllen; siehe [Setup-Modus](./setup-modus.md). |
 | **Design** | **Warband Ledger** aus Claude Design (Artifact „Azeroth Ledger Charakter-Manager", Übergabe `design_handoff_warband_ledger`), umgesetzt 2026-11-12 in vier Schritten: Tokens Nacht/Pergament und Schriften Cinzel/Spectral (selbst gehostet), Kopfzeile, Startseite mit Kriegsschar-Bühne und übrigen Charakteren, Charakterseite als Heldenakte. **Abweichungen:** Charakterbilder aus der API statt Upload, keine Wappen-Uploads, kein Spielmodus-Reiter; die Heldenakte blättert über eigene Seiten je Bereich statt eines Schiebereglers, damit jeder Bereich seine Daten erst beim Öffnen lädt; Gold, Währungen, Schatzkammer und Wochenziele entfallen (API liefert sie nicht). **Nachgebessert 2026-11-12:** statt römischer Reiter ein Bereichsmenü, das von links hereingleitet (Name und Kurzhinweis je Bereich, schliesst nach der Wahl); ‹ › bleiben. Der Aktenkopf mit Name und aktuellem Bereich klebt beim Scrollen unter der Kopfzeile; auf schmalen Bildschirmen klebt nur er. |
 | **Wochenübersicht** | Seit 2026-11-12 **nicht mehr in der Navigation** (Lockouts vorerst zurückgestellt); die Seite bleibt unter `/dashboard/woche`. Eigene Account-Seite, Status aus `last_kill_timestamp` statt aus Snapshot-Diffs, Lockout-Längen als gepflegte Tabelle. Siehe [Wochenübersicht](./wochenuebersicht.md). |
 
@@ -59,15 +59,16 @@ Erledigt am 2026-11-11, in dieser Reihenfolge:
    das Umschalten mit echten Daten durch jede Ansicht.
 3. ~~**Hintergrund-Auffrischer**~~ — gebaut und auf Wunsch wieder entfernt, siehe
    Entscheid oben.
-4. ~~**Setup-Modus abschliessen**~~ — Einrichtungscode gebaut; der Hinweis beim Wechsel der
-   Region stand schon und ist an die getrennte Ablage je Region angepasst.
+4. ~~**Setup-Modus abschliessen**~~ — Einrichtungscode gebaut und am 2026-11-13 wieder
+   entfernt; der Hinweis beim Wechsel der Region stand schon und ist an die getrennte
+   Ablage je Region angepasst.
 
 Offen als Nächstes:
 
 1. ~~**Talentplaner**~~ — gebaut 2026-11-12, siehe Abschnitt „Talentbuilds". Ungeprüft
    mit echten Daten. Die Diagnose-Route `/api/wow/probe/talents` ist am 2026-11-13 auf
    Zuruf entfernt; sie steht in der Git-Historie.
-2. **Einrichtungscode im echten Setup durchlaufen** — mit frischem Volume.
+2. **Setup im echten Durchlauf prüfen** — mit frischem Volume, jetzt ohne Einrichtungscode.
 
 Nachzuziehen, wenn die Wochenübersicht im Betrieb steht: wöchentliche Quests und
 Belohnungen, und die offenen Punkte aus [Wochenübersicht](./wochenuebersicht.md).
@@ -202,7 +203,8 @@ unangemeldet erreichbar sein. Damit nicht jeder im Heimnetz die App umkonfigurie
 kann, braucht es eine Absicherung: entweder nur solange keine Konfiguration existiert
 („first run"), oder ein Einmal-Token, das beim Start in die Container-Logs geschrieben
 wird. Letzteres ist sicherer, weil es auch beim späteren Ändern greift.
-**Umgesetzt 2026-11-11:** Einrichtungscode im Log, siehe [Setup-Modus](./setup-modus.md).
+**Umgesetzt 2026-11-11, wieder entfernt 2026-11-13:** Einrichtungscode im Log, siehe
+[Setup-Modus](./setup-modus.md).
 
 **2. `.env` schreiben oder in die Datenbank?**
 

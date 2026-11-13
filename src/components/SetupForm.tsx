@@ -11,9 +11,6 @@ import { useT } from "./I18nProvider"
  * Hier stehen nur die Werte, die der Login selbst braucht. Alles Weitere
  * kommt in Stufe 2, nach der Anmeldung.
  *
- * Vorneweg der Einrichtungscode aus dem Log des Containers – ohne ihn
- * nimmt der Server weder Prüfung noch Speichern an.
- *
  * Die Zugangsdaten werden vor dem Speichern gegen Battle.net geprüft.
  * Schlägt die Prüfung fehl, weil der Dienst nicht erreichbar war, lässt
  * sich trotzdem fortfahren – ein Netzausfall sagt nichts über die Daten.
@@ -32,7 +29,6 @@ export function SetupForm({
   const [region, setRegion] = useState(initialRegion)
   const [clientId, setClientId] = useState(initialClientId)
   const [clientSecret, setClientSecret] = useState("")
-  const [setupCode, setSetupCode] = useState("")
 
   const [origin, setOrigin] = useState("")
   const [checking, setChecking] = useState(false)
@@ -58,7 +54,7 @@ export function SetupForm({
       const res = await fetch("/api/setup/verify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ clientId, clientSecret, region, setupCode }),
+        body: JSON.stringify({ clientId, clientSecret, region }),
       })
       const data = await res.json()
       setChecked({
@@ -84,7 +80,7 @@ export function SetupForm({
       const res = await fetch("/api/setup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ clientId, clientSecret, region, language, setupCode }),
+        body: JSON.stringify({ clientId, clientSecret, region, language }),
       })
       const data = await res.json()
       if (!res.ok) {
@@ -100,35 +96,10 @@ export function SetupForm({
     }
   }
 
-  const ready =
-    clientId.trim().length > 0 &&
-    clientSecret.trim().length > 0 &&
-    setupCode.trim().length > 0
+  const ready = clientId.trim().length > 0 && clientSecret.trim().length > 0
 
   return (
     <div className="space-y-8">
-      <section>
-        <h3>{t("setup.code")}</h3>
-        <p className="mt-1 max-w-[70ch] text-[13px] opacity-60">{t("setup.codeHint")}</p>
-        <code className="mt-3 block border-2 border-line px-3 py-2 text-[13px] break-all">
-          docker compose logs app | grep setup
-        </code>
-        <input
-          className="input mt-3 w-full max-w-[16ch] font-mono uppercase tracking-[0.1em]"
-          value={setupCode}
-          onChange={(e) => {
-            setSetupCode(e.target.value)
-            setChecked(null)
-          }}
-          aria-label={t("setup.code")}
-          autoComplete="off"
-          spellCheck={false}
-        />
-        <span className="mt-1 block text-[12px] opacity-55">{t("setup.codeRestartHint")}</span>
-      </section>
-
-      <hr className="rule-thin" />
-
       <section>
         <span className="eyebrow">{t("setup.step", { current: 1, total: 4 })}</span>
         <h3 className="mt-0.5">{t("setup.language")}</h3>
