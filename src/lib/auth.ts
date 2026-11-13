@@ -77,6 +77,9 @@ const BattleNetProvider: OAuthConfig<BattleNetProfile> = {
 
 // ─── Auth-Konfiguration ───────────────────────────────────────────────────────
 
+/** Rückfall, den NextAuth selbst setzt – siehe Setter unten. */
+let secretFallback: string | undefined
+
 export const authOptions: AuthOptions = {
   providers: [BattleNetProvider],
   /**
@@ -84,7 +87,16 @@ export const authOptions: AuthOptions = {
    * danach nie ersetzt, weil ein Wechsel alle Anmeldungen ungültig machte.
    */
   get secret() {
-    return configSnapshot()?.authSecret ?? undefined
+    return configSnapshot()?.authSecret ?? secretFallback
+  },
+  /**
+   * NextAuth führt in der Route `options.secret ??= process.env.NEXTAUTH_SECRET`
+   * aus. Ohne Setter wirft das bei frischer Datenbank (noch kein Schlüssel)
+   * „Cannot set property secret … which has only a getter", und jede
+   * Auth-Route antwortet 500. Der Wert aus der Datenbank geht weiterhin vor.
+   */
+  set secret(value: string | undefined) {
+    secretFallback = value
   },
   pages: {
     signIn: "/login",
