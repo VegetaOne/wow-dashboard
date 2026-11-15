@@ -100,6 +100,38 @@ export interface SnapshotResult<T> {
 /** Standard-Frist: die Profil-API ändert sich ohnehin nur beim Ausloggen. */
 export const DEFAULT_MAX_AGE_SECONDS = 15 * 60
 
+// ─── Neu laden auf Wunsch ─────────────────────────────────────────────────────
+
+/**
+ * Wann für einen Schlüssel zuletzt „neu laden" verlangt wurde, je
+ * `{region}:{charSlug}`. Ein Stand, der älter ist als diese Marke, gilt als
+ * abgelaufen – auch innerhalb der Frist. Der alte Stand bleibt dabei
+ * unangetastet: scheitert der neue Abruf, ist er weiter der Rückfall, mit
+ * seinem echten Zeitstempel.
+ *
+ * Am `globalThis`, weil Seiten und Routen je ein eigenes Bündel haben – die
+ * Marke der Route wäre in der Seite sonst nie zu sehen. Ein Neustart
+ * vergisst sie; dann ist ohnehin nichts mehr ausstehend.
+ */
+const REFRESH_KEY = Symbol.for("wow-dashboard.snapshot-refresh")
+
+function refreshMarks(): Map<string, number> {
+  const g = globalThis as unknown as Record<symbol, Map<string, number> | undefined>
+  return (g[REFRESH_KEY] ??= new Map())
+}
+
+/** Ab jetzt für diese Schlüssel (Charakter, `@account`, `@guild:…`) frisch holen. */
+export function requestRefresh(charSlugs: string[]): void {
+  const now = Date.now()
+  const marks = refreshMarks()
+  for (const slug of charSlugs) marks.set(`${region()}:${slug.toLowerCase()}`, now)
+}
+
+function refreshRequestedAfter(key: ScopedKey, fetchedAt: Date): boolean {
+  const mark = refreshMarks().get(`${key.region}:${key.charSlug}`)
+  return mark !== undefined && fetchedAt.getTime() < mark
+}
+
 function today(): string {
   return new Date().toISOString().slice(0, 10)
 }
@@ -188,7 +220,7 @@ export async function withSnapshot<T>(
 
   if (existing) {
     const ageSeconds = (Date.now() - existing.fetchedAt.getTime()) / 1000
-    if (ageSeconds < maxAgeSeconds) {
+    if (ageSeconds < maxAgeSeconds && !refreshRequestedAfter(normalize(key), existing.fetchedAt)) {
       try {
         return {
           data: JSON.parse(existing.payload) as T,
@@ -226,6 +258,20 @@ export async function withSnapshot<T>(
       }
     }
     throw fetchError
+  }
+}
+
+/**
+ * Zuletzt gespeicherter Inhalt eines Datensatzes, ohne Abruf. `null`, wenn
+ * keiner vorliegt oder er nicht lesbar ist.
+ */
+export async function latestStored<T>(key: SnapshotKey): Promise<T | null> {
+  const row = await readLatest(key)
+  if (!row) return null
+  try {
+    return JSON.parse(row.payload) as T
+  } catch {
+    return null
   }
 }
 

@@ -228,6 +228,15 @@ export function isNotFound(error: unknown): boolean {
 
 // ─── Hilfsfunktionen ──────────────────────────────────────────────────────────
 
+/**
+ * Cache-Marke aller Profil-Abrufe im Datencache von Next. Der Knopf „neu
+ * laden" verwirft sie mit `revalidateTag`. Ohne das käme bis zu fünf
+ * Minuten lang dieselbe Antwort zurück: der Datencache unterscheidet nach
+ * dem Authorization-Header, frisch war bisher nur, wer sich neu anmeldete.
+ * Statische Daten bekommen keine Marke – die ändern sich nicht.
+ */
+export const PROFILE_FETCH_TAG = "bnet-profile"
+
 async function rawFetch<T>(
   path: string,
   token: string,
@@ -240,7 +249,7 @@ async function rawFetch<T>(
 
   const res = await fetch(url.toString(), {
     headers: { Authorization: `Bearer ${token}` },
-    next: { revalidate },
+    next: { revalidate, tags: ns.startsWith("profile-") ? [PROFILE_FETCH_TAG] : undefined },
   })
 
   if (!res.ok) throw new BnetError(res.status, path, ns)

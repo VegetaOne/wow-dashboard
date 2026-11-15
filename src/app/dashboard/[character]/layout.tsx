@@ -7,6 +7,7 @@ import { SectionCount, SectionMenu, SectionStepper } from "@/components/Characte
 import { FactionMedallion } from "@/components/FactionMedallion"
 import { NoDataYet } from "@/components/NoDataYet"
 import { CharacterNotes } from "@/components/CharacterNotes"
+import { RefreshButton } from "@/components/RefreshButton"
 import { displayNameFromSlug } from "@/lib/battlenet"
 import { attempt, characterFromParam, media, profile } from "@/lib/character"
 import { getOrCreateUser } from "@/lib/db"
@@ -153,6 +154,7 @@ export default async function CharacterLayout({
                 {subline}
               </span>
             </div>
+            <RefreshButton slug={ref.slug} />
             <SectionStepper slug={ref.slug} />
           </div>
 

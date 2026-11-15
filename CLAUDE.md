@@ -43,6 +43,7 @@ src/app/                    App Router
   dashboard/talentplaner/   Talentplaner je Klasse (Account-Ebene, in der Kopfzeile)
   api/talent-builds/, api/talent-targets/   Builds und Ziel-Build je Charakter (Nutzerdaten)
   api/character-notes/      angeheftete Notizen je Charakter (Nutzerdaten)
+  api/wow/refresh/          „Neu laden“: Snapshot-Marke + Datencache verwerfen
 src/components/             UI
 src/lib/                    alles Fachliche
   battlenet.ts              API-Zugriff (bnetGet), Namespaces, Slugs, Slots, Farben
@@ -173,6 +174,10 @@ ihre Daten selbst und erst wenn sie sichtbar ist.
 - **Der Setup ist ungeschützt, solange er offen ist** – bewusst, die Instanz läuft im
   Heimnetz. Der Einrichtungscode im Log ist am 2026-11-13 entfernt worden
   (`docs/setup-modus.md`); nicht ohne Rückfrage wieder einbauen.
+- **Zwei Caches liegen übereinander.** `withSnapshot` (Frist je Datensatz) und darunter der
+  Datencache von Next (`revalidate` in `rawFetch`), dessen Schlüssel den Authorization-Header
+  enthält – ein neuer Login umgeht ihn, sonst nichts. Frisch holen heisst beides umgehen:
+  `requestRefresh()` und `revalidateTag(PROFILE_FETCH_TAG)`, siehe `api/wow/refresh`.
 - **`config.key` gehört zur Datenbank.** Beides zusammen ins Backup, sonst ist das
   verschlüsselte Secret verloren.
 
