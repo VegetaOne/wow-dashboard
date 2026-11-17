@@ -24,8 +24,8 @@ docker compose up --build            # wie es beim Nutzer läuft
 ```
 
 `npm test` läuft mit `node:test` (steckt in Node 20, braucht keine Abhängigkeit) und
-deckt das Secret-Format in `tools/`, die Reset-Arithmetik und die Bereinigung der
-Charakter-Notizen in `tests/` ab. TypeScript ohne
+deckt das Secret-Format in `tools/`, die Reset-Arithmetik, die Bereinigung der
+Charakter-Notizen und den Aufbau der Gegenstands-Tooltips in `tests/` ab. TypeScript ohne
 Importe lässt sich wie in `tests/reset.test.mjs` mit `ts.transpileModule` laden. Wenn du etwas mit Arithmetik oder Krypto
 anfasst (`src/lib/reset.ts`, `lockouts.ts`, `secrets.ts`), lege Tests dazu an und trage sie
 im Skript in `package.json` ein. Ändert sich das Format in `secrets.ts`, muss
@@ -55,6 +55,7 @@ src/lib/                    alles Fachliche
   talent-tree.ts (rein: Einlesen, Regeln, Vergleich, JSON) / talents.ts (API) / talent-builds.ts (DB)
   notes.ts (rein: Grenzen, Bereinigung) / note-store.ts (DB)   Notizen je Charakter
   gameIcons.ts              Fraktions- und Klassen-Icons vom Blizzard-CDN (rein)
+  item-tooltip.ts           Gegenstands-Tooltip wie im Spiel als Zeilenliste (rein, getestet)
   format.ts, money.ts       Zahlen und Daten ohne toLocaleString
 prisma/schema.prisma        + migrations/
 docs/                       Konzept und Reihenfolge
